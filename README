@@ -1,0 +1,16 @@
+
+ Basic instructions to run the project generation.
+
+Run the code to generate the files:
+
+./TrackletProject.py
+
+Prepare files for graph generation:
+
+./Graph.py
+
+Make graph in root:
+
+root -l
+root[0] .L DrawTrackletProject.C++
+root[1] DrawTrackletProject()

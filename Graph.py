@@ -2,7 +2,7 @@
 
 import math
 
-fi = open("memorymodules_new.txt","r")
+fi = open("memorymodules.dat","r")
 
 memorymodules=[]
 memorycounts=[0,0,0,0,0,0,0,0,0,0,0]
@@ -15,9 +15,13 @@ for line in fi :
         memorymodules.append([1,splitline[1]])
     if (splitline[0]=="StubsByLayer:") :
         memorymodules.append([2,splitline[1]])
-    if (splitline[0]=="AllStubs:" or splitline[0]=="VMStubs:") :
+    if (splitline[0]=="StubsByDisk:") :
+        memorymodules.append([2,splitline[1]])
+    if (splitline[0]=="AllStubs:" or splitline[0]=="VMStubs:") :        
         basename=splitline[1].split("n")[0]
-        number=splitline[1].split("n")[1]
+        number=0
+        if (len(splitline[1].split("n"))>1) :
+            number=splitline[1].split("n")[1]
         found=False
         for x in memorymodules :
             if (basename==x[1]) :
@@ -43,9 +47,31 @@ for line in fi :
         memorymodules.append([8,splitline[1]])
     if (splitline[0]=="FullMatch:") :
         if "From" not in splitline[1] :
-            memorymodules.append([9,splitline[1]])
+            basename=splitline[1].split("n")[0]
+            number=0
+            if (len(splitline[1].split("n"))>1) :
+                number=splitline[1].split("n")[1]
+            found=False
+            for x in memorymodules :
+                if (basename==x[1]) :
+                    found=True
+                    if (number>x[2]) :
+                        x[2]=number
+            if (not found) :
+                memorymodules.append([9,basename,number])
         else :
-            memorymodules.append([10,splitline[1]])
+            basename=splitline[1].split("n")[0]
+            number=0
+            if (len(splitline[1].split("n"))>1) :
+                number=splitline[1].split("n")[1]
+            found=False
+            for x in memorymodules :
+                if (basename==x[1]) :
+                    found=True
+                    if (number>x[2]) :
+                        x[2]=number
+            if (not found) :
+                memorymodules.append([10,basename,number])
     if (splitline[0]=="TrackFit:") :
         memorymodules.append([11,splitline[1]])
 
@@ -59,7 +85,7 @@ print memorycounts
 
 
 
-fi = open("processingmodules_new.txt","r")
+fi = open("processingmodules.dat","r")
 
 processingmodules=[]
 processingcounts=[0,0,0,0,0,0,0,0,0,0]
@@ -69,6 +95,8 @@ for line in fi :
     print "Line:",splitline
     lenold=len(processingmodules)
     if (splitline[0]=="LayerRouter:") :
+        processingmodules.append([1,splitline[1]])
+    if (splitline[0]=="DiskRouter:") :
         processingmodules.append([1,splitline[1]])
     if (splitline[0]=="VMRouter:") :
         processingmodules.append([2,splitline[1]])
@@ -130,7 +158,7 @@ for module in processingmodules :
     fo.write(" "+str(x)+" "+str(y)+" "+str(x+dx)+" "+str(y)+"\n")
     print module
 
-fi = open("wires_new.txt","r")
+fi = open("wires.dat","r")
 for line in fi :
     memory=line.split(" ")[0]
     if (memory[len(memory)-2]=="n" or memory[len(memory)-3]=="n") :

@@ -160,7 +160,9 @@ tcin=[]
 prin=[]
 cmin=[]
 fmin=[]
+fmin2=[]
 ftin=[]
+mtout=[]
 
 for m in inputmemcount :
     mem=m[0]
@@ -231,7 +233,15 @@ for m in inputmemcount :
                         if "_ToPlus" in mem:
                             fp.write(".matchoutplus")
                         else:
-                            fp.write(".matchout ")
+                            ii=0
+                            for f in mtout :
+                                if f[0]==proc :
+                                    f[1]+=1
+                                    ii=f[1]
+                            if ii==0:
+                                mtout.append([proc,1])
+                                ii=1
+                            fp.write(".matchout"+str(ii)+" ")
                 if "TF_" in mem:
                     fp.write(".trackout ")
                 if "TPAR_" in mem:
@@ -319,17 +329,25 @@ for m in inputmemcount :
                     fp.write(".match"+str(ii)+"in ")
                 if "FM_" in mem:
                     if "MT_" in proc :
-                        fp.write(".projin")
-                    else:
                         ii=0
-                        for f in fmin :
+                        for f in fmin2 :
                             if f[0]==proc :
                                 f[1]+=1
                                 ii=f[1]
                         if ii==0:
-                            fmin.append([proc,1])
+                            fmin2.append([proc,1])
                             ii=1
-                        fp.write(".fullmatch"+mem[8:]+"in ")
+                        fp.write(".proj"+str(ii)+"in")
+                    else:
+                        ii=0
+                        for f in fmin2 :
+                            if f[0]==proc+mem[9:10] :
+                                f[1]+=1
+                                ii=f[1]
+                        if ii==0:
+                            fmin2.append([proc+mem[9:10],1])
+                            ii=1
+                        fp.write(".fullmatch"+mem[9:10]+"in"+str(ii))
                 if "TPAR_" in mem:
                     ii=0
                     for f in ftin :

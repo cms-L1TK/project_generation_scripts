@@ -225,11 +225,11 @@ for m in inputmemcount :
                 if "CM_" in mem:
                     fp.write(".matchout ")
                 if "FM_" in mem:
-                    if "_ToLeft" in mem:
-                        fp.write(".matchoutplus")
+                    if "_ToMinus" in mem:
+                        fp.write(".matchoutminus")
                     else:
-                        if "_ToRight" in mem:
-                            fp.write(".matchoutminus")
+                        if "_ToPlus" in mem:
+                            fp.write(".matchoutplus")
                         else:
                             fp.write(".matchout ")
                 if "TF_" in mem:

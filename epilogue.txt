@@ -39,7 +39,7 @@
 //);
 
 wire InputLink_R1Link1_io_rd_ack , InputLink_R1Link2_io_rd_ack , InputLink_R1Link3_io_rd_ack;
-
+wire TPars_L1L2_io_rd_ack , TPars_L3L4_io_rd_ack , TPars_L5L6_io_rd_ack;
     // readback mux
     // If a particular block is addressed, connect that block's signals
     // to the 'rdbk' output. At the same time, assert 'rdbk_sel' to tell downstream muxes to

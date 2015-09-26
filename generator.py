@@ -198,7 +198,7 @@ for x in memories:
 
 ####################################################
 ####################################################
-
+done_cnt = 0
 for x in modules:
     #if x[0] == 'ProjRouter':
     #break
@@ -222,12 +222,16 @@ for x in modules:
     m.in_names = i_n
     m.out_names = o_n
     m.common = Common
+    done_cnt = done_cnt + 1
 
     if m.module == 'LayerRouter':
         m.inputs.append(m.inputs[-1]+'_read_en')
         m.in_names.append('read_en')
         m.start = 'start1_5'
-        m.done = 'done1'
+        if done_cnt == 1:
+            m.done = 'done1_0'
+        else:
+            m.done = 'done1'
         out_names = []
         outputs = []
         for cnt,out in enumerate(m.outputs):
@@ -257,13 +261,11 @@ for x in modules:
                 m.parameters = "#(1'b1,1'b0)"
             else:
                 m.parameters = "#(1'b0,1'b0)"
-    #Do this for now!!!!!!!!
-    # for o,on in zip(m.outputs,m.out_names):
-    #       if 'vmstubout' in on:
-    #           m.out_names.remove(on)
-	#           m.out_names.append(on+'_'+o[-2:])
         m.start = 'start2_5'
-        m.done = 'done2'
+        if done_cnt == 4:
+            m.done = 'done2_0'
+        else:
+            m.done = 'done2'
         vs = 0
         valids = []
         valids2 = []
@@ -278,7 +280,10 @@ for x in modules:
         m.out_names.append('valid_data')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start3_5'
-        m.done = 'done3'
+        if done_cnt == 10:
+            m.done = 'done3_0'
+        else:
+            m.done = 'done3'
         m.parameters = '#("/home/Jorge/work/firmware/TrackletProject/AdditionalFiles/tables/TETable_%s_phi.txt","/home/Jorge/work/firmware/TrackletProject/AdditionalFiles/tables/TETable_%s_z.txt")'%(m.name,m.name)
     if m.module == 'TrackletCalculator':
         ons = []
@@ -290,9 +295,25 @@ for x in modules:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
         if 'L1D3L2D3' in m.name:
-            m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a,,14,12,9,9,1'b1,16'h86a)"
+            m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
         m.start = 'start4_5'
-        m.done = 'done4'
+        if done_cnt == 64:
+            m.done = 'done4_0'
+        else:
+            m.done = 'done4'
+    if m.module == 'ProjectionTransceiver':
+        ons = []
+        for i,o in enumerate(m.out_names):
+            ons.append(o+'_%d'%(i+1))
+        m.out_names = ons
+        ins = []
+        for i,o in enumerate(m.in_names):
+            ins.append(o+'_%d'%(i+1))
+        m.in_names = ins
+        if done_cnt == 79:
+            m.done = 'done5_0'
+        else:
+            m.done = 'done5'
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en')
         m.out_names.append('valid_data')
@@ -307,7 +328,10 @@ for x in modules:
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,26)"
         m.start = 'start6_5'
-        m.done = 'done6'
+        if done_cnt == 67:
+            m.done = 'done6_0'
+        else:
+            m.done = 'done6'
     if m.module == 'MatchEngine':
         m.in_names.append(m.in_names[0])
         m.in_names.append(m.in_names[1])
@@ -316,23 +340,32 @@ for x in modules:
         m.inputs.append(m.inputs[1])
         m.inputs = m.inputs[2:]
         m.start = 'start7_5'
-        m.done = 'done7'
+        if done_cnt == 81:
+            m.done = 'done7_0'
+        else:
+            m.done = 'done7'
     if m.module == 'MatchCalculator':
         m.in_names.append(m.in_names[0])
-        m.in_names.append(m.in_names[1])
-        m.in_names = m.in_names[2:]
-        m.inputs.append(m.inputs[0])
-        m.inputs.append(m.inputs[1])
-        m.inputs = m.inputs[2:]
-        m.start = 'start8_5'
-        m.done = 'done8'
-    if m.module == 'FitTrack':
-        m.in_names.append(m.in_names[0])
+        #m.in_names.append(m.in_names[1])
         m.in_names = m.in_names[1:]
         m.inputs.append(m.inputs[0])
+        #m.inputs.append(m.inputs[1])
         m.inputs = m.inputs[1:]
+        m.start = 'start8_5'
+        if done_cnt == 165:
+            m.done = 'done8_0'
+        else:
+            m.done = 'done8'
+    if m.module == 'FitTrack':
+        m.in_names.append(m.in_names[4])
+        m.in_names = m.in_names[:4]+m.in_names[5:]
+        m.inputs.append(m.inputs[4])
+        m.inputs = m.inputs[:4]+m.inputs[5:]
         m.start = 'start9_5'
-        m.done = 'done9'
+        if done_cnt == 183:
+            m.done = 'done9_0'
+        else:
+            m.done = 'done9'
     
 ####################################################
 
@@ -350,7 +383,7 @@ for x in modules:
                     print '.read_add_allstub('+i+'_read_add),'
                 elif n == 'allprojin':
                     print '.read_add_allproj('+i+'_read_add),'
-                elif n == 'trackparsin':
+                elif n == 'tpar1in':
                     print '.read_add_pars('+i+'_read_add),'
                 else:
                     print '.number_in'+str(k)+'('+i+'_number),'

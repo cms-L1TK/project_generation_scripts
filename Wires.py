@@ -120,15 +120,15 @@ for mem in inputmemorymodules :
         shortmem+=1
         found=True
     if "TPROJ_" in mem:
-        fp.write("TrackletProjections: "+mem+n+" [36]\n")
+        fp.write("TrackletProjections: "+mem+n+" [54]\n")
         longmem+=1
         found=True
     if "TPAR_" in mem:
-        fp.write("TrackletParameters: "+mem+n+" [36]\n")
+        fp.write("TrackletParameters: "+mem+n+" [54]\n")
         longmem+=1
         found=True
     if "AP_" in mem:
-        fp.write("AllProj: "+mem+n+" [36]\n")
+        fp.write("AllProj: "+mem+n+" [54]\n")
         longmem+=1
         found=True
     if "VMPROJ_" in mem:

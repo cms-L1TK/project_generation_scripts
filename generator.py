@@ -294,8 +294,8 @@ for x in modules:
         for o in m.outputs:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
-        if 'L1D3L2D3' in m.name:
-            m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
+        #if 'L1D3L2D3' in m.name: # PARAMETERS BROKEN
+         #   m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
         m.start = 'start4_5'
         if done_cnt == 64:
             m.done = 'done4_0'
@@ -339,6 +339,8 @@ for x in modules:
         m.inputs.append(m.inputs[0])
         m.inputs.append(m.inputs[1])
         m.inputs = m.inputs[2:]
+        m.outputs.append(m.outputs[0]+'_wr_en')
+        m.out_names.append('valid_data')
         m.start = 'start7_5'
         if done_cnt == 81:
             m.done = 'done7_0'
@@ -351,6 +353,12 @@ for x in modules:
         m.inputs.append(m.inputs[0])
         #m.inputs.append(m.inputs[1])
         m.inputs = m.inputs[1:]
+        m.outputs.append(m.outputs[0]+'_wr_en')
+        m.outputs.append(m.outputs[1]+'_wr_en')
+        m.outputs.append(m.outputs[2]+'_wr_en')
+        m.out_names.append('valid_matchminus')
+        m.out_names.append('valid_matchplus')
+        m.out_names.append('valid_match')
         m.start = 'start8_5'
         if done_cnt == 165:
             m.done = 'done8_0'

@@ -103,19 +103,19 @@ reg [4:0] clk_cnt;
 //.out(enable_gen)
 //);
 
-//initial
-//clk_cnt = 5'b0;
-//always @(posedge clk) begin
-//if(enable_gen)
-//clk_cnt <= clk_cnt + 1'b1;
-//else begin
-//clk_cnt <= 5'b0;
-//end
-//if(clk_cnt == 5'd24)
-//clk_cnt <= 5'b0;
-//end
+initial
+clk_cnt = 5'b0;
+always @(posedge clk) begin
+if(en_proc)
+clk_cnt <= clk_cnt + 1'b1;
+else begin
+clk_cnt <= 5'b0;
+end
+if(clk_cnt == 5'd23)
+clk_cnt <= 5'b0;
+end
 
-assign start1_0 = en_proc; // = (clk_cnt == 5'd24);
+assign start1_0 = (clk_cnt == 5'd0 && en_proc);
 assign start2_0 = done1_0;
 assign start3_0 = done2_0;
 assign start4_0 = done3_0;
@@ -126,8 +126,8 @@ assign start8_0 = done7_0;
 assign start9_0 = done8_0;
 assign start10_0 = done9_0;
 
-//assign start1_5 = (clk_cnt == 5'd24);
-assign start1_5 = en_proc;
+assign start1_5 = (clk_cnt == 5'd0 && en_proc);
+//assign start1_5 = en_proc;
 assign start2_5 = done1_5;
 assign start3_5 = done2_5;
 assign start4_5 = done3_5;
@@ -152,62 +152,13 @@ wire done8_5_21,done8_5_22,done8_5_23,done8_5_24,done8_5_25,done8_5_26,done8_5_2
 wire done8_5_31,done8_5_32,done8_5_33,done8_5_34,done8_5_35,done8_5_36,done8_5_37,done8_5_38,done8_5_39,done8_5_40;
 
 
-assign done1_5 = done1_5_1 | done1_5_2 | done1_5_3 | done1_5_4 | done1_5_5 | done1_5_6 | done1_5_7 | done1_5_8 | done1_5_9 | done1_5_10 |
-done1_5_11 | done1_5_12 | done1_5_13 | done1_5_14 | done1_5_15 | done1_5_16 | done1_5_17 | done1_5_18;
+assign done1_5 = done1_5_1;
 
-assign done2_5 = done2_5_1 | done2_5_2 | done2_5_3 | done2_5_4 | done2_5_5 | done2_5_6 | done2_5_7 | done2_5_8 | done2_5_9 | done2_5_10 |
-| done2_5_11 | done2_5_12 | done2_5_13 | done2_5_14 | done2_5_15 | done2_5_16 | done2_5_17 | done2_5_18 | done2_5_19 | done2_5_20 |
-| done2_5_21 | done2_5_22 | done2_5_23 | done2_5_24 | done2_5_25 | done2_5_26 | done2_5_27 | done2_5_28 | done2_5_29 | done2_5_30 |
-| done2_5_31 | done2_5_32 | done2_5_33 | done2_5_34 | done2_5_35 | done2_5_36 | done2_5_37 | done2_5_38 | done2_5_39 | done2_5_40 |
-| done2_5_41 | done2_5_42 | done2_5_43 | done2_5_44 | done2_5_45 | done2_5_46 | done2_5_47 | done2_5_48 | done2_5_49 | done2_5_50 |
-| done2_5_51 | done2_5_52 | done2_5_53 | done2_5_54 | done2_5_55 | done2_5_56 | done2_5_57 | done2_5_58 | done2_5_59 | done2_5_60 |
-| done2_5_61 | done2_5_62 | done2_5_63 | done2_5_64 | done2_5_65 | done2_5_66 | done2_5_67 | done2_5_68 | done2_5_69 | done2_5_70 |
-| done2_5_71 | done2_5_72 | done2_5_73 | done2_5_74 | done2_5_75 | done2_5_76 | done2_5_77 | done2_5_78 | done2_5_79 | done2_5_80 |
-| done2_5_81 | done2_5_82 | done2_5_83 | done2_5_84 | done2_5_85 | done2_5_86 | done2_5_87 | done2_5_88 | done2_5_89 | done2_5_90 |
-| done2_5_91 | done2_5_92 | done2_5_93 | done2_5_94 | done2_5_95 | done2_5_96 | done2_5_97 | done2_5_98 | done2_5_99 | done2_5_100 |
-| done2_5_101 | done2_5_102 | done2_5_103 | done2_5_104 | done2_5_105 | done2_5_106 | done2_5_107 | done2_5_108 | done2_5_109 | done2_5_110 |
-| done2_5_111 | done2_5_112 | done2_5_113 | done2_5_114 | done2_5_115 | done2_5_116 | done2_5_117 | done2_5_118 | done2_5_119 | done2_5_120 |
-| done2_5_121 | done2_5_122 | done2_5_123 | done2_5_124 | done2_5_125 | done2_5_126 | done2_5_127 | done2_5_128 | done2_5_129 | done2_5_130 |
-| done2_5_131 | done2_5_132 | done2_5_133 | done2_5_134 | done2_5_135 | done2_5_136 | done2_5_137 | done2_5_138 | done2_5_139 | done2_5_140 |
-| done2_5_141 | done2_5_142 | done2_5_143 | done2_5_144 | done2_5_145 | done2_5_146 | done2_5_147 | done2_5_148 | done2_5_149 | done2_5_150 |
-| done2_5_151 | done2_5_152 | done2_5_153 | done2_5_154 | done2_5_155 | done2_5_156 | done2_5_157 | done2_5_158 | done2_5_159 | done2_5_160 |
-| done2_5_161 | done2_5_162 | done2_5_163 | done2_5_164 | done2_5_165 | done2_5_166 | done2_5_167 | done2_5_168 | done2_5_169 | done2_5_170 |
-| done2_5_171 | done2_5_172 | done2_5_173 | done2_5_174 | done2_5_175 | done2_5_176 | done2_5_177 | done2_5_178 | done2_5_179 | done2_5_180 |
-| done2_5_181 | done2_5_182 | done2_5_183 | done2_5_184 | done2_5_185 | done2_5_186 | done2_5_187 | done2_5_188 | done2_5_189 | done2_5_190 |
-| done2_5_191 | done2_5_192;
-assign done3_5 = done3_5_1 | done3_5_2 | done3_5_3 | done3_5_4 | done3_5_5 | done3_5_6 | done3_5_7 | done3_5_8 | done3_5_9 | done3_5_10 |
-| done3_5_11 | done3_5_12 | done3_5_13 | done3_5_14 | done3_5_15 | done3_5_16 | done3_5_17 | done3_5_18 | done3_5_19 | done3_5_20 |
-| done3_5_21 | done3_5_22 | done3_5_23 | done3_5_24 | done3_5_25 | done3_5_26 | done3_5_27 | done3_5_28 | done3_5_29 | done3_5_30 |
-| done3_5_31 | done3_5_32 | done3_5_33 | done3_5_34 | done3_5_35 | done3_5_36 | done3_5_37 | done3_5_38 | done3_5_39 | done3_5_40 |
-| done3_5_41 | done3_5_42 | done3_5_43 | done3_5_44 | done3_5_45 | done3_5_46 | done3_5_47 | done3_5_48 | done3_5_49 | done3_5_50 |
-| done3_5_51 | done3_5_52 | done3_5_53 | done3_5_54;
-assign done4_5 = done4_5_1 | done4_5_2 | done4_5_3 | done4_5_4 | done4_5_5 | done4_5_6 | done4_5_7 | done4_5_8 | done4_5_9 | done4_5_10 |
-| done4_5_11 | done4_5_12 | done4_5_13 | done4_5_14 | done4_5_15 | done4_5_16 | done4_5_17 | done4_5_18 | done4_5_19 | done4_5_20 |
-| done4_5_21 | done4_5_22 | done4_5_23 | done4_5_24;
-assign done5_5 = done5_5_1 | done5_5_2 | done5_5_3 | done5_5_4 | done5_5_6 | done5_5_8 | done5_5_10 |
-| done5_5_12 | done5_5_14 | done5_5_16 | done5_5_18 | done5_5_20 |
-| done5_5_22 | done5_5_23 | done5_5_24 | done5_5_25 | done5_5_27 | done5_5_29 |
-| done5_5_31 | done5_5_33 |  done5_5_35;
-assign done6_5 = done6_5_1 | done6_5_2 | done6_5_3 | done6_5_4 | done6_5_5 | done6_5_6 | done6_5_7 | done6_5_8 | done6_5_9 | done6_5_10 |
-| done6_5_11 | done6_5_12 | done6_5_13 | done6_5_14 | done6_5_15 | done6_5_16 | done6_5_17 | done6_5_18 | done6_5_19 | done6_5_20 |
-| done6_5_21 | done6_5_22 | done6_5_23 | done6_5_24 | done6_5_25 | done6_5_26 | done6_5_27 | done6_5_28 | done6_5_29 | done6_5_30 |
-| done6_5_31 | done6_5_32 | done6_5_33 | done6_5_34 | done6_5_35 | done6_5_36 | done6_5_37 | done6_5_38 | done6_5_39 | done6_5_40 |
-| done6_5_41 | done6_5_42 | done6_5_43 | done6_5_44 | done6_5_45 | done6_5_46 | done6_5_47 | done6_5_48 | done6_5_49 | done6_5_50 |
-| done6_5_51 | done6_5_52 | done6_5_53 | done6_5_54 | done6_5_55 | done6_5_56 | done6_5_57 | done6_5_58 | done6_5_59 | done6_5_60 |
-| done6_5_61 | done6_5_62 | done6_5_63 | done6_5_64 | done6_5_65 | done6_5_66 | done6_5_67 | done6_5_68 | done6_5_69 | done6_5_70 |
-| done6_5_71 | done6_5_72 | done6_5_73 | done6_5_74 | done6_5_75 | done6_5_76 | done6_5_77 | done6_5_78 | done6_5_79 | done6_5_80 |
-| done6_5_81 | done6_5_82 | done6_5_83 | done6_5_84;
-assign done7_5 = done7_5_1 | done7_5_2 | done7_5_3 | done7_5_4 | done7_5_5 | done7_5_6 | done7_5_7 | done7_5_8 | done7_5_9 | done7_5_10 |
-| done7_5_11 | done7_5_12;// | done7_5_13 | done7_5_14 | done7_5_15 | done7_5_16 | done7_5_17 | done7_5_18 | done7_5_19 | done7_5_20 |
-//| done7_5_21 | done7_5_22 | done7_5_23 | done7_5_24 | done7_5_25 | done7_5_26 | done7_5_27 | done7_5_28 | done7_5_29 | done7_5_30 |
-//| done7_5_31 | done7_5_32 | done7_5_33 | done7_5_34 | done7_5_35 | done7_5_36 | done7_5_37 | done7_5_38 | done7_5_39 | done7_5_40 |
-//| done7_5_41 | done7_5_42 | done7_5_43 | done7_5_44 | done7_5_45 | done7_5_46 | done7_5_47 | done7_5_48 | done7_5_49 | done7_5_50 |
-//| done7_5_51 | done7_5_52 | done7_5_53 | done7_5_54 | done7_5_55 | done7_5_56 | done7_5_57 | done7_5_58 | done7_5_59 | done7_5_60 |
-//| done7_5_61 | done7_5_62 | done7_5_63 | done7_5_64 | done7_5_65 | done7_5_66 | done7_5_67 | done7_5_68 | done7_5_69 | done7_5_70 |
-//| done7_5_71 | done7_5_72 | done7_5_73 | done7_5_74 | done7_5_75 | done7_5_76 | done7_5_77 | done7_5_78 | done7_5_79 | done7_5_80 |
-//| done7_5_81 | done7_5_82 | done7_5_83 | done7_5_84 | done7_5_85 | done7_5_86 | done7_5_87 | done7_5_88 | done7_5_89 | done7_5_90 |
-//| done7_5_91 | done7_5_92 | done7_5_93 | done7_5_94 | done7_5_95 | done7_5_96;
-assign done8_5 = done8_5_1 | done8_5_2 | done8_5_3 | done8_5_4 | done8_5_5 | done8_5_6 | done8_5_7 | done8_5_8 | done8_5_9 | done8_5_10 |
-done8_5_11 | done8_5_12;
+assign done2_5 = done2_5_1;
+assign done3_5 = done3_5_1;
+assign done4_5 = done4_5_1;
+assign done5_5 = done5_5_1;
+assign done6_5 = done6_5_1;
+assign done7_5 = done7_5_1;
+assign done8_5 = done8_5_1;
 
-//assign done4_0 = done4_0_1 | done4_0_2 | done4_0_3;

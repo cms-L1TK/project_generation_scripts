@@ -32,7 +32,7 @@ for line in g:
         signals.append(int(line.split(':')[1].split(' ')[-1].replace('[','').replace(']','').strip()))
     memories.append(signals)
 
-Common = '.clk(clk),\n//.reset(reset),\n.en_proc(en_proc),\n.io_clk(io_clk),\n.io_sel(io_sel_R3_io_block),\n.io_addr(io_addr[15:0]),        \n.io_sync(io_sync),\n.io_rd_en(io_rd_en),\n.io_wr_en(io_wr_en),\n.io_wr_data(io_wr_data[31:0]),\n.io_rd_data(io_rd_data_R3_io_block),\n.io_rd_ack(io_rd_ack_R3_io_block)'
+Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc),\n.io_clk(io_clk),\n.io_sel(io_sel_R3_io_block),\n.io_addr(io_addr[15:0]),        \n.io_sync(io_sync),\n.io_rd_en(io_rd_en),\n.io_wr_en(io_wr_en),\n.io_wr_data(io_wr_data[31:0]),\n.io_rd_data(io_rd_data_R3_io_block),\n.io_rd_ack(io_rd_ack_R3_io_block)'
 
 p  = open('prologue.txt')
 prologue = []
@@ -320,13 +320,13 @@ for x in modules:
         m.outputs = m.outputs + [x+'_wr_en' for x in m.outputs[:-2]]
         m.out_names = m.out_names + [x+'_wr_en' for x in m.out_names[:-2]]
         if 'PR_L1' in m.name or 'PR_L3' in m.name:
-            m.parameters = "#(1'b1,29)"
+            m.parameters = "#(1'b1,1'b1)"
         elif 'PR_L2' in m.name:
-            m.parameters = "#(1'b0,29)"
+            m.parameters = "#(1'b0,1'b1)"
         elif 'PR_L4' in m.name or 'PR_L6' in m.name:
-            m.parameters = "#(1'b0,26)"
+            m.parameters = "#(1'b0,1'b0)"
         elif 'PR_L5' in m.name:
-            m.parameters = "#(1'b1,26)"
+            m.parameters = "#(1'b1,1'b0)"
         m.start = 'start6_5'
         if done_cnt == 67:
             m.done = 'done6_0'
@@ -359,6 +359,18 @@ for x in modules:
         m.out_names.append('valid_matchminus')
         m.out_names.append('valid_matchplus')
         m.out_names.append('valid_match')
+        if '_L1D' in m.name or '_L2D' in m.name or '_L3D' in m.name:
+            m.parameters = "#(1'b1,14,12,7,7,8,2,4)"
+        elif '_L4D' in m.name or '_L5D' in m.name or '_L6D' in m.name:
+            m.parameters = "#(1'b0,17,8,8,8,7,0,9)"
+        if 'MC_L1L2_L3' in m.name:
+            m.parameters = "#(1'b1,14,12,7,7,8,2,4,868,9,0)"
+        if 'MC_L1L2_L4' in m.name:
+            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1793,53,4)"
+        if 'MC_L1L2_L5' in m.name:
+            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1388,53,4)"
+        if 'MC_L1L2_L6' in m.name:
+            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1138,53,4)"
         m.start = 'start8_5'
         if done_cnt == 165:
             m.done = 'done8_0'

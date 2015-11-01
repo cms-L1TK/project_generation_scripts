@@ -124,7 +124,7 @@ for mem in inputmemorymodules :
         longmem+=1
         found=True
     if "TPAR_" in mem:
-        fp.write("TrackletParameters: "+mem+n+" [54]\n")
+        fp.write("TrackletParameters: "+mem+n+" [56]\n")
         longmem+=1
         found=True
     if "AP_" in mem:

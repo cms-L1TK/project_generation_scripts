@@ -22,7 +22,7 @@
 //.input5(SL1_L5D3_VMR_L5D3),
 
 //.clk(clk),
-////.reset(reset),
+//.reset(reset),
 //.en_proc(enable_gen),
 //.io_clk(io_clk),
 //.io_sel(io_sel_R3_io_block),

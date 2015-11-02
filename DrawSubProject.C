@@ -27,8 +27,7 @@
 #include <string>
 #include <vector>
 
-double textsize=0.006;
-double dy=0.005;
+double textsize=1.0;
 
 class DrawBase{
 
@@ -215,69 +214,79 @@ using namespace std;
 void SetPlotStyle();
 
 // Main script
-void DrawTrackletProject() {
+void DrawSubProject() {
 
-  ifstream diagram("diagram.dat");
+  ifstream diagram("smallgraph.dat");
 
-  TCanvas* c1=new TCanvas("c1","c1",20,20,10000,5000);
-  //c1->Divide(2,2);
+  TString procname;
 
+  diagram >> procname;
 
-  TString tmp;
+  cout << procname <<endl;
 
-  diagram >> tmp;
+  std::vector<TString> inmem;
+  std::vector<TString> outmem;
 
-  cout << tmp <<endl;
-
-  while (diagram.good()) {
-
-    if (tmp=="Memory") {
-
-      TString name;
-      double x1,y1,x2,y2;
-
-      diagram >> name >> x1 >> y1 >> x2 >> y2;
-      
-      Box *mem= new Box(x1,y1-0.5*dy,x2,y2+0.5*dy,name);
-      mem->Draw();
-      
-    }
+  TString type, mem;
 
 
-    if (tmp=="Process") {
+  do {
 
-      TString name;
-      double x1,y1,x2,y2;
+    diagram >> type >> mem;
 
-      diagram >> name >> x1 >> y1 >> x2 >> y2;
-      
-      Hex *proc= new Hex(x1,y1-0.5*dy,x2,y2+0.5*dy,name);
-      proc->Draw();
-      
-    }
+    if (!diagram.good()) continue;
 
-    if (tmp=="Line") {
-
-      double x1,y1,x2,y2;
-
-      diagram >> x1 >> y1 >> x2 >> y2;
-      
-      TLine *line= new TLine(x1,y1,x2,y2);
-      line->Draw();
-      
-    }
+    if (type=="in") inmem.push_back(mem);
+    if (type=="out") outmem.push_back(mem);
+    
+  } while (diagram.good());
 
 
+  cout << "inmem.size() = "<<inmem.size()<<endl;
+  cout << "outmem.size() = "<<outmem.size()<<endl;
 
-    diagram >> tmp;
 
-    cout << tmp <<endl;
-
+  unsigned int nbox=inmem.size();
+  if (nbox<outmem.size()) {
+    nbox=outmem.size(); 
   }
 
-  c1->Print("TrackletProject.pdf");
+
+  TCanvas* c1=new TCanvas("c1","c1",20,20,800,50*(nbox+1));
+
+  textsize=0.35/(nbox+1);
+  double dy=0.5/(nbox+1);
+
+  double dy1=0.70*dy;  
+
+  Hex *proc= new Hex(0.38,0.5-0.5*dy,0.62,0.5+0.5*dy,procname);
+  proc->Draw();
+  
+  for(unsigned int i=0;i<inmem.size();i++) {
+    double y=0.5+1.5*dy1*(inmem.size()-1)-3*dy1*i;
+    Box *membox= new Box(0.05,y-0.5*dy,0.32,y+0.5*dy,inmem[i]);
+    membox->Draw();
+    TLine *line= new TLine(0.32,y,0.38,0.5);
+    line->Draw();
+  }
 
 
+  for(unsigned int i=0;i<outmem.size();i++) {
+    double y=0.5+1.5*dy1*(outmem.size()-1)-3*dy1*i;
+    Box *membox= new Box(0.68,y-0.5*dy,0.98,y+0.5*dy,outmem[i]);
+    membox->Draw();
+    TLine *line= new TLine(0.62,0.5,0.68,y);
+    line->Draw();
+  }
+
+  
+
+
+
+    
+
+  c1->Print("TrackletSubProject_"+procname+".pdf");
+  
 }
 
 

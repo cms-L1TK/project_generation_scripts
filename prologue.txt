@@ -1,0 +1,164 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company:
+// Engineer:
+//
+// Create Date: 09/28/2014 11:01:39 AM
+// Design Name:
+// Module Name: Tracklet_processing
+// Project Name:
+// Target Devices:
+// Tool Versions:
+// Description:
+//
+// Dependencies:
+//
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module Tracklet_processing(
+input clk,
+input reset,
+input en_proc,
+// programming interface
+// inputs
+input wire io_clk,                    // programming clock
+input wire io_sel,                    // this module has been selected for an I/O operation
+input wire io_sync,
+// start the I/O operation
+input wire [15:0] io_addr,        // slave address, memory or register. Top 12 bits already consumed.
+input wire io_rd_en,                // this is a read operation
+input wire io_wr_en,                // this is a write operation
+input wire [31:0] io_wr_data,    // data to write for write operations
+// outputs
+output wire [31:0] io_rd_data,    // data returned for read operations
+output wire io_rd_ack,                // 'read' data from this module is ready
+//clocks
+input wire [2:0] BX,
+input wire first_clk,
+input wire not_first_clk,
+// inputs
+input [31:0] input_link1_reg1,
+input [31:0] input_link1_reg2,
+input [31:0] input_link2_reg1,
+input [31:0] input_link2_reg2,
+input [31:0] input_link3_reg1,
+input [31:0] input_link3_reg2,
+// outputs
+input [15:0] BRAM_OUTPUT_addr, // 1 for now, add more later
+input BRAM_OUTPUT_clk,
+input [31:0] BRAM_OUTPUT_din,
+output [31:0] BRAM_OUTPUT_dout,
+input BRAM_OUTPUT_en,
+input BRAM_OUTPUT_rst,
+input [3:0] BRAM_OUTPUT_we,
+// Projections
+output wire [47:0] TProj_ToPlus_DataStream,
+output wire TProj_ToPlus_DataStream_en,
+output wire [47:0] TProj_ToMinus_DataStream,
+output wire TProj_ToMinus_DataStream_en,
+input wire [47:0] TProj_FromPlus_DataStream,
+input wire TProj_FromPlus_DataStream_en,
+input wire [47:0] TProj_FromMinus_DataStream,
+input wire TProj_FromMinus_DataStream_en,
+// Track Fits
+output wire [125:0] TF_L1L2_DataStream,
+output wire [125:0] TF_L3L4_DataStream,
+output wire [125:0] TF_L5L6_DataStream
+
+);
+
+// Address bits "io_addr[31:30] = 2'b01" are consumed when selecting 'slave6'
+// Address bits "io_addr[29:28] = 2'b01" are consumed when selecting 'tracklet_processing'
+wire InputLink_R1Link1_io_sel, TPars_L1L2_io_sel;
+wire InputLink_R1Link2_io_sel, TPars_L3L4_io_sel;
+wire InputLink_R1Link3_io_sel, TPars_L5L6_io_sel;
+wire io_sel_R3_io_block;
+assign InputLink_R1Link1_io_sel = io_sel && (io_addr[13:10] == 4'b0001);
+assign InputLink_R1Link2_io_sel = io_sel && (io_addr[13:10] == 4'b0010);
+assign InputLink_R1Link3_io_sel = io_sel && (io_addr[13:10] == 4'b0011);
+assign TPars_L1L2_io_sel  = io_sel && (io_addr[13:10] == 4'b0100);
+assign TPars_L3L4_io_sel  = io_sel && (io_addr[13:10] == 4'b0101);
+assign TPars_L5L6_io_sel  = io_sel && (io_addr[13:10] == 4'b0110);
+assign io_sel_R3_io_block = io_sel && (io_addr[13:10] == 4'b1000);
+// data busses for readback
+wire [31:0] InputLink_R1Link1_io_rd_data, TPars_L1L2_io_rd_data;
+wire [31:0] InputLink_R1Link2_io_rd_data, TPars_L3L4_io_rd_data;
+wire [31:0] InputLink_R1Link3_io_rd_data, TPars_L5L6_io_rd_data;
+
+wire IL1_D3_LR1_D3_empty;
+wire IL2_D3_LR2_D3_empty;
+wire IL3_D3_LR3_D3_empty;
+
+reg [4:0] clk_cnt;
+
+//wire enable_gen;
+//enable_generator en_gen(
+//.clk(clk),
+//.in( (~IL1_D3_LR1_D3_empty | ~IL2_D3_LR2_D3_empty | ~IL3_D3_LR3_D3_empty) & bc0_i ),
+//.out(enable_gen)
+//);
+
+initial
+clk_cnt = 5'b0;
+always @(posedge clk) begin
+if(en_proc)
+clk_cnt <= clk_cnt + 1'b1;
+else begin
+clk_cnt <= 5'b0;
+end
+if(clk_cnt == 5'd23)
+clk_cnt <= 5'b0;
+end
+
+assign start1_0 = (clk_cnt == 5'd0 && en_proc);
+assign start2_0 = done1_0;
+assign start3_0 = done2_0;
+assign start4_0 = done3_0;
+assign start5_0 = done4_0;
+assign start6_0 = done5_0;
+assign start7_0 = done6_0;
+assign start8_0 = done7_0;
+assign start9_0 = done8_0;
+assign start10_0 = done9_0;
+
+assign start1_5 = (clk_cnt == 5'd0 && en_proc);
+//assign start1_5 = en_proc;
+assign start2_5 = done1_5;
+assign start3_5 = done2_5;
+assign start4_5 = done3_5;
+assign start5_5 = done4_5;
+assign start6_5 = done5_5;
+assign start7_5 = done6_5;
+assign start8_5 = done7_5;
+assign start9_5 = done8_5;
+
+wire done4_5_1,done4_5_2,done4_5_3,done4_5_4,done4_5_5,done4_5_6,done4_5_7,done4_5_8,done4_5_9,done4_5_10;
+wire done4_5_11,done4_5_12,done4_5_13,done4_5_14,done4_5_15,done4_5_16,done4_5_17,done4_5_18,done4_5_19,done4_5_20;
+wire done4_5_21,done4_5_22,done4_5_23,done4_5_24,done4_5_25,done4_5_26,done4_5_27,done4_5_28,done4_5_29,done4_5_30;
+
+wire done5_5_1,done5_5_2,done5_5_3,done5_5_4,done5_5_5,done5_5_6,done5_5_7,done5_5_8,done5_5_9,done5_5_10;
+wire done5_5_11,done5_5_12,done5_5_13,done5_5_14,done5_5_15,done5_5_16,done5_5_17,done5_5_18,done5_5_19,done5_5_20;
+wire done5_5_21,done5_5_22,done5_5_23,done5_5_24,done5_5_25,done5_5_26,done5_5_27,done5_5_28,done5_5_29,done5_5_30;
+wire done5_5_31,done5_5_32,done5_5_33,done5_5_34,done5_5_35,done5_5_36,done5_5_37,done5_5_38,done5_5_39,done5_5_40;
+
+wire done8_5_1,done8_5_2,done8_5_3,done8_5_4,done8_5_5,done8_5_6,done8_5_7,done8_5_8,done8_5_9,done8_5_10;
+wire done8_5_11,done8_5_12,done8_5_13,done8_5_14,done8_5_15,done8_5_16,done8_5_17,done8_5_18,done8_5_19,done8_5_20;
+wire done8_5_21,done8_5_22,done8_5_23,done8_5_24,done8_5_25,done8_5_26,done8_5_27,done8_5_28,done8_5_29,done8_5_30;
+wire done8_5_31,done8_5_32,done8_5_33,done8_5_34,done8_5_35,done8_5_36,done8_5_37,done8_5_38,done8_5_39,done8_5_40;
+
+
+assign done1_5 = done1_5_1;
+
+assign done2_5 = done2_5_1;
+assign done3_5 = done3_5_1;
+assign done4_5 = done4_5_1;
+assign done5_5 = done5_5_1;
+assign done6_5 = done6_5_1;
+assign done7_5 = done7_5_1;
+assign done8_5 = done8_5_1;
+

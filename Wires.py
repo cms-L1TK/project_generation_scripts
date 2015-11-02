@@ -120,15 +120,15 @@ for mem in inputmemorymodules :
         shortmem+=1
         found=True
     if "TPROJ_" in mem:
-        fp.write("TrackletProjections: "+mem+n+" [36]\n")
+        fp.write("TrackletProjections: "+mem+n+" [54]\n")
         longmem+=1
         found=True
     if "TPAR_" in mem:
-        fp.write("TrackletParameters: "+mem+n+" [36]\n")
+        fp.write("TrackletParameters: "+mem+n+" [56]\n")
         longmem+=1
         found=True
     if "AP_" in mem:
-        fp.write("AllProj: "+mem+n+" [36]\n")
+        fp.write("AllProj: "+mem+n+" [54]\n")
         longmem+=1
         found=True
     if "VMPROJ_" in mem:
@@ -181,34 +181,34 @@ for m in inputmemcount :
                 fp.write(proc)
                 if "SL" in mem:
                     if "_L1" in mem:
-                        fp.write(".stuboutL1 ")
+                        fp.write(".stuboutL1")
                     if "_L2" in mem:
-                        fp.write(".stuboutL2 ")
+                        fp.write(".stuboutL2")
                     if "_L3" in mem:
-                        fp.write(".stuboutL3 ")
+                        fp.write(".stuboutL3")
                     if "_L4" in mem:
-                        fp.write(".stuboutL4 ")
+                        fp.write(".stuboutL4")
                     if "_L5" in mem:
-                        fp.write(".stuboutL5 ")
+                        fp.write(".stuboutL5")
                     if "_L6" in mem:
-                        fp.write(".stuboutL6 ")
+                        fp.write(".stuboutL6")
                 if "SD" in mem:
                     if "_F1" in mem or "_B1" in mem:
-                        fp.write(".stuboutD1 ")
+                        fp.write(".stuboutD1")
                     if "_F2" in mem or "_B2" in mem:
-                        fp.write(".stuboutD2 ")
+                        fp.write(".stuboutD2")
                     if "_F3" in mem or "_B3" in mem:
-                        fp.write(".stuboutD3 ")
+                        fp.write(".stuboutD3")
                     if "_F4" in mem or "_B4" in mem:
-                        fp.write(".stuboutD4 ")
+                        fp.write(".stuboutD4")
                     if "_F5" in mem or "_B5" in mem:
-                        fp.write(".stuboutD5 ")
+                        fp.write(".stuboutD5")
                 if "VMS_" in mem:
                     fp.write(".vmstubout"+mem[8:14]+n+" ")
                 if "AS_" in mem:
                     fp.write(".allstubout"+n+" ")
                 if "SP_" in mem:
-                    fp.write(".stubpairout ")
+                    fp.write(".stubpairout")
                 if "TPROJ_" in mem:
                     if ("PT_" in proc) :
                         fp.write(".projout")
@@ -243,9 +243,9 @@ for m in inputmemcount :
                                 ii=1
                             fp.write(".matchout"+str(ii)+" ")
                 if "TF_" in mem:
-                    fp.write(".trackout ")
+                    fp.write(".trackout")
                 if "TPAR_" in mem:
-                    fp.write(".trackpar ")
+                    fp.write(".trackpar")
         fp.write(" output=> ")
         # now we need to search for an proc module that fills this memory
         c=0
@@ -259,37 +259,37 @@ for m in inputmemcount :
                         continue
                 fp.write(proc)
                 if "IL" in mem:
-                    fp.write(".stubin ")
+                    fp.write(".stubin")
                 if "SL" in mem:
                     if "SL1_" in mem :
-                        fp.write(".stubinLink1 ")
+                        fp.write(".stubinLink1")
                     if "SL2_" in mem :
-                        fp.write(".stubinLink2 ")
+                        fp.write(".stubinLink2")
                     if "SL3_" in mem :
-                        fp.write(".stubinLink3 ")
+                        fp.write(".stubinLink3")
                 if "SD" in mem:
                     if "SD1_" in mem :
-                        fp.write(".stubinLink1 ")
+                        fp.write(".stubinLink1")
                     if "SD2_" in mem :
-                        fp.write(".stubinLink2 ")
+                        fp.write(".stubinLink2")
                     if "SD3_" in mem :
-                        fp.write(".stubinLink3 ")
+                        fp.write(".stubinLink3")
                 if "VMS_" in mem:
                     if ("ME_" in proc) :
-                        fp.write(".vmstubin ")
+                        fp.write(".vmstubin")
                     else :
                         if ( ("_L1" in mem and not "TE_F1" in proc and not "TE_B1" in proc) or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem or "_B1" in mem or "_B3" in mem ) :  
-                            fp.write(".innervmstubin ")
+                            fp.write(".innervmstubin")
                         else :
-                            fp.write(".outervmstubin ")
+                            fp.write(".outervmstubin")
                 if "AS_" in mem:
                     if ("MC_" in proc) :
-                        fp.write(".allstubin ")
+                        fp.write(".allstubin")
                     else :
                         if ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
-                            fp.write(".innerallstubin ")
+                            fp.write(".innerallstubin")
                         else :
-                            fp.write(".outerallstubin ")
+                            fp.write(".outerallstubin")
                 if "SP_" in mem:
                     ii=0
                     for f in tcin :
@@ -299,7 +299,7 @@ for m in inputmemcount :
                     if ii==0:
                         tcin.append([proc,1])
                         ii=1
-                    fp.write(".stubpair"+str(ii)+"in ")
+                    fp.write(".stubpair"+str(ii)+"in")
                 if "TPROJ_" in mem:
                     if "PT_" in proc :
                         fp.write(".projin")
@@ -312,11 +312,11 @@ for m in inputmemcount :
                         if ii==0:
                             prin.append([proc,1])
                             ii=1
-                        fp.write(".proj"+str(ii)+"in ")
+                        fp.write(".proj"+str(ii)+"in")
                 if "VMPROJ_" in mem:
-                    fp.write(".vmprojin ")
+                    fp.write(".vmprojin")
                 if "AP_" in mem:
-                    fp.write(".allprojin ")
+                    fp.write(".allprojin")
                 if "CM_" in mem:
                     ii=0
                     for f in cmin :
@@ -326,7 +326,7 @@ for m in inputmemcount :
                     if ii==0:
                         cmin.append([proc,1])
                         ii=1
-                    fp.write(".match"+str(ii)+"in ")
+                    fp.write(".match"+str(ii)+"in")
                 if "FM_" in mem:
                     if "MT_" in proc :
                         ii=0
@@ -357,7 +357,7 @@ for m in inputmemcount :
                     if ii==0:
                         ftin.append([proc,1])
                         ii=1
-                    fp.write(".tpar"+str(ii)+"in ")
+                    fp.write(".tpar"+str(ii)+"in")
                     
 
         fp.write("\n")

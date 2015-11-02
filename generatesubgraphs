@@ -1,0 +1,3 @@
+cat processingmodules.dat | awk '{system("./SubGraph.py \"" $2 "\" ; ./subplotscript")}'
+pdfjoin `ls TrackletSubProject_*.pdf`
+mv TrackletSubProject_*-joined.pdf TrackletSubProject.pdf

@@ -3,7 +3,9 @@
 
 Run the code to generate the files:
 
-./TrackletProject.py
+./Wires.py wires.input.D3
+
+(or some other input file like wires.input.fullsector)
 
 Prepare files for graph generation:
 
@@ -14,3 +16,8 @@ Make graph in root:
 root -l
 root[0] .L DrawTrackletProject.C++
 root[1] DrawTrackletProject()
+
+You can also generate the 'zoomed in' views of all the processing modules
+after running the Wires.py script by doing
+
+./generatesubgraphs

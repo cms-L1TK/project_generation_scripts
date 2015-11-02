@@ -1,0 +1,5 @@
+root -b -l <<EOF
+.L DrawSubProject.C++
+DrawSubProject()
+.q
+EOF

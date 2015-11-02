@@ -4,7 +4,10 @@ import math
 import sys
 
 if (len(sys.argv) != 2 ) :
-    print "Usage: SmallGraph.py <proc. module>"
+    print "Usage: SubGraph.py <proc. module>"
+    print len(sys.argv)
+    print sys.argv[0]
+    print sys.argv[1]
     exit(1)
 
 print 'Will read wires.dat'
@@ -28,7 +31,7 @@ for line in fi:
     if sys.argv[1] in substr[2]:
         outputmemorymodules.append(subsubstr[0])
 
-fp = open("smallgraph.dat","w")
+fp = open("subgraph.dat","w")
 
 fp.write(sys.argv[1]+"\n");
 

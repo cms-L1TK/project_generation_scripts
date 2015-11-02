@@ -216,7 +216,7 @@ void SetPlotStyle();
 // Main script
 void DrawSubProject() {
 
-  ifstream diagram("smallgraph.dat");
+  ifstream diagram("subgraph.dat");
 
   TString procname;
 

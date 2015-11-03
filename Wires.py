@@ -60,8 +60,12 @@ for proc in processingmodules :
         fp.write("VMRouter: "+proc+"\n")
     if "TE_" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
-    if "TC_" in proc:
+    if "TC_L" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
+    if "TC_F" in proc:
+        fp.write("TrackletDiskCalculator: "+proc+"\n")
+    if "TC_B" in proc:
+        fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:

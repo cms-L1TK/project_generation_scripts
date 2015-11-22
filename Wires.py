@@ -15,6 +15,113 @@ inputmemorymodules = []
 outputmemorymodules = []
 processingmodules = []
 
+def matchin(proc,mem):
+    if "FT_L1L2" in proc:
+        if "L3" in mem[8:10]:
+            return "1"
+        if "L4" in mem[8:10]:
+            return "2"
+        if "L5" in mem[8:10]:
+            return "3"
+        if "L6" in mem[8:10]:
+            return "4"
+        if "F1" in mem[8:10] or "B1" in mem[8:10]:
+            return "4"
+        if "F2" in mem[8:10] or "B2" in mem[8:10]:
+            return "3"
+        if "F3" in mem[8:10] or "B3" in mem[8:10]:
+            return "2"
+        if "F4" in mem[8:10] or "B4" in mem[8:10]:
+            return "1"
+    if "FT_L3L4" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "L2" in mem[8:10]:
+            return "2"
+        if "L5" in mem[8:10]:
+            return "3"
+        if "L6" in mem[8:10]:
+            return "4"
+        if "F1" in mem[8:10] or "B1" in mem[8:10]:
+            return "4"
+        if "F2" in mem[8:10] or "B2" in mem[8:10]:
+            return "3"
+    if "FT_L5L6" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "L2" in mem[8:10]:
+            return "2"
+        if "L3" in mem[8:10]:
+            return "3"
+        if "L4" in mem[8:10]:
+            return "4"
+    if "FT_F1F2" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "F3" in mem[8:10]:
+            return "2"
+        if "F4" in mem[8:10]:
+            return "3"
+        if "F5" in mem[8:10]:
+            return "4"
+        if "L2" in mem[8:10]:
+            return "4"
+    if "FT_B1B2" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "B3" in mem[8:10]:
+            return "2"
+        if "B4" in mem[8:10]:
+            return "3"
+        if "B5" in mem[8:10]:
+            return "4"
+        if "L2" in mem[8:10]:
+            return "4"
+    if "FT_F3F4" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "F1" in mem[8:10]:
+            return "2"
+        if "F2" in mem[8:10]:
+            return "3"
+        if "F5" in mem[8:10]:
+            return "4"
+        if "L2" in mem[8:10]:
+            return "4"
+    if "FT_B3B4" in proc:
+        if "L1" in mem[8:10]:
+            return "1"
+        if "B1" in mem[8:10]:
+            return "2"
+        if "B2" in mem[8:10]:
+            return "3"
+        if "B5" in mem[8:10]:
+            return "4"
+        if "L2" in mem[8:10]:
+            return "4"
+    if "FT_F1L" in proc:
+        if "F2" in mem[8:10]:
+            return "1"
+        if "F3" in mem[8:10]:
+            return "2"
+        if "F4" in mem[8:10]:
+            return "3"
+        if "F5" in mem[8:10]:
+            return "4"
+    if "FT_B1L" in proc:
+        if "B2" in mem[8:10]:
+            return "1"
+        if "B3" in mem[8:10]:
+            return "2"
+        if "B4" in mem[8:10]:
+            return "3"
+        if "B5" in mem[8:10]:
+            return "4"
+            
+    print "Unknown in matchin : ",proc,mem,mem[8:10]
+    return "0"
+
+
 
 fi = open(sys.argv[1],"r")
 
@@ -393,15 +500,16 @@ for m in inputmemcount :
                             ii=1
                         fp.write(".proj"+str(ii)+"in")
                     else:
+                        num=matchin(proc,mem)
                         ii=0
                         for f in fmin2 :
-                            if f[0]==proc+mem[9:10] :
+                            if f[0]==proc+num :
                                 f[1]+=1
                                 ii=f[1]
                         if ii==0:
-                            fmin2.append([proc+mem[9:10],1])
+                            fmin2.append([proc+num,1])
                             ii=1
-                        fp.write(".fullmatch"+mem[9:10]+"in"+str(ii))
+                        fp.write(".fullmatch"+num+"in"+str(ii))
                 if "TPAR_" in mem:
                     ii=0
                     for f in ftin :

@@ -167,16 +167,11 @@ assign start8_5 = done7_5;
 assign start9_5 = done8_5;
 assign start10_5 = done9_5;
 
-wire done4_5_1;
-wire done5_5_2;
-wire done8_5_1;
-
-
 assign done1_5 = done1_5_1;
 assign done2_5 = done2_5_1;
 assign done3_5 = done3_5_1;
 assign done4_5 = done4_5_1;
-assign done5_5 = done5_5_2;
+assign done5_5 = done5_5_1;
 assign done6_5 = done6_5_1;
 assign done7_5 = done7_5_1;
 assign done8_5 = done8_5_1;

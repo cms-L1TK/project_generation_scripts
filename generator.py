@@ -181,7 +181,15 @@ for x in memories:
         for o in m.outputs:
             if 'empty' in o or 'TF_L' in o:
                 print '//wire '+o+';'
-            elif 'number' in o or 'read' in o:
+            elif 'number' in o:
+                print 'wire [5:0] '+o+';'
+            elif 'read' in o:
+                #if m.module == 'VMStubs' or m.module == 'AllStubs':
+                 #   print 'wire [10:0] '+o+';'
+                #elif m.module == 'TrackletProjections' or m.module == 'TrackletParameters':
+                 #   print 'wire [9:0] '+o+';'
+                #else:
+                 #   print 'wire [8:0] '+o+';'
                 print 'wire [5:0] '+o+';'
             else:
                 print 'wire ['+str(m.size-1)+':0] '+o+';'
@@ -284,7 +292,7 @@ for x in modules:
             m.done = 'done3_0'
         else:
             m.done = 'done3'
-        m.parameters = '#("/home/Jorge/work/firmware/TrackletProject/AdditionalFiles/tables/TETable_%s_phi.txt","/home/Jorge/work/firmware/TrackletProject/AdditionalFiles/tables/TETable_%s_z.txt")'%(m.name,m.name)
+        m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name)
     if m.module == 'TrackletCalculator':
         ons = []
         for o in m.out_names:
@@ -305,15 +313,30 @@ for x in modules:
         ons = []
         for i,o in enumerate(m.out_names):
             ons.append(o+'_%d'%(i+1))
+	for i,o in enumerate(m.out_names):
+            ons.append('valid_%d'%(i+1))
         m.out_names = ons
+	valids = []
+	for o in m.outputs:
+		valids.append(o+'_wr_en')
+	m.outputs = m.outputs + valids
         ins = []
         for i,o in enumerate(m.in_names):
             ins.append(o+'_%d'%(i+1))
         m.in_names = ins
+        m.start = 'start5_5'
         if done_cnt == 79:
             m.done = 'done5_0'
         else:
             m.done = 'done5'
+        #m.out_names.append('proj_data_stream')
+        #m.out_names.append('valid_proj_data_stream')
+        #if 'Plus' in m.name:
+        #    m.outputs.append('TProj_ToPlus_DataStream')
+	#    m.outputs.append('TProj_ToPlus_DataStream_en')
+        #elif 'Minus' in m.name:
+        #    m.outputs.append('TProj_ToMinus_DataStream')
+        #    m.outputs.append('TProj_ToMinus_DataStream_en')
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en')
         m.out_names.append('valid_data')
@@ -381,6 +404,8 @@ for x in modules:
         m.in_names = m.in_names[:4]+m.in_names[5:]
         m.inputs.append(m.inputs[4])
         m.inputs = m.inputs[:4]+m.inputs[5:]
+	m.out_names.append('valid_fit')
+	m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start9_5'
         if done_cnt == 183:
             m.done = 'done9_0'

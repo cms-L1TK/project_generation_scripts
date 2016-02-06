@@ -57,41 +57,41 @@ input BRAM_OUTPUT_en,
 input BRAM_OUTPUT_rst,
 input [3:0] BRAM_OUTPUT_we,
 // Projections
-output wire [47:0] TProj_ToPlus_DataStream,
-output wire TProj_ToPlus_DataStream_en,
-output wire [47:0] TProj_ToMinus_DataStream,
-output wire TProj_ToMinus_DataStream_en,
-input wire [47:0] TProj_FromPlus_DataStream,
-input wire TProj_FromPlus_DataStream_en,
-input wire [47:0] TProj_FromMinus_DataStream,
-input wire TProj_FromMinus_DataStream_en,
+output wire [47:0] PT_Plus_To_DataStream,
+output wire PT_Plus_To_DataStream_en,
+output wire [47:0] PT_Minus_To_DataStream,
+output wire PT_Minus_To_DataStream_en,
+input wire [47:0] PT_Plus_From_DataStream,
+input wire PT_Plus_From_DataStream_en,
+input wire [47:0] PT_Minus_From_DataStream,
+input wire PT_Minus_From_DataStream_en,
 // Matches L1L2
-output wire [38:0] Match_L1L2_ToPlus_DataStream,
-output wire Match_L1L2_ToPlus_DataStream_en,
-output wire [38:0] Match_L1L2_ToMinus_DataStream,
-output wire Match_L1L2_ToMinus_DataStream_en,
-input wire [38:0] Match_L1L2_FromPlus_DataStream,
-input wire Match_L1L2_FromPlus_DataStream_en,
-input wire [38:0] Match_L1L2_FromMinus_DataStream,
-input wire Match_L1L2_FromMinus_DataStream_en,
+output wire [38:0] MT_L1L2_Plus_To_DataStream,
+output wire MT_L1L2_Plus_To_DataStream_en,
+output wire [38:0] MT_L1L2_Minus_To_DataStream,
+output wire MT_L1L2_Minus_To_DataStream_en,
+input wire [38:0] MT_L1L2_Plus_From_DataStream,
+input wire MT_L1L2_Plus_From_DataStream_en,
+input wire [38:0] MT_L1L2_Minus_From_DataStream,
+input wire MT_L1L2_Minus_From_DataStream_en,
 // Matches L3L4
-output wire [38:0] Match_L3L4_ToPlus_DataStream,
-output wire Match_L3L4_ToPlus_DataStream_en,
-output wire [38:0] Match_L3L4_ToMinus_DataStream,
-output wire Match_L3L4_ToMinus_DataStream_en,
-input wire [38:0] Match_L3L4_FromPlus_DataStream,
-input wire Match_L3L4_FromPlus_DataStream_en,
-input wire [38:0] Match_L3L4_FromMinus_DataStream,
-input wire Match_L3L4_FromMinus_DataStream_en,
+output wire [38:0] MT_L3L4_Plus_To_DataStream,
+output wire MT_L3L4_Plus_To_DataStream_en,
+output wire [38:0] MT_L3L4_Minus_To_DataStream,
+output wire MT_L3L4_Minus_To_DataStream_en,
+input wire [38:0] MT_L3L4_Plus_From_DataStream,
+input wire MT_L3L4_Plus_From_DataStream_en,
+input wire [38:0] MT_L3L4_Minus_From_DataStream,
+input wire MT_L3L4_Minus_From_DataStream_en,
 // Matches L5L6
-output wire [38:0] Match_L5L6_ToPlus_DataStream,
-output wire Match_L5L6_ToPlus_DataStream_en,
-output wire [38:0] Match_L5L6_ToMinus_DataStream,
-output wire Match_L5L6_ToMinus_DataStream_en,
-input wire [38:0] Match_L5L6_FromPlus_DataStream,
-input wire Match_L5L6_FromPlus_DataStream_en,
-input wire [38:0] Match_L5L6_FromMinus_DataStream,
-input wire Match_L5L6_FromMinus_DataStream_en,
+output wire [38:0] MT_L5L6_Plus_To_DataStream,
+output wire MT_L5L6_Plus_To_DataStream_en,
+output wire [38:0] MT_L5L6_Minus_To_DataStream,
+output wire MT_L5L6_Minus_To_DataStream_en,
+input wire [38:0] MT_L5L6_Plus_From_DataStream,
+input wire MT_L5L6_Plus_From_DataStream_en,
+input wire [38:0] MT_L5L6_Minus_From_DataStream,
+input wire MT_L5L6_Minus_From_DataStream_en,
 // Track Fits
 output wire [125:0] TF_L1L2_DataStream,
 output wire [125:0] TF_L3L4_DataStream,
@@ -147,11 +147,13 @@ assign start2_0 = done1_0;
 assign start3_0 = done2_0;
 assign start4_0 = done3_0;
 assign start5_0 = done4_0;
+assign startproj5_0 = done_proj4_0;
 assign start6_0 = done5_0;
 assign start7_0 = done6_0;
 assign start8_0 = done7_0;
 assign start9_0 = done8_0;
 assign start10_0 = done9_0;
+assign start11_0 = done10_0;
 
 assign start1_5 = (clk_cnt == 5'd0 && en_proc);
 //assign start1_5 = en_proc;
@@ -163,6 +165,7 @@ assign start6_5 = done5_5;
 assign start7_5 = done6_5;
 assign start8_5 = done7_5;
 assign start9_5 = done8_5;
+assign start10_5 = done9_5;
 
 wire done4_5_1;
 wire done5_5_2;
@@ -177,4 +180,5 @@ assign done5_5 = done5_5_2;
 assign done6_5 = done6_5_1;
 assign done7_5 = done7_5_1;
 assign done8_5 = done8_5_1;
+assign done9_5 = done9_5_1;
 

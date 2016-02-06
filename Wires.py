@@ -265,7 +265,7 @@ for mem in inputmemorymodules :
         longmem+=1
         found=True
     if "AP_" in mem:
-        fp.write("AllProj: "+mem+n+" [54]\n")
+        fp.write("AllProj: "+mem+n+" [56]\n")
         AP_mem+=1
         longmem+=1
         found=True

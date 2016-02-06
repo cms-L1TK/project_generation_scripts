@@ -45,20 +45,16 @@ for line in ep:
 
 ####################################################
 ####################################################
-counter = 1
-il = 0 # Input Links
-sl = 0 # Stub by Layer
-vms = 0 # VM Stubs
-alls = 0 # All Stubs
-sp = 0 # Stub Pairs
-tpj = 0 # Tracklet Projections
-tpj_pm = 0 # Tracklet Projections plus/minus
-vmp = 0 # VM Projections
-cm = 0 # Candidate Matches
-allp = 0 # All Projections
-fm = 0 # Full Matches
-tpar = 0 # Tracklet Parameters
-tf = 0 # Track Fits
+seen_done1_5 = False
+seen_done2_5 = False
+seen_done3_5 = False
+seen_done4_5 = False
+seen_done5_5 = False
+seen_done6_5 = False
+seen_done7_5 = False
+seen_done8_5 = False
+seen_done9_5 = False
+seen_done10_5 = False
 
 for p in prologue:
     print p.strip()
@@ -94,8 +90,9 @@ for x in memories:
     m.in_names = i_n
     m.out_names = o_n
     m.common = Common
+    il = 0
     if m.module == 'InputLink':
-        il = il + 1
+        il += 1
         m.outputs = [m.outputs[-1]]
         m.in_names.append('data_in1')
         m.in_names.append('data_in2')
@@ -108,9 +105,9 @@ for x in memories:
         m.outputs.append(m.outputs[-1]+'_empty')
         m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'StubsByLayer':
-        sl = sl + 1
         m.start = 'start2_0'
-        m.done = 'done1_5_'+str(sl)
+        m.done = 'done1_5' if seen_done1_5 else 'done1_5_1'
+        seen_done1_5 = True
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:]
         m.outputs = m.outputs[1:]
@@ -118,57 +115,62 @@ for x in memories:
         if 'MC' in m.outputs[0]:
             m.out_names = ['read_add_MC','data_out_MC']
     if m.module == 'VMStubs':
-        vms = vms + 1
         m.start = 'start3_0'
-        m.done = 'done2_5_'+str(vms)
+        m.done = 'done2_5' if seen_done2_5 else 'done2_5_1'
+        seen_done2_5 = True
         if 'ME' in m.outputs[0]:
             m.out_names = ['number_out_ME','read_add_ME','data_out_ME']
     if m.module == 'StubPairs':
-        sp = sp + 1
         m.start = 'start4_0'
-        m.done = 'done3_5_'+str(sp)
+        m.done = 'done3_5' if seen_done3_5 else 'done3_5_1'
+        seen_done3_5 = True
     if m.module == 'TrackletParameters':
         m.out_names = m.out_names[1:]
         m.outputs = m.outputs[1:]
         m.start = 'start5_0'
     if m.module == 'TrackletProjections':
-        tpj = tpj + 1
-        tpj = tpj + 1
         m.parameters = "#(0,1)"
-        m.start = 'start5_0'
-        m.done = 'done5_5_'+str(tpj)
+        if 'From' not in m.name:
+            m.start = 'startproj5_0'
+        else:
+            m.start = 'start6_0'
+        m.done = 'done5_5' if seen_done5_5 else 'done5_5_1'
+        seen_done5_5 = True
         if 'ToPlus' in m.name or 'ToMinus' in m.name:
-            tpj_pm = tpj_pm + 1
             m.parameters = "#(0,0)"
-            m.done = 'done4_5_'+str(tpj_pm)
+            m.done = 'done4_5' if seen_done4_5 else 'done4_5_1'
+            seen_done4_5 = True
         if 'FromPlus'in m.name or 'FromMinus' in m.name:
             m.parameters = "#(1,1)"
     if m.module == 'AllProj':
-        allp = allp + 1
         m.out_names = m.out_names[1:]
         m.outputs = m.outputs[1:]
         m.start = 'start7_0'
-        m.done = 'done7_5_'+str(allp)
     if m.module == 'VMProjections':
-        vmp = vmp + 1
         m.start = 'start7_0'
-        m.done = 'done6_5_'+str(vmp)
+        m.done = 'done6_5' if seen_done6_5 else 'done6_5_1'
+        seen_done6_5 = True
     if m.module == 'CandidateMatch':
-        cm = cm + 1
         m.start = 'start8_0'
-        m.done = 'done7_5_'+str(cm)
+        m.done = 'done7_5' if seen_done7_5 else 'done7_5_1'
+        seen_done7_5 = True
     if m.module == 'FullMatch':
-        fm = fm + 1
-        m.start = 'start9_0'
-        m.done = 'done8_5_'+str(fm)
+        if 'From' in m.name:
+            m.start = 'start10_0'
+            m.done = 'done9_5' if seen_done9_5 else 'done9_5_1'
+            seen_done9_5 = True
+        else:
+            m.start = 'start9_0'
+            m.done = 'done8_5' if seen_done8_5 else 'done8_5_1'
+            seen_done8_5 = True
     if m.module == 'TrackFit':
-        tf = tf + 1
         m.inputs.append(m.name+'_led_test')
         m.in_names.append('led_test')
         m.outputs.append(m.name+'_DataStream')
         m.out_names.append('data_out')
-        m.start = 'start10_0'
-        m.done = 'done9_5_'+str(tf)
+        m.start = 'start11_0'
+        m.done = 'done10_5' if seen_done10_5 else 'done10_5_1'
+        seen_done10_5 = True
 ####################################################
     if('mem' in sys.argv):
         print '\n'
@@ -184,13 +186,13 @@ for x in memories:
             elif 'number' in o:
                 print 'wire [5:0] '+o+';'
             elif 'read' in o:
-                #if m.module == 'VMStubs' or m.module == 'AllStubs':
-                 #   print 'wire [10:0] '+o+';'
-                #elif m.module == 'TrackletProjections' or m.module == 'TrackletParameters':
-                 #   print 'wire [9:0] '+o+';'
-                #else:
-                 #   print 'wire [8:0] '+o+';'
-                print 'wire [5:0] '+o+';'
+                if m.module == 'VMStubs' or m.module == 'AllStubs' or m.module == 'TrackletParameters' :
+                    print 'wire [10:0] '+o+';'
+                elif m.module == 'TrackletProjections' or m.module == 'FullMatch':
+                    print 'wire [9:0] '+o+';'
+                else:
+                    print 'wire [8:0] '+o+';'
+                #print 'wire [5:0] '+o+';'
             else:
                 print 'wire ['+str(m.size-1)+':0] '+o+';'
         print m.module,m.parameters,m.name + '('
@@ -200,13 +202,22 @@ for x in memories:
             print '.'+n+'('+o+'),'
         print '.start('+m.start+'),'
         print '.done('+m.done+'),'
-        counter = counter + 1
         print m.common
         print ');'
 
 ####################################################
 ####################################################
-done_cnt = 0
+seen_done1_0 = False
+seen_done2_0 = False
+seen_done3_0 = False
+seen_done4_0 = False
+seen_done5_0 = False
+seen_done6_0 = False
+seen_done7_0 = False
+seen_done8_0 = False
+seen_done9_0 = False
+seen_done10_0 = False
+
 for x in modules:
     #if x[0] == 'ProjRouter':
     #break
@@ -230,16 +241,12 @@ for x in modules:
     m.in_names = i_n
     m.out_names = o_n
     m.common = Common
-    done_cnt = done_cnt + 1
-
     if m.module == 'LayerRouter':
         m.inputs.append(m.inputs[-1]+'_read_en')
         m.in_names.append('read_en')
         m.start = 'start1_5'
-        if done_cnt == 1:
-            m.done = 'done1_0'
-        else:
-            m.done = 'done1'
+        m.done = 'done1' if seen_done1_0 else 'done1_0'
+        seen_done1_0 = True
         out_names = []
         outputs = []
         for cnt,out in enumerate(m.outputs):
@@ -270,10 +277,8 @@ for x in modules:
             else:
                 m.parameters = "#(1'b0,1'b0)"
         m.start = 'start2_5'
-        if done_cnt == 4:
-            m.done = 'done2_0'
-        else:
-            m.done = 'done2'
+        m.done = 'done2' if seen_done2_0 else 'done2_0'
+        seen_done2_0 = True
         vs = 0
         valids = []
         valids2 = []
@@ -288,55 +293,47 @@ for x in modules:
         m.out_names.append('valid_data')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start3_5'
-        if done_cnt == 10:
-            m.done = 'done3_0'
-        else:
-            m.done = 'done3'
+        m.done = 'done3' if seen_done3_0 else 'done3_0'
+        seen_done3_0 = True
         m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name)
     if m.module == 'TrackletCalculator':
         ons = []
         for o in m.out_names:
             ons.append('valid_'+o)
         m.out_names = m.out_names + ons    
+        m.out_names = m.out_names + ['done_proj']            
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
+        m.outputs = m.outputs+['done_proj4_0']
         #if 'L1D3L2D3' in m.name: # PARAMETERS BROKEN
          #   m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
         m.start = 'start4_5'
-        if done_cnt == 64:
-            m.done = 'done4_0'
-        else:
-            m.done = 'done4'
+        m.done = 'done4' if seen_done4_0 else 'done4_0'
+        seen_done4_0 = True
     if m.module == 'ProjectionTransceiver':
         ons = []
         for i,o in enumerate(m.out_names):
             ons.append(o+'_%d'%(i+1))
-	for i,o in enumerate(m.out_names):
+        for i,o in enumerate(m.out_names):
             ons.append('valid_%d'%(i+1))
         m.out_names = ons
-	valids = []
-	for o in m.outputs:
-		valids.append(o+'_wr_en')
-	m.outputs = m.outputs + valids
+        valids = []
+        for o in m.outputs:
+            valids.append(o+'_wr_en')
+        m.outputs = m.outputs + valids
         ins = []
         for i,o in enumerate(m.in_names):
             ins.append(o+'_%d'%(i+1))
         m.in_names = ins
         m.start = 'start5_5'
-        if done_cnt == 79:
-            m.done = 'done5_0'
-        else:
-            m.done = 'done5'
-        #m.out_names.append('proj_data_stream')
-        #m.out_names.append('valid_proj_data_stream')
-        #if 'Plus' in m.name:
-        #    m.outputs.append('TProj_ToPlus_DataStream')
-	#    m.outputs.append('TProj_ToPlus_DataStream_en')
-        #elif 'Minus' in m.name:
-        #    m.outputs.append('TProj_ToMinus_DataStream')
-        #    m.outputs.append('TProj_ToMinus_DataStream_en')
+        m.done = 'done5' if seen_done5_0 else 'done5_0'
+        seen_done5_0 = True
+        m.out_names = m.out_names+['valid_proj_data_stream','proj_data_stream']
+        m.in_names = m.in_names+['incomming_proj_data_stream']
+        m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
+        m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en')
         m.out_names.append('valid_data')
@@ -351,10 +348,8 @@ for x in modules:
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,1'b0)"
         m.start = 'start6_5'
-        if done_cnt == 67:
-            m.done = 'done6_0'
-        else:
-            m.done = 'done6'
+        m.done = 'done6' if seen_done6_0 else 'done6_0'
+        seen_done6_0 = True
     if m.module == 'MatchEngine':
         m.in_names.append(m.in_names[0])
         m.in_names.append(m.in_names[1])
@@ -365,10 +360,8 @@ for x in modules:
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.out_names.append('valid_data')
         m.start = 'start7_5'
-        if done_cnt == 81:
-            m.done = 'done7_0'
-        else:
-            m.done = 'done7'
+        m.done = 'done7' if seen_done7_0 else 'done7_0'
+        seen_done7_0 = True
     if m.module == 'MatchCalculator':
         m.in_names.append(m.in_names[0])
         #m.in_names.append(m.in_names[1])
@@ -395,10 +388,26 @@ for x in modules:
         if 'MC_L1L2_L6' in m.name:
             m.parameters = "#(1'b0,17,8,8,8,7,0,9,1138,53,4)"
         m.start = 'start8_5'
-        if done_cnt == 165:
-            m.done = 'done8_0'
-        else:
-            m.done = 'done8'
+        m.done = 'done8' if seen_done8_0 else 'done8_0'
+        seen_done8_0 = True
+    if m.module == 'MatchTransceiver':
+        ons = []
+        for i,o in enumerate(m.out_names):
+            ons.append(o)
+        for i,o in enumerate(m.out_names):
+            ons.append('valid_matchout%d'%(i+1))
+        m.out_names = ons
+        valids = []
+        for o in m.outputs:
+            valids.append(o+'_wr_en')
+        m.outputs = m.outputs + valids
+        m.start = 'start9_5'
+        m.done = 'done9' if seen_done9_0 else 'done9_0'
+        seen_done9_0 = True
+        m.out_names = m.out_names+['valid_match_data_stream','match_data_stream']
+        m.in_names = m.in_names+['incomming_match_data_stream']
+        m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
+        m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'FitTrack':
         m.in_names.append(m.in_names[4])
         m.in_names = m.in_names[:4]+m.in_names[5:]
@@ -406,12 +415,10 @@ for x in modules:
         m.inputs = m.inputs[:4]+m.inputs[5:]
 	m.out_names.append('valid_fit')
 	m.outputs.append(m.outputs[0]+'_wr_en')
-        m.start = 'start9_5'
-        if done_cnt == 183:
-            m.done = 'done9_0'
-        else:
-            m.done = 'done9'
-    
+        m.start = 'start10_5'
+        m.done = 'done10' if seen_done10_0 else 'done10_0'
+        seen_done10_0 = True
+
 ####################################################
 
     if('mod' in sys.argv):
@@ -430,6 +437,10 @@ for x in modules:
                     print '.read_add_allproj('+i+'_read_add),'
                 elif n == 'tpar1in':
                     print '.read_add_pars('+i+'_read_add),'
+                elif n == 'incomming_proj_data_stream':
+                    print '.valid_incomming_proj_data_stream('+i+'_en),'
+                elif n == 'incomming_match_data_stream':
+                    print '.valid_incomming_match_data_stream('+i+'_en),'                    
                 else:
                     print '.number_in'+str(k)+'('+i+'_number),'
                     print '.read_add'+str(k)+'('+i+'_read_add),'

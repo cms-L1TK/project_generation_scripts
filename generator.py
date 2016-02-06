@@ -107,7 +107,7 @@ for x in memories:
         m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'StubsByLayer':
         m.start = 'start2_0'
-        m.done = 'done1_5' if seen_done1_5 else 'done1_5_1'
+        m.done = '' if seen_done1_5 else 'done1_5_1'
         seen_done1_5 = True
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:]
@@ -117,13 +117,13 @@ for x in memories:
             m.out_names = ['read_add_MC','data_out_MC']
     if m.module == 'VMStubs':
         m.start = 'start3_0'
-        m.done = 'done2_5' if seen_done2_5 else 'done2_5_1'
+        m.done = '' if seen_done2_5 else 'done2_5_1'
         seen_done2_5 = True
         if 'ME' in m.outputs[0]:
             m.out_names = ['number_out_ME','read_add_ME','data_out_ME']
     if m.module == 'StubPairs':
         m.start = 'start4_0'
-        m.done = 'done3_5' if seen_done3_5 else 'done3_5_1'
+        m.done = '' if seen_done3_5 else 'done3_5_1'
         seen_done3_5 = True
     if m.module == 'TrackletParameters':
         m.out_names = m.out_names[1:]
@@ -135,11 +135,11 @@ for x in memories:
             m.start = 'startproj5_0'
         else:
             m.start = 'start6_0'
-        m.done = 'done5_5' if seen_done5_5 else 'done5_5_1'
+        m.done = '' if seen_done5_5 else 'done5_5_1'
         seen_done5_5 = True
         if 'ToPlus' in m.name or 'ToMinus' in m.name:
             m.parameters = "#(0,0)"
-            m.done = 'done4_5' if seen_done4_5 else 'done4_5_1'
+            m.done = '' if seen_done4_5 else 'done4_5_1'
             seen_done4_5 = True
         if 'FromPlus'in m.name or 'FromMinus' in m.name:
             m.parameters = "#(1,1)"
@@ -149,20 +149,20 @@ for x in memories:
         m.start = 'start7_0'
     if m.module == 'VMProjections':
         m.start = 'start7_0'
-        m.done = 'done6_5' if seen_done6_5 else 'done6_5_1'
+        m.done = '' if seen_done6_5 else 'done6_5_1'
         seen_done6_5 = True
     if m.module == 'CandidateMatch':
         m.start = 'start8_0'
-        m.done = 'done7_5' if seen_done7_5 else 'done7_5_1'
+        m.done = '' if seen_done7_5 else 'done7_5_1'
         seen_done7_5 = True
     if m.module == 'FullMatch':
         if 'From' in m.name:
             m.start = 'start10_0'
-            m.done = 'done9_5' if seen_done9_5 else 'done9_5_1'
+            m.done = '' if seen_done9_5 else 'done9_5_1'
             seen_done9_5 = True
         else:
             m.start = 'start9_0'
-            m.done = 'done8_5' if seen_done8_5 else 'done8_5_1'
+            m.done = '' if seen_done8_5 else 'done8_5_1'
             seen_done8_5 = True
     if m.module == 'TrackFit':
         m.inputs.append(m.name+'_led_test')
@@ -170,7 +170,7 @@ for x in memories:
         m.outputs.append(m.name+'_DataStream')
         m.out_names.append('data_out')
         m.start = 'start11_0'
-        m.done = 'done10_5' if seen_done10_5 else 'done10_5_1'
+        m.done = '' if seen_done10_5 else 'done10_5_1'
         seen_done10_5 = True
 ####################################################
     if('mem' in sys.argv):

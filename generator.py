@@ -56,6 +56,8 @@ seen_done8_5 = False
 seen_done9_5 = False
 seen_done10_5 = False
 
+il = 0
+
 for p in prologue:
     print p.strip()
 for x in memories:    
@@ -90,7 +92,6 @@ for x in memories:
     m.in_names = i_n
     m.out_names = o_n
     m.common = Common
-    il = 0
     if m.module == 'InputLink':
         il += 1
         m.outputs = [m.outputs[-1]]

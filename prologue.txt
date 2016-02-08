@@ -57,14 +57,41 @@ input BRAM_OUTPUT_en,
 input BRAM_OUTPUT_rst,
 input [3:0] BRAM_OUTPUT_we,
 // Projections
-output wire [47:0] TProj_ToPlus_DataStream,
-output wire TProj_ToPlus_DataStream_en,
-output wire [47:0] TProj_ToMinus_DataStream,
-output wire TProj_ToMinus_DataStream_en,
-input wire [47:0] TProj_FromPlus_DataStream,
-input wire TProj_FromPlus_DataStream_en,
-input wire [47:0] TProj_FromMinus_DataStream,
-input wire TProj_FromMinus_DataStream_en,
+output wire [47:0] PT_Plus_To_DataStream,
+output wire PT_Plus_To_DataStream_en,
+output wire [47:0] PT_Minus_To_DataStream,
+output wire PT_Minus_To_DataStream_en,
+input wire [47:0] PT_Plus_From_DataStream,
+input wire PT_Plus_From_DataStream_en,
+input wire [47:0] PT_Minus_From_DataStream,
+input wire PT_Minus_From_DataStream_en,
+// Matches L1L2
+output wire [38:0] MT_L1L2_Plus_To_DataStream,
+output wire MT_L1L2_Plus_To_DataStream_en,
+output wire [38:0] MT_L1L2_Minus_To_DataStream,
+output wire MT_L1L2_Minus_To_DataStream_en,
+input wire [38:0] MT_L1L2_Plus_From_DataStream,
+input wire MT_L1L2_Plus_From_DataStream_en,
+input wire [38:0] MT_L1L2_Minus_From_DataStream,
+input wire MT_L1L2_Minus_From_DataStream_en,
+// Matches L3L4
+output wire [38:0] MT_L3L4_Plus_To_DataStream,
+output wire MT_L3L4_Plus_To_DataStream_en,
+output wire [38:0] MT_L3L4_Minus_To_DataStream,
+output wire MT_L3L4_Minus_To_DataStream_en,
+input wire [38:0] MT_L3L4_Plus_From_DataStream,
+input wire MT_L3L4_Plus_From_DataStream_en,
+input wire [38:0] MT_L3L4_Minus_From_DataStream,
+input wire MT_L3L4_Minus_From_DataStream_en,
+// Matches L5L6
+output wire [38:0] MT_L5L6_Plus_To_DataStream,
+output wire MT_L5L6_Plus_To_DataStream_en,
+output wire [38:0] MT_L5L6_Minus_To_DataStream,
+output wire MT_L5L6_Minus_To_DataStream_en,
+input wire [38:0] MT_L5L6_Plus_From_DataStream,
+input wire MT_L5L6_Plus_From_DataStream_en,
+input wire [38:0] MT_L5L6_Minus_From_DataStream,
+input wire MT_L5L6_Minus_From_DataStream_en,
 // Track Fits
 output wire [125:0] TF_L1L2_DataStream,
 output wire [125:0] TF_L3L4_DataStream,
@@ -120,11 +147,13 @@ assign start2_0 = done1_0;
 assign start3_0 = done2_0;
 assign start4_0 = done3_0;
 assign start5_0 = done4_0;
+assign startproj5_0 = done_proj4_0;
 assign start6_0 = done5_0;
 assign start7_0 = done6_0;
 assign start8_0 = done7_0;
 assign start9_0 = done8_0;
 assign start10_0 = done9_0;
+assign start11_0 = done10_0;
 
 assign start1_5 = (clk_cnt == 5'd0 && en_proc);
 //assign start1_5 = en_proc;
@@ -136,24 +165,9 @@ assign start6_5 = done5_5;
 assign start7_5 = done6_5;
 assign start8_5 = done7_5;
 assign start9_5 = done8_5;
-
-wire done4_5_1,done4_5_2,done4_5_3,done4_5_4,done4_5_5,done4_5_6,done4_5_7,done4_5_8,done4_5_9,done4_5_10;
-wire done4_5_11,done4_5_12,done4_5_13,done4_5_14,done4_5_15,done4_5_16,done4_5_17,done4_5_18,done4_5_19,done4_5_20;
-wire done4_5_21,done4_5_22,done4_5_23,done4_5_24,done4_5_25,done4_5_26,done4_5_27,done4_5_28,done4_5_29,done4_5_30;
-
-wire done5_5_1,done5_5_2,done5_5_3,done5_5_4,done5_5_5,done5_5_6,done5_5_7,done5_5_8,done5_5_9,done5_5_10;
-wire done5_5_11,done5_5_12,done5_5_13,done5_5_14,done5_5_15,done5_5_16,done5_5_17,done5_5_18,done5_5_19,done5_5_20;
-wire done5_5_21,done5_5_22,done5_5_23,done5_5_24,done5_5_25,done5_5_26,done5_5_27,done5_5_28,done5_5_29,done5_5_30;
-wire done5_5_31,done5_5_32,done5_5_33,done5_5_34,done5_5_35,done5_5_36,done5_5_37,done5_5_38,done5_5_39,done5_5_40;
-
-wire done8_5_1,done8_5_2,done8_5_3,done8_5_4,done8_5_5,done8_5_6,done8_5_7,done8_5_8,done8_5_9,done8_5_10;
-wire done8_5_11,done8_5_12,done8_5_13,done8_5_14,done8_5_15,done8_5_16,done8_5_17,done8_5_18,done8_5_19,done8_5_20;
-wire done8_5_21,done8_5_22,done8_5_23,done8_5_24,done8_5_25,done8_5_26,done8_5_27,done8_5_28,done8_5_29,done8_5_30;
-wire done8_5_31,done8_5_32,done8_5_33,done8_5_34,done8_5_35,done8_5_36,done8_5_37,done8_5_38,done8_5_39,done8_5_40;
-
+assign start10_5 = done9_5;
 
 assign done1_5 = done1_5_1;
-
 assign done2_5 = done2_5_1;
 assign done3_5 = done3_5_1;
 assign done4_5 = done4_5_1;
@@ -161,4 +175,5 @@ assign done5_5 = done5_5_1;
 assign done6_5 = done6_5_1;
 assign done7_5 = done7_5_1;
 assign done8_5 = done8_5_1;
+assign done9_5 = done9_5_1;
 

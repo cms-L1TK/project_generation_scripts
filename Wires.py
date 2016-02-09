@@ -250,7 +250,7 @@ for mem in inputmemorymodules :
         shortmem+=1
         found=True
     if "SP_" in mem:
-        fp.write("StubPairs: "+mem+n+" [18]\n")
+        fp.write("StubPairs: "+mem+n+" [12]\n")
         SP_mem+=1
         shortmem+=1
         found=True

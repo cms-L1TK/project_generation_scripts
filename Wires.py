@@ -165,6 +165,8 @@ for proc in processingmodules :
         fp.write("DiskRouter: "+proc+"\n")
     if "VMR_" in proc:
         fp.write("VMRouter: "+proc+"\n")
+    if "VMRD_" in proc:
+        fp.write("VMDRouter: "+proc+"\n")
     if "TE_" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
     if "TC_L" in proc:
@@ -175,6 +177,8 @@ for proc in processingmodules :
         fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
+    if "PRD_" in proc:
+        fp.write("ProjectionDiskRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
@@ -219,7 +223,10 @@ for mem in inputmemorymodules :
         count=1
     n=""
     if inputmemorymodules.count(mem)>1 :
-        n="n"+str(count)    
+        n="n"+str(count)
+    if inputmemorymodules.count(mem) == 1 :
+        if "AS_" in mem or "VMS_" in mem:
+            n="n1"
     found=False
     if "IL" in mem:
         fp.write("InputLink: "+mem+n+" [36]\n")
@@ -333,6 +340,9 @@ for m in inputmemcount :
         n=""
         if count>1 :
             n="n"+str(i)
+        if count==1 :
+            if "AS_" in mem or "VMS_" in mem :
+                n="n1"
         fp.write(mem+n+" input=> ")
         # now we need to search for an proc module that fills this memory
         for line in lines:

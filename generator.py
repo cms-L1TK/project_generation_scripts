@@ -109,6 +109,10 @@ for x in memories:
         m.start = 'start2_0'
         m.done = '' if seen_done1_5 else 'done1_5_1'
         seen_done1_5 = True
+    if m.module == 'StubsByDisk':
+        m.start = 'start2_0'
+        m.done = '' if seen_done1_5 else 'done1_5_1'
+        seen_done1_5 = True
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:]
         m.outputs = m.outputs[1:]
@@ -134,15 +138,15 @@ for x in memories:
         if 'From' not in m.name:
             m.start = 'startproj5_0'
         else:
-            m.start = 'start6_0'
-        m.done = '' if seen_done5_5 else 'done5_5_1'
-        seen_done5_5 = True
+            m.start = 'start6_0'        
         if 'ToPlus' in m.name or 'ToMinus' in m.name:
             m.parameters = "#(0,0)"
             m.done = '' if seen_done4_5 else 'done4_5_1'
             seen_done4_5 = True
         if 'FromPlus'in m.name or 'FromMinus' in m.name:
             m.parameters = "#(1,1)"
+            m.done = '' if seen_done5_5 else 'done5_5_1'
+            seen_done5_5 = True       
     if m.module == 'AllProj':
         m.out_names = m.out_names[1:]
         m.outputs = m.outputs[1:]
@@ -182,7 +186,7 @@ for x in memories:
                 else:
                     print 'wire ['+str(m.size-1)+':0] '+i+';'
         for o in m.outputs:
-            if 'empty' in o or 'TF_L' in o:
+            if 'empty' in o or 'TF_' in o:
                 print '//wire '+o+';'
             elif 'number' in o:
                 print 'wire [5:0] '+o+';'
@@ -256,6 +260,20 @@ for x in modules:
         #print out_names
         m.out_names = m.out_names + out_names
         m.outputs = m.outputs + outputs
+    if m.module == 'DiskRouter':
+        m.inputs.append(m.inputs[-1]+'_read_en')
+        m.in_names.append('read_en')
+        m.start = 'start1_5'
+        m.done = 'done1' if seen_done1_0 else 'done1_0'
+        seen_done1_0 = True
+        out_names = []
+        outputs = []
+        for cnt,out in enumerate(m.outputs):
+            out_names.append(str('wr_en%d' %(cnt+1)))
+            outputs.append(out+'_wr_en')
+        #print out_names
+        m.out_names = m.out_names + out_names
+        m.outputs = m.outputs + outputs
     if m.module == 'VMRouter':
         enables = []
         enables_2 = []
@@ -290,6 +308,40 @@ for x in modules:
                 valids2.append('valid_data%d'%vs)
         m.outputs = m.outputs + valids
         m.out_names = m.out_names + valids2
+    if m.module == 'VMDRouter': # VM router for the disks. Make sure the parameters are set correctly
+        enables = []
+        enables_2 = []
+        for o in m.out_names:
+            if 'vmstubout' in o:
+                enables.append(o+'_wr_en')
+        for o in m.outputs:
+            if 'VMR' in o and 'VMS' in o:
+                enables_2.append(o+'_wr_en')
+        m.out_names = m.out_names + enables
+        m.outputs = m.outputs + enables_2
+        if 'L1' in m.name or 'L3' in m.name or 'L5' in m.name:
+            if 'L1' in m.name or 'L3' in m.name:
+                m.parameters = "#(1'b1,1'b1)"
+            else:
+                m.parameters = "#(1'b0,1'b1)"
+        else:
+            if 'L2' in m.name:
+                m.parameters = "#(1'b1,1'b0)"
+            else:
+                m.parameters = "#(1'b0,1'b0)"
+        m.start = 'start2_5'
+        m.done = 'done2' if seen_done2_0 else 'done2_0'
+        seen_done2_0 = True
+        vs = 0
+        valids = []
+        valids2 = []
+        for o in m.outputs:
+            if 'VMR_F' in o and '_AS_F' in o:
+                vs = vs + 1
+                valids.append(o+'_wr_en')
+                valids2.append('valid_data%d'%vs)
+        m.outputs = m.outputs + valids
+        m.out_names = m.out_names + valids2
     if m.module == 'TrackletEngine':
         m.out_names.append('valid_data')
         m.outputs.append(m.outputs[0]+'_wr_en')
@@ -308,6 +360,23 @@ for x in modules:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
         m.outputs = m.outputs+['done_proj4_0']
+        #if 'L1D3L2D3' in m.name: # PARAMETERS BROKEN
+         #   m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
+        m.start = 'start4_5'
+        m.done = 'done4' if seen_done4_0 else 'done4_0'
+        seen_done4_0 = True
+    if m.module == 'TrackletDiskCalculator':
+        ons = []
+        for o in m.out_names:
+            ons.append('valid_'+o)
+        m.out_names = m.out_names + ons    
+        m.out_names = m.out_names + ['done_proj']            
+        outs = []
+        for o in m.outputs:
+            outs.append(o+'_wr_en')
+        m.outputs = m.outputs+outs
+        m.outputs = m.outputs+['done_proj4_0']
+        m.parameters = '#(47,17,"",981,1515)'
         #if 'L1D3L2D3' in m.name: # PARAMETERS BROKEN
          #   m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
         m.start = 'start4_5'
@@ -351,6 +420,22 @@ for x in modules:
         m.start = 'start6_5'
         m.done = 'done6' if seen_done6_0 else 'done6_0'
         seen_done6_0 = True
+    if m.module == 'ProjectionDiskRouter': # Disk Router. Check parameters
+        m.outputs.append(m.outputs[-1]+'_wr_en')
+        m.out_names.append('valid_data')
+        m.outputs = m.outputs + [x+'_wr_en' for x in m.outputs[:-2]]
+        m.out_names = m.out_names + [x+'_wr_en' for x in m.out_names[:-2]]
+        if 'PR_L1' in m.name or 'PR_L3' in m.name:
+            m.parameters = "#(1'b1,1'b1)"
+        elif 'PR_L2' in m.name:
+            m.parameters = "#(1'b0,1'b1)"
+        elif 'PR_L4' in m.name or 'PR_L6' in m.name:
+            m.parameters = "#(1'b0,1'b0)"
+        elif 'PR_L5' in m.name:
+            m.parameters = "#(1'b1,1'b0)"
+        m.start = 'start6_5'
+        m.done = 'done6' if seen_done6_0 else 'done6_0'
+        seen_done6_0 = True
     if m.module == 'MatchEngine':
         m.in_names.append(m.in_names[0])
         m.in_names.append(m.in_names[1])
@@ -364,12 +449,9 @@ for x in modules:
         m.done = 'done7' if seen_done7_0 else 'done7_0'
         seen_done7_0 = True
     if m.module == 'MatchCalculator':
-        m.in_names.append(m.in_names[0])
-        #m.in_names.append(m.in_names[1])
-        m.in_names = m.in_names[1:]
-        m.inputs.append(m.inputs[0])
-        #m.inputs.append(m.inputs[1])
-        m.inputs = m.inputs[1:]
+        for i,n in enumerate(m.in_names):
+            if 'all' in n:
+                m.in_names.insert(-1,m.in_names.pop(i))
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.outputs.append(m.outputs[1]+'_wr_en')
         m.outputs.append(m.outputs[2]+'_wr_en')
@@ -414,8 +496,8 @@ for x in modules:
         m.in_names = m.in_names[:4]+m.in_names[5:]
         m.inputs.append(m.inputs[4])
         m.inputs = m.inputs[:4]+m.inputs[5:]
-	m.out_names.append('valid_fit')
-	m.outputs.append(m.outputs[0]+'_wr_en')
+        m.out_names.append('valid_fit')
+        m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start10_5'
         m.done = 'done10' if seen_done10_0 else 'done10_0'
         seen_done10_0 = True
@@ -427,7 +509,7 @@ for x in modules:
         print m.module,m.parameters,m.name + '('
         k = 1
         for n,i in zip(m.in_names,m.inputs):
-            if m.module != 'LayerRouter':
+            if m.module != 'LayerRouter' and m.module != 'DiskRouter':
                 if n == 'innerallstubin':
                     print '.read_add_innerall('+i+'_read_add),'
                 elif n == 'outerallstubin':

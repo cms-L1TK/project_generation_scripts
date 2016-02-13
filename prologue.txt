@@ -95,7 +95,9 @@ input wire MT_L5L6_Minus_From_DataStream_en,
 // Track Fits
 output wire [125:0] TF_L1L2_DataStream,
 output wire [125:0] TF_L3L4_DataStream,
-output wire [125:0] TF_L5L6_DataStream
+output wire [125:0] TF_L5L6_DataStream,
+output wire [125:0] TF_F1F2_DataStream,
+output wire [125:0] TF_F3F4_DataStream
 
 );
 

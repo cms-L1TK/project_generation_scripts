@@ -184,8 +184,6 @@ for x in memories:
             m.done = '' if seen_done8_5 else 'done8_5_1'
             seen_done8_5 = True
     if m.module == 'TrackFit':
-        m.inputs.append(m.name+'_led_test') # Testing LED on VC709
-        m.in_names.append('led_test')
         m.outputs.append(m.name+'_DataStream') # Final track out, going to DTC but should go to DuplicateRemoval
         m.out_names.append('data_out')
         m.start = 'start11_0'
@@ -233,6 +231,7 @@ seen_done1_0 = False
 seen_done2_0 = False
 seen_done3_0 = False
 seen_done4_0 = False
+seen_done_proj = False
 seen_done5_0 = False
 seen_done6_0 = False
 seen_done7_0 = False
@@ -373,8 +372,10 @@ for x in modules:
         ons = []
         for o in m.out_names:
             ons.append('valid_'+o)
-        m.out_names = m.out_names + ons    
-        m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        m.out_names = m.out_names + ons
+        if not seen_done_proj:    
+            m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        seen_done_proj = True
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')

@@ -36,7 +36,7 @@ for line in g:
     memories.append(signals) # Add to the list of triplets
 
 # Common signals for every module # IPBus might go away
-Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc),\n.io_clk(io_clk),\n.io_sel(io_sel_R3_io_block),\n.io_addr(io_addr[15:0]),        \n.io_sync(io_sync),\n.io_rd_en(io_rd_en),\n.io_wr_en(io_wr_en),\n.io_wr_data(io_wr_data[31:0]),\n.io_rd_data(io_rd_data_R3_io_block),\n.io_rd_ack(io_rd_ack_R3_io_block)'
+Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
@@ -500,10 +500,15 @@ for x in modules:
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'FitTrack':
-        m.in_names.append(m.in_names[4]) # Ignore LED test
-        m.in_names = m.in_names[:4]+m.in_names[5:]
-        m.inputs.append(m.inputs[4])
-        m.inputs = m.inputs[:4]+m.inputs[5:]
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'tpar1' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'tpar2' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'tpar3' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
         m.out_names.append('valid_fit')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start10_5'
@@ -526,7 +531,11 @@ for x in modules:
                 elif n == 'allprojin':
                     print '.read_add_allproj('+i+'_read_add),'
                 elif n == 'tpar1in':
-                    print '.read_add_pars('+i+'_read_add),'
+                    print '.read_add_pars1('+i+'_read_add),'
+                elif n == 'tpar2in':
+                    print '.read_add_pars2('+i+'_read_add),'
+                elif n == 'tpar3in':
+                    print '.read_add_pars3('+i+'_read_add),'
                 elif n == 'incomming_proj_data_stream':
                     print '.valid_incomming_proj_data_stream('+i+'_en),'
                 elif n == 'incomming_match_data_stream':

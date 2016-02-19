@@ -138,8 +138,8 @@ for x in memories:
         m.start = 'start3_0'
         m.done = '' if seen_done2_5 else 'done2_5_1'
         seen_done2_5 = True
-        if 'ME' in m.outputs[0]:
-            m.out_names = ['number_out_ME','read_add_ME','data_out_ME'] # TODO not needed anymore
+        #if 'ME' in m.outputs[0]:
+         #   m.out_names = ['number_out_ME','read_add_ME','data_out_ME'] # TODO not needed anymore
     if m.module == 'StubPairs':
         m.start = 'start4_0'
         m.done = '' if seen_done3_5 else 'done3_5_1'

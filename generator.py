@@ -462,9 +462,21 @@ for x in modules:
         m.done = 'done7' if seen_done7_0 else 'done7_0'
         seen_done7_0 = True
     if m.module == 'MatchCalculator':
+        print m.in_names
         for i,n in enumerate(m.in_names): # Count the inputs
-            if 'all' in n:
-                m.in_names.insert(-1,m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
+            if 'allprojin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AP_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
+
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'allstubin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AS_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
+        print m.in_names
         m.outputs.append(m.outputs[0]+'_wr_en') # Write enable for local and neighbor matches
         m.outputs.append(m.outputs[1]+'_wr_en')
         m.outputs.append(m.outputs[2]+'_wr_en')

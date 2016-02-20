@@ -176,9 +176,12 @@ for x in memories:
         seen_done7_5 = True
     if m.module == 'FullMatch':
         if 'From' in m.name:
+            m.parameters = "#(128)"
             m.start = 'start10_0' # Matches from neighbors start later
             m.done = '' if seen_done9_5 else 'done9_5_1'
             seen_done9_5 = True
+        elif 'To' in m.name:
+            m.parameters = "#(128)"
         else:
             m.start = 'start9_0'
             m.done = '' if seen_done8_5 else 'done8_5_1'

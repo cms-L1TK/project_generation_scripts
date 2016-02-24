@@ -16,6 +16,10 @@ if sys.argv[1]=="D5D6":
     regions = ["D5","D6"] 
     vregions = ["D1","D2","D3","D4","D7","D8","L1L2","F1L","_L1","_L2","_L3","_L4","_L5","_L6","_B1","_B2"]
 
+if sys.argv[1]=="D3D4D5D6":
+    regions = ["D3","D4","D5","D6"] 
+    vregions = ["D1","D2","D7","D8","_B1","_B2"]
+
 if sys.argv[1]=="D3":
     regions = ["D3"] 
     vregions = ["D1","D2","D4","D5","D6","D7","D8","_F1","_F2","_F3","_F4","_F5"]

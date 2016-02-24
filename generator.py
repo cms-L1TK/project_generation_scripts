@@ -138,8 +138,10 @@ for x in memories:
         m.start = 'start3_0'
         m.done = '' if seen_done2_5 else 'done2_5_1'
         seen_done2_5 = True
-        #if 'ME' in m.outputs[0]:
-         #   m.out_names = ['number_out_ME','read_add_ME','data_out_ME'] # TODO not needed anymore
+        if 'ME' in m.outputs[0]:
+            m.parameters = '#("Match")'
+        else:
+            m.parameters = '#("Tracklet")'
     if m.module == 'StubPairs':
         m.start = 'start4_0'
         m.done = '' if seen_done3_5 else 'done3_5_1'
@@ -149,18 +151,15 @@ for x in memories:
         m.outputs = m.outputs[1:]
         m.start = 'start5_0'
     if m.module == 'TrackletProjections':
-        m.parameters = "#(0,1)" # Deprecated parameter
         if 'From' not in m.name:
             m.start = 'startproj5_0' # Projections from neighbors start later
         else:
             m.start = 'start6_0'
         if 'ToPlus' in m.name or 'ToMinus' in m.name:
-            m.parameters = "#(0,0)"  # Deprecated parameter
-            m.done = '' if seen_done4_5 else 'done4_5_1'
+	    m.done = '' if seen_done4_5 else 'done4_5_1'
             seen_done4_5 = True
         if 'FromPlus'in m.name or 'FromMinus' in m.name:
-            m.parameters = "#(1,1)" # Deprecated parameter
-            m.done = '' if seen_done5_5 else 'done5_5_1'
+	    m.done = '' if seen_done5_5 else 'done5_5_1'
             seen_done5_5 = True       
     if m.module == 'AllProj':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
@@ -390,6 +389,12 @@ for x in modules:
         m.done = 'done4' if seen_done4_0 else 'done4_0'
         seen_done4_0 = True
     if m.module == 'TrackletDiskCalculator':
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'stubin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AS_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
         ons = []
         for o in m.out_names:
             ons.append('valid_'+o)
@@ -560,7 +565,10 @@ for x in modules:
                 elif n == 'incomming_proj_data_stream':
                     print '.valid_incomming_proj_data_stream('+i+'_en),'
                 elif n == 'incomming_match_data_stream':
-                    print '.valid_incomming_match_data_stream('+i+'_en),'                    
+                    print '.valid_incomming_match_data_stream('+i+'_en),'
+                elif 'fullmatch' in n:
+                    print '.number'+n.split('match')[-1]+'('+i+'_number),'
+                    print '.read_add'+n.split('match')[-1]+'('+i+'_read_add),'
                 else:
                     print '.number_in'+str(k)+'('+i+'_number),'
                     print '.read_add'+str(k)+'('+i+'_read_add),'

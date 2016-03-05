@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "constants.vh"
 //////////////////////////////////////////////////////////////////////////////////
 // Company:
 // Engineer:
@@ -62,15 +63,33 @@ output [31:0] BRAM_OUTPUT_dout,
 input BRAM_OUTPUT_en,
 input BRAM_OUTPUT_rst,
 input [3:0] BRAM_OUTPUT_we,
-// Projections
-output wire [47:0] PT_Plus_To_DataStream,
-output wire PT_Plus_To_DataStream_en,
-output wire [47:0] PT_Minus_To_DataStream,
-output wire PT_Minus_To_DataStream_en,
-input wire [47:0] PT_Plus_From_DataStream,
-input wire PT_Plus_From_DataStream_en,
-input wire [47:0] PT_Minus_From_DataStream,
-input wire PT_Minus_From_DataStream_en,
+// Projections L1L2
+output wire [50:0] PT_L1L2_Plus_To_DataStream,
+output wire PT_L1L2_Plus_To_DataStream_en,
+output wire [50:0] PT_L1L2_Minus_To_DataStream,
+output wire PT_L1L2_Minus_To_DataStream_en,
+input wire [50:0] PT_L1L2_Plus_From_DataStream,
+input wire PT_L1L2_Plus_From_DataStream_en,
+input wire [50:0] PT_L1L2_Minus_From_DataStream,
+input wire PT_L1L2_Minus_From_DataStream_en,
+// Projections L3L4
+output wire [50:0] PT_L3L4_Plus_To_DataStream,
+output wire PT_L3L4_Plus_To_DataStream_en,
+output wire [50:0] PT_L3L4_Minus_To_DataStream,
+output wire PT_L3L4_Minus_To_DataStream_en,
+input wire [50:0] PT_L3L4_Plus_From_DataStream,
+input wire PT_L3L4_Plus_From_DataStream_en,
+input wire [50:0] PT_L3L4_Minus_From_DataStream,
+input wire PT_L3L4_Minus_From_DataStream_en,
+// Projections L5L6
+output wire [50:0] PT_L5L6_Plus_To_DataStream,
+output wire PT_L5L6_Plus_To_DataStream_en,
+output wire [50:0] PT_L5L6_Minus_To_DataStream,
+output wire PT_L5L6_Minus_To_DataStream_en,
+input wire [50:0] PT_L5L6_Plus_From_DataStream,
+input wire PT_L5L6_Plus_From_DataStream_en,
+input wire [50:0] PT_L5L6_Minus_From_DataStream,
+input wire PT_L5L6_Minus_From_DataStream_en,
 // Matches L1L2
 output wire [38:0] MT_L1L2_Plus_To_DataStream,
 output wire MT_L1L2_Plus_To_DataStream_en,
@@ -129,7 +148,7 @@ wire IL1_D3_LR1_D3_empty;
 wire IL2_D3_LR2_D3_empty;
 wire IL3_D3_LR3_D3_empty;
 
-reg [4:0] clk_cnt;
+reg [5:0] clk_cnt;
 
 //wire enable_gen;
 //enable_generator en_gen(
@@ -139,18 +158,18 @@ reg [4:0] clk_cnt;
 //);
 
 initial
-clk_cnt = 5'b0;
+clk_cnt = 6'b0;
 always @(posedge clk) begin
 if(en_proc)
 clk_cnt <= clk_cnt + 1'b1;
 else begin
-clk_cnt <= 5'b0;
+clk_cnt <= 6'b0;
 end
-if(clk_cnt == 5'd23)
-clk_cnt <= 5'b0;
+if(clk_cnt == (`tmux - 1'b1))
+clk_cnt <= 6'b0;
 end
 
-assign start1_0 = (clk_cnt == 5'd0 && en_proc);
+assign start1_0 = (clk_cnt == 6'd0 && en_proc);
 assign start2_0 = done1_0;
 assign start3_0 = done2_0;
 assign start4_0 = done3_0;
@@ -163,7 +182,7 @@ assign start9_0 = done8_0;
 assign start10_0 = done9_0;
 assign start11_0 = done10_0;
 
-assign start1_5 = (clk_cnt == 5'd0 && en_proc);
+assign start1_5 = (clk_cnt == 6'd0 && en_proc);
 //assign start1_5 = en_proc;
 assign start2_5 = done1_5;
 assign start3_5 = done2_5;

@@ -181,6 +181,7 @@ for x in memories:
             seen_done9_5 = True
         elif 'To' in m.name:
             m.parameters = "#(128)"
+            m.start = 'start9_0'
         else:
             m.start = 'start9_0'
             m.done = '' if seen_done8_5 else 'done8_5_1'

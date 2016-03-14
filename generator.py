@@ -174,6 +174,8 @@ for x in memories:
         m.done = '' if seen_done7_5 else 'done7_5_1'
         seen_done7_5 = True
     if m.module == 'FullMatch':
+        m.outputs.append(m.outputs[-1]+'_read_en')
+        m.out_names.append('read_en')
         if 'From' in m.name:
             m.parameters = "#(128)"
             m.start = 'start10_0' # Matches from neighbors start later
@@ -210,7 +212,10 @@ for x in memories:
                 if m.module == 'VMStubs' or m.module == 'AllStubs' or m.module == 'TrackletParameters' : # These memories have to cross the link
                     print 'wire [10:0] '+o+';' # Deeper for latency
                 elif m.module == 'TrackletProjections' or m.module == 'FullMatch': # Not as deep
-                    print 'wire [9:0] '+o+';'
+                    if '_en' in o:
+                        print 'wire '+o+';'
+                    else:
+                        print 'wire [9:0] '+o+';'
                 else:
                     print 'wire [8:0] '+o+';' # Standard depth 6 bits of number plus 3 of BX
                 #print 'wire [5:0] '+o+';'
@@ -535,7 +540,7 @@ for x in modules:
         for i,n in enumerate(m.inputs):
             if 'TPAR' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i))
-        
+
         m.out_names.append('valid_fit')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = 'start10_5'
@@ -570,6 +575,7 @@ for x in modules:
                 elif 'fullmatch' in n:
                     print '.number'+n.split('match')[-1]+'('+i+'_number),'
                     print '.read_add'+n.split('match')[-1]+'('+i+'_read_add),'
+                    print '.read_en'+n.split('match')[-1]+'('+i+'_read_en),'
                 else:
                     print '.number_in'+str(k)+'('+i+'_number),'
                     print '.read_add'+str(k)+'('+i+'_read_add),'

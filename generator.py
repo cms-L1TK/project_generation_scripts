@@ -122,11 +122,11 @@ for x in memories:
         m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'StubsByLayer':
         m.start = 'start2_0'
-        m.done = '' if seen_done1_5 else 'done1_5_1' # After 1 seen, no more dones
+        m.done = '' if seen_done1_5 else 'done1_5' # After 1 seen, no more dones
         seen_done1_5 = True
     if m.module == 'StubsByDisk':
         m.start = 'start2_0'
-        m.done = '' if seen_done1_5 else 'done1_5_1'
+        m.done = '' if seen_done1_5 else 'done1_5'
         seen_done1_5 = True
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
@@ -136,7 +136,7 @@ for x in memories:
             m.out_names = ['read_add_MC','data_out_MC'] # If the memory is read by an MC change the output names # TODO not needed anymore
     if m.module == 'VMStubs':
         m.start = 'start3_0'
-        m.done = '' if seen_done2_5 else 'done2_5_1'
+        m.done = '' if seen_done2_5 else 'done2_5'
         seen_done2_5 = True
         if 'ME' in m.outputs[0]:
             m.parameters = '#("Match")'
@@ -144,7 +144,7 @@ for x in memories:
             m.parameters = '#("Tracklet")'
     if m.module == 'StubPairs':
         m.start = 'start4_0'
-        m.done = '' if seen_done3_5 else 'done3_5_1'
+        m.done = '' if seen_done3_5 else 'done3_5'
         seen_done3_5 = True
     if m.module == 'TrackletParameters':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
@@ -156,10 +156,10 @@ for x in memories:
         else:
             m.start = 'start6_0'
         if 'ToPlus' in m.name or 'ToMinus' in m.name:
-	    m.done = '' if seen_done4_5 else 'done4_5_1'
+	    m.done = '' if seen_done4_5 else 'done4_5'
             seen_done4_5 = True
         if 'FromPlus'in m.name or 'FromMinus' in m.name:
-	    m.done = '' if seen_done5_5 else 'done5_5_1'
+	    m.done = '' if seen_done5_5 else 'done5_5'
             seen_done5_5 = True       
     if m.module == 'AllProj':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
@@ -167,32 +167,35 @@ for x in memories:
         m.start = 'start7_0'
     if m.module == 'VMProjections':
         m.start = 'start7_0'
-        m.done = '' if seen_done6_5 else 'done6_5_1'
+        m.done = '' if seen_done6_5 else 'done6_5'
         seen_done6_5 = True
     if m.module == 'CandidateMatch':
         m.start = 'start8_0'
-        m.done = '' if seen_done7_5 else 'done7_5_1'
+        m.done = '' if seen_done7_5 else 'done7_5'
         seen_done7_5 = True
     if m.module == 'FullMatch':
-        m.outputs.append(m.outputs[-1]+'_read_en')
+        
         m.out_names.append('read_en')
         if 'From' in m.name:
             m.parameters = "#(128)"
             m.start = 'start10_0' # Matches from neighbors start later
-            m.done = '' if seen_done9_5 else 'done9_5_1'
+            m.done = '' if seen_done9_5 else 'done9_5'
             seen_done9_5 = True
+            m.outputs.append(m.outputs[-1]+'_read_en')
         elif 'To' in m.name:
             m.parameters = "#(128)"
             m.start = 'start9_0'
+            m.outputs.append("1'b1")
         else:
             m.start = 'start9_0'
-            m.done = '' if seen_done8_5 else 'done8_5_1'
+            m.done = '' if seen_done8_5 else 'done8_5'
             seen_done8_5 = True
+            m.outputs.append(m.outputs[-1]+'_read_en')
     if m.module == 'TrackFit':
         m.outputs.append(m.name+'_DataStream') # Final track out, going to DTC but should go to DuplicateRemoval
         m.out_names.append('data_out')
         m.start = 'start11_0'
-        m.done = '' if seen_done10_5 else 'done10_5_1'
+        m.done = '' if seen_done10_5 else 'done10_5'
         seen_done10_5 = True
     ####################################################
     if('mem' in sys.argv): # If you want memories in the print out
@@ -219,6 +222,8 @@ for x in memories:
                 else:
                     print 'wire [8:0] '+o+';' # Standard depth 6 bits of number plus 3 of BX
                 #print 'wire [5:0] '+o+';'
+            elif "1'b1" in o:
+                continue
             else:
                 print 'wire ['+str(m.size-1)+':0] '+o+';' # Wire size
         print m.module,m.parameters,m.name + '(' # Parameters here

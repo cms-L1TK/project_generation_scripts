@@ -524,9 +524,9 @@ for x in modules:
             m.parameters = "#(1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L1,`MC_z_L3L4_L1,`MC_zfactor_INNER)"
         if 'MC_L3L4_L2' in m.name:
             m.parameters = "#(1'b1,`PHI_L2,`Z_L2,`R_L2,`PHID_L2,`ZD_L2,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L2,`MC_z_L3L4_L2,`MC_zfactor_INNER)"
-        if 'MC_L3L4_L3' in m.name:
+        if 'MC_L3L4_L5' in m.name:
             m.parameters = "#(1'b0,`PHI_L5,`Z_L5,`R_L5,`PHID_L5,`ZD_L5,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L5,`MC_z_L3L4_L5,`MC_zfactor_OUTER)"
-        if 'MC_L3L4_L4' in m.name:
+        if 'MC_L3L4_L6' in m.name:
             m.parameters = "#(1'b0,`PHI_L6,`Z_L6,`R_L6,`PHID_L6,`ZD_L6,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L6,`MC_z_L3L4_L6,`MC_zfactor_OUTER)"
         if 'MC_L5L6_L1' in m.name:
             m.parameters = "#(1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L1,`MC_z_L5L6_L1,`MC_zfactor_INNER)"

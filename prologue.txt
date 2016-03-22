@@ -169,7 +169,12 @@ if(clk_cnt == (`tmux - 1'b1))
 clk_cnt <= 6'b0;
 end
 
-assign start1_0 = (clk_cnt == 6'd0 && en_proc);
+wire [1:0] start1_0, start2_0, start3_0, start4_0, start5_0, startproj5_0, start6_0, start7_0, start8_0, start9_0, start10_0, start11_0;
+wire [1:0] done1_0, done2_0, done3_0, done4_0, done_proj4_0, done5_0, done6_0, done7_0, done8_0, done9_0, done10_0;
+wire [1:0] start1_5, start2_5, start3_5, start4_5, start5_5, start6_5, start7_5, start8_5, start9_5, start10_5;
+wire [1:0] done1_5, done2_5, done3_5, done4_5, done5_5, done6_5, done7_5, done8_5, done9_5, done10_5;
+
+//assign start1_0 = (clk_cnt == 6'd0 && en_proc);
 assign start2_0 = done1_0;
 assign start3_0 = done2_0;
 assign start4_0 = done3_0;
@@ -182,7 +187,8 @@ assign start9_0 = done8_0;
 assign start10_0 = done9_0;
 assign start11_0 = done10_0;
 
-assign start1_5 = (clk_cnt == 6'd0 && en_proc);
+assign start1_5[1] = reset;    // use the top bit of start as reset
+assign start1_5[0] = (clk_cnt == 6'd0 && en_proc);
 //assign start1_5 = en_proc;
 assign start2_5 = done1_5;
 assign start3_5 = done2_5;
@@ -194,13 +200,4 @@ assign start8_5 = done7_5;
 assign start9_5 = done8_5;
 assign start10_5 = done9_5;
 
-assign done1_5 = done1_5_1;
-assign done2_5 = done2_5_1;
-assign done3_5 = done3_5_1;
-assign done4_5 = done4_5_1;
-assign done5_5 = done5_5_1;
-assign done6_5 = done6_5_1;
-assign done7_5 = done7_5_1;
-assign done8_5 = done8_5_1;
-assign done9_5 = done9_5_1;
 

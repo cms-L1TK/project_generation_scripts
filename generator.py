@@ -372,6 +372,12 @@ for x in modules:
         seen_done3_0 = True
         m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
     if m.module == 'TrackletCalculator':
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'stubin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AS_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
         ons = []
         for o in m.out_names:
             ons.append('valid_'+o)
@@ -384,8 +390,12 @@ for x in modules:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
         m.outputs = m.outputs+['done_proj4_0'] # Hardcoded signal name
-        #if 'L1D3L2D3' in m.name: # PARAMETERS BROKEN # Will be fixed when seeding in other layers
-         #   m.parameters = "#(12'sd981,12'sd1514,14,12,9,9,1'b1,16'h86a)"
+        if 'L1' in m.name:
+            m.parameters = '#("InvRTable_TC_L1D3L2D3.dat",'+"`TC_L1L2_krA,`TC_L1L2_krB,1'b1,1'b1)"
+        if 'L3' in m.name:
+            m.parameters = '#("InvRTable_TC_L3D3L4D3.dat",'+"`TC_L3L4_krA,`TC_L3L4_krB,1'b1,1'b0)"
+        if 'L5' in m.name:
+            m.parameters = '#("InvRTable_TC_L5D3L6D3.dat",'+"`TC_L5L6_krA,`TC_L5L6_krB,1'b0,1'b0)"
         m.start = 'start4_5'
         m.done = 'done4' if seen_done4_0 else 'done4_0'
         seen_done4_0 = True
@@ -400,7 +410,9 @@ for x in modules:
         for o in m.out_names:
             ons.append('valid_'+o)
         m.out_names = m.out_names + ons    
-        m.out_names = m.out_names + ['done_proj']            
+        if not seen_done_proj:    
+            m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        seen_done_proj = True
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')
@@ -416,7 +428,7 @@ for x in modules:
             ons.append(o+'_%d'%(i+1)) # Enumerate them
         for i,o in enumerate(m.out_names):
             ons.append('valid_%d'%(i+1)) # Valid outputs
-        m.out_names = ons
+        m.out_names = ons        
         valids = []
         for o in m.outputs:
             valids.append(o+'_wr_en')
@@ -491,13 +503,29 @@ for x in modules:
         m.out_names.append('valid_matchplus')
         m.out_names.append('valid_match')
         if 'MC_L1L2_L3' in m.name: # Parameter for constants # Will be moved to header file
-            m.parameters = "#(1'b1,14,12,7,7,8,2,4,868,9,0)"
+            m.parameters = "#(1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L1L2_L3,`MC_z_L1L2_L3,`MC_zfactor_INNER)"
         if 'MC_L1L2_L4' in m.name:
-            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1793,53,4)"
+            m.parameters = "#(1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L4,`MC_z_L1L2_L4,`MC_zfactor_OUTER)"
         if 'MC_L1L2_L5' in m.name:
-            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1388,53,4)"
+            m.parameters = "#(1'b0,`PHI_L5,`Z_L5,`R_L5,`PHID_L5,`ZD_L5,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L5,`MC_z_L1L2_L5,`MC_zfactor_OUTER)"
         if 'MC_L1L2_L6' in m.name:
-            m.parameters = "#(1'b0,17,8,8,8,7,0,9,1138,53,4)"
+            m.parameters = "#(1'b0,`PHI_L6,`Z_L6,`R_L6,`PHID_L6,`ZD_L6,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L6,`MC_z_L1L2_L6,`MC_zfactor_OUTER)"
+        if 'MC_L3L4_L1' in m.name:
+            m.parameters = "#(1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L1,`MC_z_L3L4_L1,`MC_zfactor_INNER)"
+        if 'MC_L3L4_L2' in m.name:
+            m.parameters = "#(1'b1,`PHI_L2,`Z_L2,`R_L2,`PHID_L2,`ZD_L2,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L2,`MC_z_L3L4_L2,`MC_zfactor_INNER)"
+        if 'MC_L3L4_L3' in m.name:
+            m.parameters = "#(1'b0,`PHI_L5,`Z_L5,`R_L5,`PHID_L5,`ZD_L5,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L5,`MC_z_L3L4_L5,`MC_zfactor_OUTER)"
+        if 'MC_L3L4_L4' in m.name:
+            m.parameters = "#(1'b0,`PHI_L6,`Z_L6,`R_L6,`PHID_L6,`ZD_L6,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L6,`MC_z_L3L4_L6,`MC_zfactor_OUTER)"
+        if 'MC_L5L6_L1' in m.name:
+            m.parameters = "#(1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L1,`MC_z_L5L6_L1,`MC_zfactor_INNER)"
+        if 'MC_L5L6_L2' in m.name:
+            m.parameters = "#(1'b1,`PHI_L2,`Z_L2,`R_L2,`PHID_L2,`ZD_L2,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L2,`MC_z_L5L6_L2,`MC_zfactor_INNER)"
+        if 'MC_L5L6_L3' in m.name:
+            m.parameters = "#(1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L3,`MC_z_L5L6_L3,`MC_zfactor_INNER)"
+        if 'MC_L5L6_L4' in m.name:
+            m.parameters = "#(1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L5L6_L4,`MC_z_L5L6_L4,`MC_zfactor_OUTER)"
         m.start = 'start8_5'
         m.done = 'done8' if seen_done8_0 else 'done8_0'
         seen_done8_0 = True

@@ -162,6 +162,8 @@ for x in memories:
 	    m.done = '' if seen_done5_5 else 'done5_5'
             seen_done5_5 = True       
     if m.module == 'AllProj':
+        if 'L4D' in m.name or 'L5D' in m.name or 'L6D' in m.name:
+            m.parameters = "#(1'b0)"
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = 'start7_0'
@@ -173,8 +175,7 @@ for x in memories:
         m.start = 'start8_0'
         m.done = '' if seen_done7_5 else 'done7_5'
         seen_done7_5 = True
-    if m.module == 'FullMatch':
-        
+    if m.module == 'FullMatch':        
         m.out_names.append('read_en')
         if 'From' in m.name:
             m.parameters = "#(128)"
@@ -198,7 +199,7 @@ for x in memories:
         m.done = '' if seen_done10_5 else 'done10_5'
         seen_done10_5 = True
     ####################################################
-    if('mem' in sys.argv): # If you want memories in the print out
+    if('mem' not in sys.argv): # If you want memories in the print out
         print '\n'
         for i in m.inputs: # Declare the wires to be used in the memory
             if 'input_link' not in i: # Input link memory does not have an enable
@@ -280,8 +281,6 @@ for x in modules:
     # Any new processing added here
     ####################################################
     if m.module == 'LayerRouter':
-        m.inputs.append(m.inputs[-1]+'_read_en') 
-        m.in_names.append('read_en')
         m.start = 'start1_5'
         m.done = '' if seen_done1_0 else 'done1_0'
         seen_done1_0 = True
@@ -294,8 +293,6 @@ for x in modules:
         m.out_names = m.out_names + out_names
         m.outputs = m.outputs + outputs
     if m.module == 'DiskRouter':
-        m.inputs.append(m.inputs[-1]+'_read_en')
-        m.in_names.append('read_en')
         m.start = 'start1_5'
         m.done = '' if seen_done1_0 else 'done1_0'
         seen_done1_0 = True
@@ -581,21 +578,13 @@ for x in modules:
         seen_done10_0 = True
 
     ####################################################
-    if('mod' in sys.argv): # If you want processing modules in the print out
+    if('mod' not in sys.argv): # If you want processing modules in the print out
         print '\n'
         print m.module,m.parameters,m.name + '('
         k = 1
         for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names 
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
-                if n == 'innerallstubin':
-                    print '.read_add_innerall('+i+'_read_add),'
-                elif n == 'outerallstubin':
-                    print '.read_add_outerall('+i+'_read_add),'
-                elif n == 'allstubin':
-                    print '.read_add_allstub('+i+'_read_add),'
-                elif n == 'allprojin':
-                    print '.read_add_allproj('+i+'_read_add),'
-                elif n == 'tpar1in':
+                if n == 'tpar1in':
                     print '.read_add_pars1('+i+'_read_add),'
                 elif n == 'tpar2in':
                     print '.read_add_pars2('+i+'_read_add),'
@@ -609,9 +598,11 @@ for x in modules:
                     print '.number'+n.split('match')[-1]+'('+i+'_number),'
                     print '.read_add'+n.split('match')[-1]+'('+i+'_read_add),'
                     print '.read_en'+n.split('match')[-1]+'('+i+'_read_en),'
+                elif 'allstubin' in n:
+                    print '.read_add_'+n+'('+i+'_read_add),'
                 else:
-                    print '.number_in'+str(k)+'('+i+'_number),'
-                    print '.read_add'+str(k)+'('+i+'_read_add),'
+                    print '.number_in_'+n+'('+i+'_number),'
+                    print '.read_add_'+n+'('+i+'_read_add),'
             print '.'+n+'('+i+'),' # Write the signal name
             k = k + 1
         for n,o in zip(m.out_names,m.outputs): # Loop over outputs and output names 

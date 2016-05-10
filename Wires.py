@@ -149,7 +149,8 @@ print "Number of processing modules : ",len(processingmodules)
 print "Number of input memories     : ",len(inputmemorymodules)
 print "Number of output memories    : ",len(outputmemorymodules)
 
-fp = open("processingmodules.dat","w")
+region = sys.argv[1].split('.')[-1]
+fp = open("processingmodules_"+region+".dat","w")
 
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
@@ -190,7 +191,7 @@ for proc in processingmodules :
     if "FT_" in proc:
         fp.write("FitTrack: "+proc+"\n")
 
-fp = open("memorymodules.dat","w")
+fp = open("memorymodules_"+region+".dat","w")
 
 inputmemcount=[]
 
@@ -267,7 +268,7 @@ for mem in inputmemorymodules :
         longmem+=1
         found=True
     if "TPAR_" in mem:
-        fp.write("TrackletParameters: "+mem+n+" [56]\n")
+        fp.write("TrackletParameters: "+mem+n+" [68]\n")
         TPAR_mem+=1
         longmem+=1
         found=True
@@ -322,7 +323,7 @@ print "Number of 18 bit memories : ",shortmem
 print "Number of 36 bit memories : ",longmem        
 print "Megabits required :",shortmem*0.018+longmem*0.036
 
-fp = open("wires.dat","w")
+fp = open("wires_"+region+".dat","w")
 
 tcin=[]
 prin=[]

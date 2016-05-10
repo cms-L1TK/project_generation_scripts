@@ -38,7 +38,10 @@ print 'Will read wires.input.fullsector and select ',regions
 
 fi = open("wires.input.fullsector","r")
 
-fo = open("wires.reduced","w")
+if len(sys.argv) > 1:
+    fo = open("wires."+sys.argv[1],"w")
+else:
+    fo = open("wires.reduced","w")
 
 for line in fi:
     match=False

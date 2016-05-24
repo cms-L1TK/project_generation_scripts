@@ -299,7 +299,7 @@ for mem in inputmemorymodules :
         found=True
     if not found :
         print "Did not print memorymodule : ",mem
-
+'''
 print "Memory type     #mems  bits wide   depth   #BX   bits (kbits)  #18k Bram"
 print "Input Link      ","{:4.0f}".format(IL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(IL_mem*36*64*2*1e-3),"{:10.0f}".format(IL_mem*2)
 print "Stub Layer      ","{:4.0f}".format(SL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SL_mem*36*64*2*1e-3),"{:10.0f}".format(SL_mem*2)
@@ -316,7 +316,7 @@ print "VM Projection   ","{:4.0f}".format(VMPROJ_mem),"{:10.0f}".format(13),"{:7
 print "Cand. Mactch    ","{:4.0f}".format(CM_mem),"{:10.0f}".format(12),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(CM_mem*12*32*2*1e-3),"{:10.0f}".format(CM_mem*1)
 print "FM Match        ","{:4.0f}".format(FM_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(FM_mem*36*32*2*1e-3),"{:10.0f}".format(FM_mem*2)
 print "Track Fit       ","{:4.0f}".format(TF_mem),"{:10.0f}".format(122),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(TF_mem*122*64*2*1e-3),"{:10.0f}".format(TF_mem*4)
-
+'''
 
 
 print "Number of 18 bit memories : ",shortmem        

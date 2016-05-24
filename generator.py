@@ -66,18 +66,6 @@ string_processing = ''
 string_epilogue = ''
 ####################################################
 ####################################################
-# Done is only needed for 1 module
-# If seen once, don't add it anymore
-seen_done1_5 = False
-seen_done2_5 = False
-seen_done3_5 = False
-seen_done4_5 = False
-seen_done5_5 = False
-seen_done6_5 = False
-seen_done7_5 = False
-seen_done8_5 = False
-seen_done9_5 = False
-seen_done10_5 = False
 
 il = 0
 
@@ -175,7 +163,9 @@ for x in memories:
         #if 'FromPlus'in m.name or 'FromMinus' in m.name:
         #    m.done = '' if seen_done5_5 else 'done5_5'
         #    seen_done5_5 = True
-        m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.start = m.inputs[0].replace(m.name,'')+'proj_start'
+        if 'From' in m.name:
+            m.start = m.start.replace('proj_','')
         m.done = m.name+'_start'
     if m.module == 'AllProj':
         if 'L4D' in m.name or 'L5D' in m.name or 'L6D' in m.name:
@@ -202,7 +192,7 @@ for x in memories:
         elif 'To' in m.name:
             m.parameters = "#(128)"
             #m.start = 'start9_0'
-            #m.outputs.append("1'b1")
+            m.outputs.append("1'b1")
         else:
             #m.start = 'start9_0'
             #m.done = '' if seen_done8_5 else 'done8_5'
@@ -407,14 +397,13 @@ for x in modules:
         for o in m.out_names:
             ons.append('valid_'+o)
         m.out_names = m.out_names + ons
-        if not seen_done_proj:    
-            m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        m.out_names = m.out_names + ['done_proj'] # Done signal for projections
         seen_done_proj = True
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
-        m.outputs = m.outputs+['done_proj4_0'] # Hardcoded signal name
+        m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
         if 'L1' in m.name:
             m.parameters = '#("InvRTable_TC_L1D3L2D3.dat",'+"`TC_L1L2_krA,`TC_L1L2_krB,1'b1,1'b1)"
         if 'L3' in m.name:
@@ -468,7 +457,14 @@ for x in modules:
         m.out_names = m.out_names+['valid_proj_data_stream','proj_data_stream'] # Outputs to links
         m.in_names = m.in_names+['incomming_proj_data_stream'] # Input from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
-        m.inputs = m.inputs+[m.name+'_From_DataStream']        
+        m.inputs = m.inputs+[m.name+'_From_DataStream']
+        if 'L1L2' in m.name:
+            m.parameters = '#(0)'
+        elif 'L3L4' in m.name:
+            m.parameters = '#(1)'
+        if 'L5L6' in m.name:
+            m.parameters = '#(2)'
+        
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en') # Write enable signal to AllProjection memory
         m.out_names.append('valid_data')

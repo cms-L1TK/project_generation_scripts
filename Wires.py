@@ -288,7 +288,7 @@ for mem in inputmemorymodules :
         shortmem+=1
         found=True
     if "FM_" in mem:
-        fp.write("FullMatch: "+mem+n+" [36]\n")
+        fp.write("FullMatch: "+mem+n+" [40]\n")
         FM_mem+=1
         longmem+=1
         found=True

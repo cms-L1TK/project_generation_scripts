@@ -404,12 +404,31 @@ for x in modules:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
         m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
+        TC_index = ''
         if 'L1' in m.name:
-            m.parameters = '#("InvRTable_TC_L1D3L2D3.dat",'+"`TC_L1L2_krA,`TC_L1L2_krB,1'b1,1'b1)"
+            if 'D3L2D3' in m.name:
+                TC_index = "4'b0000"
+            if 'D3L2D4' in m.name:
+                TC_index = "4'b0001"
+            if 'D4L2D4' in m.name:
+                TC_index = "4'b0010"
+            m.parameters = '#("InvRTable_TC_L1D3L2D3.dat",'+"`TC_L1L2_krA,`TC_L1L2_krB,1'b1,1'b1,"+TC_index+")"
         if 'L3' in m.name:
-            m.parameters = '#("InvRTable_TC_L3D3L4D3.dat",'+"`TC_L3L4_krA,`TC_L3L4_krB,1'b1,1'b0)"
+            if 'D3L4D3' in m.name:
+                TC_index = "4'b0000"
+            if 'D3L4D4' in m.name:
+                TC_index = "4'b0001"
+            if 'D4L4D4' in m.name:
+                TC_index = "4'b0010"
+            m.parameters = '#("InvRTable_TC_L3D3L4D3.dat",'+"`TC_L3L4_krA,`TC_L3L4_krB,1'b1,1'b0,"+TC_index+")"
         if 'L5' in m.name:
-            m.parameters = '#("InvRTable_TC_L5D3L6D3.dat",'+"`TC_L5L6_krA,`TC_L5L6_krB,1'b0,1'b0)"
+            if 'D3L6D3' in m.name:
+                TC_index = "4'b0000"
+            if 'D3L6D4' in m.name:
+                TC_index = "4'b0001"
+            if 'D4L6D4' in m.name:
+                TC_index = "4'b0010"            
+            m.parameters = '#("InvRTable_TC_L5D3L6D3.dat",'+"`TC_L5L6_krA,`TC_L5L6_krB,1'b0,1'b0,"+TC_index+")"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done4_0 = True

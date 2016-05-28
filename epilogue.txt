@@ -1,42 +1,5 @@
 
- wire [31:0] reader_out;
-    
-//reader reader1(
-
-//.read_add1(TPAR_L1D3L2D3_FT_L1L2_read_add),
-//.read_add2(TPROJ_L1D3L2D3_L3_PR_L3D3_L1L2_read_add),
-//.read_add3(SL1_L3D3_VMR_L3D3_read_add),
-//.read_add4(SL1_L4D3_VMR_L4D3_read_add),
-//.read_add5(SL1_L5D3_VMR_L5D3_read_add),
-
-//.number_in1(TPAR_L1D3L2D3_FT_L1L2_number),
-//.number_in2(TPROJ_L1D3L2D3_L3_PR_L3D3_L1L2_number),
-//.number_in3(SL1_L3D3_VMR_L3D3_number),
-//.number_in4(SL1_L4D3_VMR_L4D3_number),
-//.number_in5(SL1_L5D3_VMR_L5D3_number),
-
-//.input1(TPAR_L1D3L2D3_FT_L1L2),
-//.input2(TPROJ_L1D3L2D3_L3_PR_L3D3_L1L2),
-//.input3(SL1_L3D3_VMR_L3D3),
-//.input4(SL1_L4D3_VMR_L4D3),
-//.input5(SL1_L5D3_VMR_L5D3),
-
-//.clk(clk),
-//.reset(reset),
-//.en_proc(enable_gen),
-//.io_clk(io_clk),
-//.io_sel(io_sel_R3_io_block),
-//.io_addr(io_addr[15:0]),        
-//.io_sync(io_sync),
-//.io_rd_en(io_rd_en),
-//.io_wr_en(io_wr_en),
-//.io_wr_data(io_wr_data[31:0]),
-//.io_rd_data(reader_out),
-//.io_rd_ack(reader_ack),
-//.BX(BX[2:0]),
-//.first_clk(first_clk),
-//.not_first_clk(not_first_clk)
-//);
+wire [31:0] reader_out;
 
 wire InputLink_R1Link1_io_rd_ack , InputLink_R1Link2_io_rd_ack , InputLink_R1Link3_io_rd_ack;
 wire TPars_L1L2_io_rd_ack , TPars_L3L4_io_rd_ack , TPars_L5L6_io_rd_ack;

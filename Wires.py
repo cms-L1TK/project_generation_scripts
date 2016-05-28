@@ -149,7 +149,8 @@ print "Number of processing modules : ",len(processingmodules)
 print "Number of input memories     : ",len(inputmemorymodules)
 print "Number of output memories    : ",len(outputmemorymodules)
 
-fp = open("processingmodules.dat","w")
+region = sys.argv[1].split('.')[-1]
+fp = open("processingmodules_"+region+".dat","w")
 
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
@@ -190,7 +191,7 @@ for proc in processingmodules :
     if "FT_" in proc:
         fp.write("FitTrack: "+proc+"\n")
 
-fp = open("memorymodules.dat","w")
+fp = open("memorymodules_"+region+".dat","w")
 
 inputmemcount=[]
 
@@ -258,7 +259,7 @@ for mem in inputmemorymodules :
         TPROJ_mem+=1
         found=True
     if "TPAR_" in mem:
-        fp.write("TrackletParameters: "+mem+n+" [56]\n")
+        fp.write("TrackletParameters: "+mem+n+" [68]\n")
         TPAR_mem+=1
         found=True
     if "AP_" in mem:
@@ -274,7 +275,7 @@ for mem in inputmemorymodules :
         CM_mem+=1
         found=True
     if "FM_" in mem:
-        fp.write("FullMatch: "+mem+n+" [36]\n")
+        fp.write("FullMatch: "+mem+n+" [40]\n")
         FM_mem+=1
         found=True
     if "TF_" in mem:
@@ -287,29 +288,30 @@ for mem in inputmemorymodules :
 shortmem=0
 longmem=0
 
-def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem)
+def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem):
     n18bits=0
-    if (memwidth<=18)
+    if (memwidth<=18):
         n18bits=1;
-    if (memwidth==36)
+    if (memwidth==36):
         n18bits=2;
-    if (memwidth==54)
+    if (memwidth==54):
         n18bits=3;
-    if (memwidth==122)
+    if (memwidth==122):
         n18bits=8;
-    if (n18bits==0)
+    if (n18bits==0):
         print "n18bits is zero!!! Fix code"
     print memname,"{:4.0f}".format(nmem),"{:10.0f}".format(memwidth),"{:7.0f}".format(memdepth),"{:5.0f}".format(nbx),"{:14.3f}".format(IL_mem*memwidth*memdepth*nbx*1e-3),"{:10.0f}".format(nmem*n18bits)
-    if (n12bits==2 or n12bits==4 or n12bits==6 or n12bits==8)
+    if (n12bits==2 or n12bits==4 or n12bits==6 or n12bits==8):
         longmem+=nmem*n12bits/2
-    if (n12bits==1)
+    if (n12bits==1):
         shortmem+=nmem;
-    if (n12bits==3)
+    if (n12bits==3):
         longmem+=nmem;
         shortmem+=nmem;
         
+
 print "Memory type     #mems  bits wide   depth   #BX   bits (kbits)  #18k Bram"
-printsum("Input Link     ",IL_mem,36,64,2,shortmem,longmem)
+#printsum("Input Link     ",IL_mem,36,64,2,shortmem,longmem)
 print "Input Link      ","{:4.0f}".format(IL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(IL_mem*36*64*2*1e-3),"{:10.0f}".format(IL_mem*2)
 longmem+=IL_mem
 print "Stub Layer      ","{:4.0f}".format(SL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SL_mem*36*64*2*1e-3),"{:10.0f}".format(SL_mem*2)
@@ -343,13 +345,13 @@ print "FM Match        ","{:4.0f}".format(FM_mem),"{:10.0f}".format(36),"{:7.0f}
 longmem+=FM_mem
 print "Track Fit       ","{:4.0f}".format(TF_mem),"{:10.0f}".format(122),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(TF_mem*122*64*2*1e-3),"{:10.0f}".format(TF_mem*8)
 longmem+=4*TF_mem
-
+print "Track Fit       ","{:4.0f}".format(TF_mem),"{:10.0f}".format(122),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(TF_mem*122*64*2*1e-3),"{:10.0f}".format(TF_mem*4)
 
 print "Number of 18 bit memories : ",shortmem        
 print "Number of 36 bit memories : ",longmem        
 print "Megabits required :",shortmem*0.018+longmem*0.036
 
-fp = open("wires.dat","w")
+fp = open("wires_"+region+".dat","w")
 
 tcin=[]
 prin=[]

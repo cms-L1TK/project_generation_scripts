@@ -1,17 +1,32 @@
 
  Basic instructions to run the project generation.
 
-Run the code to generate the files:
+* Reduce the project if needed:
 
-./Wires.py wires.input.D3
+   python SubProject.py D3 (or D3D4, D5D6, D3D4D5D6, etc.)
 
-(or some other input file like wires.input.fullsector)
+   This will generate an output file: wires.reduced   
 
-Prepare files for graph generation:
+
+* Create the connections:
+
+   python Wires.py wires.input.D3
+
+(or some other input file like wires.input.fullsector or wires.reduced generated from the previous step)
+
+
+* To generate verilog top level code:
+
+python generator.py mem mod
+
+
+* To plot:
+
+-- Prepare files for graph generation:
 
 ./Graph.py
 
-Make graph in root:
+-- Make graph in root:
 
 root -l
 root[0] .L DrawTrackletProject.C++

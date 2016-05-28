@@ -194,8 +194,6 @@ fp = open("memorymodules.dat","w")
 
 inputmemcount=[]
 
-shortmem=0
-longmem=0
 
 IL_mem=0
 SL_mem=0
@@ -231,22 +229,18 @@ for mem in inputmemorymodules :
     if "IL" in mem:
         fp.write("InputLink: "+mem+n+" [36]\n")
         IL_mem+=1
-        longmem+=1
         found=True
     if "SL" in mem:
         fp.write("StubsByLayer: "+mem+n+" [36]\n")
-        longmem+=1
         SL_mem+=1
         found=True
     if "SD" in mem:
         fp.write("StubsByDisk: "+mem+n+" [36]\n")
         SD_mem+=1
-        longmem+=1
         found=True
     if "AS_" in mem:
         fp.write("AllStubs: "+mem+n+" [36]\n")
         AS_mem+=1
-        longmem+=1
         found=True
     if "VMS_" in mem:
         fp.write("VMStubs: "+mem+n+" [18]\n")
@@ -254,68 +248,101 @@ for mem in inputmemorymodules :
             VMS_long_mem+=1
         else:
             VMS_short_mem+=1
-        shortmem+=1
         found=True
     if "SP_" in mem:
         fp.write("StubPairs: "+mem+n+" [12]\n")
         SP_mem+=1
-        shortmem+=1
         found=True
     if "TPROJ_" in mem:
         fp.write("TrackletProjections: "+mem+n+" [54]\n")
         TPROJ_mem+=1
-        longmem+=1
         found=True
     if "TPAR_" in mem:
         fp.write("TrackletParameters: "+mem+n+" [56]\n")
         TPAR_mem+=1
-        longmem+=1
         found=True
     if "AP_" in mem:
         fp.write("AllProj: "+mem+n+" [56]\n")
         AP_mem+=1
-        longmem+=1
         found=True
     if "VMPROJ_" in mem:
         fp.write("VMProjections: "+mem+n+" [13]\n")
         VMPROJ_mem+=1
-        shortmem+=1
         found=True
     if "CM_" in mem:
         fp.write("CandidateMatch: "+mem+n+" [12]\n")
         CM_mem+=1
-        shortmem+=1
         found=True
     if "FM_" in mem:
         fp.write("FullMatch: "+mem+n+" [36]\n")
         FM_mem+=1
-        longmem+=1
         found=True
     if "TF_" in mem:
         fp.write("TrackFit: "+mem+n+" [126]\n")
         TF_mem+=1
-        longmem+=4
         found=True
     if not found :
         print "Did not print memorymodule : ",mem
 
-print "Memory type     #mems  bits wide   depth   #BX   bits (kbits)  #18k Bram"
-print "Input Link      ","{:4.0f}".format(IL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(IL_mem*36*64*2*1e-3),"{:10.0f}".format(IL_mem*2)
-print "Stub Layer      ","{:4.0f}".format(SL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SL_mem*36*64*2*1e-3),"{:10.0f}".format(SL_mem*2)
-print "Stub Disk       ","{:4.0f}".format(SD_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SD_mem*36*64*2*1e-3),"{:10.0f}".format(SD_mem*2)
-print "All Stubs       ","{:4.0f}".format(AS_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(AS_mem*36*64*8*1e-3),"{:10.0f}".format(AS_mem*2)
-print "VM Stubs (TE)   ","{:4.0f}".format(VMS_short_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(VMS_short_mem*18*32*2*1e-3),"{:10.0f}".format(VMS_short_mem*1)
-print "VM Stubs (ME)   ","{:4.0f}".format(VMS_long_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(8),"{:14.3f}".format(VMS_long_mem*18*32*8*1e-3),"{:10.0f}".format(VMS_long_mem*1)
-print "ME LUT          ","{:4.0f}".format(2*SP_mem),"{:10.0f}".format(1),"{:7.0f}".format(16384),"{:5.0f}".format(1),"{:14.3f}".format(2*SP_mem*16384*1e-3),"{:10.0f}".format(2*SP_mem)
-print "Stub Pair       ","{:4.0f}".format(SP_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(SP_mem*18*32*2*1e-3),"{:10.0f}".format(SP_mem*1)
-print "TPROJ           ","{:4.0f}".format(TPROJ_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPROJ_mem*54*64*8*1e-3),"{:10.0f}".format(TPROJ_mem*3)
-print "TPAR            ","{:4.0f}".format(TPAR_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPAR_mem*54*64*8*1e-3),"{:10.0f}".format(TPAR_mem*3)
-print "All Projection  ","{:4.0f}".format(AP_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(AP_mem*54*64*8*1e-3),"{:10.0f}".format(AP_mem*3)
-print "VM Projection   ","{:4.0f}".format(VMPROJ_mem),"{:10.0f}".format(13),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(VMPROJ_mem*13*32*2*1e-3),"{:10.0f}".format(VMPROJ_mem*1)
-print "Cand. Mactch    ","{:4.0f}".format(CM_mem),"{:10.0f}".format(12),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(CM_mem*12*32*2*1e-3),"{:10.0f}".format(CM_mem*1)
-print "FM Match        ","{:4.0f}".format(FM_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(FM_mem*36*32*2*1e-3),"{:10.0f}".format(FM_mem*2)
-print "Track Fit       ","{:4.0f}".format(TF_mem),"{:10.0f}".format(122),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(TF_mem*122*64*2*1e-3),"{:10.0f}".format(TF_mem*4)
+shortmem=0
+longmem=0
 
+def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem)
+    n18bits=0
+    if (memwidth<=18)
+        n18bits=1;
+    if (memwidth==36)
+        n18bits=2;
+    if (memwidth==54)
+        n18bits=3;
+    if (memwidth==122)
+        n18bits=8;
+    if (n18bits==0)
+        print "n18bits is zero!!! Fix code"
+    print memname,"{:4.0f}".format(nmem),"{:10.0f}".format(memwidth),"{:7.0f}".format(memdepth),"{:5.0f}".format(nbx),"{:14.3f}".format(IL_mem*memwidth*memdepth*nbx*1e-3),"{:10.0f}".format(nmem*n18bits)
+    if (n12bits==2 or n12bits==4 or n12bits==6 or n12bits==8)
+        longmem+=nmem*n12bits/2
+    if (n12bits==1)
+        shortmem+=nmem;
+    if (n12bits==3)
+        longmem+=nmem;
+        shortmem+=nmem;
+        
+print "Memory type     #mems  bits wide   depth   #BX   bits (kbits)  #18k Bram"
+printsum("Input Link     ",IL_mem,36,64,2,shortmem,longmem)
+print "Input Link      ","{:4.0f}".format(IL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(IL_mem*36*64*2*1e-3),"{:10.0f}".format(IL_mem*2)
+longmem+=IL_mem
+print "Stub Layer      ","{:4.0f}".format(SL_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SL_mem*36*64*2*1e-3),"{:10.0f}".format(SL_mem*2)
+longmem+=SL_mem
+print "Stub Disk       ","{:4.0f}".format(SD_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(SD_mem*36*64*2*1e-3),"{:10.0f}".format(SD_mem*2)
+longmem+=SD_mem
+print "All Stubs       ","{:4.0f}".format(AS_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(AS_mem*36*64*8*1e-3),"{:10.0f}".format(AS_mem*2)
+longmem+=AS_mem
+print "VM Stubs (TE)   ","{:4.0f}".format(VMS_short_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(VMS_short_mem*18*32*2*1e-3),"{:10.0f}".format(VMS_short_mem*1)
+shortmem+=VMS_short_mem
+print "VM Stubs (ME)   ","{:4.0f}".format(VMS_long_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(8),"{:14.3f}".format(VMS_long_mem*18*32*8*1e-3),"{:10.0f}".format(VMS_long_mem*1)
+shortmem+=VMS_long_mem
+print "ME LUT          ","{:4.0f}".format(2*SP_mem),"{:10.0f}".format(1),"{:7.0f}".format(16384),"{:5.0f}".format(1),"{:14.3f}".format(2*SP_mem*16384*1e-3),"{:10.0f}".format(2*SP_mem)
+shortmem+=2*SP_mem
+print "Stub Pair       ","{:4.0f}".format(SP_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(SP_mem*18*32*2*1e-3),"{:10.0f}".format(SP_mem*1)
+shortmem+=SP_mem
+print "TPROJ           ","{:4.0f}".format(TPROJ_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPROJ_mem*54*64*8*1e-3),"{:10.0f}".format(TPROJ_mem*3)
+longmem+=TPROJ_mem
+shortmem+=TPROJ_mem
+print "TPAR            ","{:4.0f}".format(TPAR_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPAR_mem*54*64*8*1e-3),"{:10.0f}".format(TPAR_mem*3)
+longmem+=TPAR_mem
+shortmem+=TPAR_mem
+print "All Projection  ","{:4.0f}".format(AP_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(AP_mem*54*64*8*1e-3),"{:10.0f}".format(AP_mem*3)
+longmem+=AP_mem
+shortmem+=AP_mem
+print "VM Projection   ","{:4.0f}".format(VMPROJ_mem),"{:10.0f}".format(13),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(VMPROJ_mem*13*32*2*1e-3),"{:10.0f}".format(VMPROJ_mem*1)
+shortmem+=VMPROJ_mem
+print "Cand. Mactch    ","{:4.0f}".format(CM_mem),"{:10.0f}".format(12),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(CM_mem*12*32*2*1e-3),"{:10.0f}".format(CM_mem*1)
+shortmem+=CM_mem
+print "FM Match        ","{:4.0f}".format(FM_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(FM_mem*36*32*2*1e-3),"{:10.0f}".format(FM_mem*2)
+longmem+=FM_mem
+print "Track Fit       ","{:4.0f}".format(TF_mem),"{:10.0f}".format(122),"{:7.0f}".format(64),"{:5.0f}".format(2),"{:14.3f}".format(TF_mem*122*64*2*1e-3),"{:10.0f}".format(TF_mem*8)
+longmem+=4*TF_mem
 
 
 print "Number of 18 bit memories : ",shortmem        

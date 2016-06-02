@@ -49,12 +49,18 @@ Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
-p  = open('prologue.txt')
+if "D5" in region:
+  p = open('prologue_disk.txt')
+else:
+  p = open('prologue.txt')
 prologue = []
 for line in p:
     prologue.append(line)
 # Read final lines for IPbus and possible reader
-ep  = open('epilogue.txt')
+if "D5" in region:
+  ep  = open('epilogue_disk.txt')
+else:
+  ep  = open('epilogue.txt')
 epilogue = []
 for line in ep:
     epilogue.append(line)

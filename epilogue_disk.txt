@@ -1,0 +1,31 @@
+
+wire [31:0] reader_out;
+
+wire InputLink_R1Link1_io_rd_ack , InputLink_R1Link2_io_rd_ack , InputLink_R1Link3_io_rd_ack;
+wire TPars_L1L2_io_rd_ack , TPars_L3L4_io_rd_ack , TPars_L5L6_io_rd_ack;
+    // readback mux
+    // If a particular block is addressed, connect that block's signals
+    // to the 'rdbk' output. At the same time, assert 'rdbk_sel' to tell downstream muxes to
+    // use the 'rdbk' from this module as their source of data.
+    reg [31:0] io_rd_data_reg;
+    assign io_rd_data = io_rd_data_reg;
+    // Assert 'io_rd_ack' if any module is asserting its 'rd_ack'.
+    reg io_rd_ack_reg;
+    assign io_rd_ack = io_rd_ack_reg;
+    always @ (posedge io_clk) begin
+        io_rd_ack_reg <= InputLink_R1Link1_io_rd_ack | InputLink_R1Link2_io_rd_ack | InputLink_R1Link3_io_rd_ack | 
+        TPars_L1L2_io_rd_ack | TPars_L3L4_io_rd_ack | TPars_L5L6_io_rd_ack;
+    end
+    // Route the selected register to the 'rdbk' output.
+    always @(posedge io_clk) begin
+        if (InputLink_R1Link1_io_sel) io_rd_data_reg[31:0] <= InputLink_R1Link1_io_rd_data[31:0];
+        if (InputLink_R1Link2_io_sel) io_rd_data_reg[31:0] <= InputLink_R1Link2_io_rd_data[31:0];
+        if (InputLink_R1Link3_io_sel) io_rd_data_reg[31:0] <= InputLink_R1Link3_io_rd_data[31:0];
+        if (TPars_L1L2_io_sel) io_rd_data_reg[31:0] <= TPars_L1L2_io_rd_data[31:0];
+        if (TPars_L3L4_io_sel) io_rd_data_reg[31:0] <= TPars_L3L4_io_rd_data[31:0];
+        if (TPars_L5L6_io_sel) io_rd_data_reg[31:0] <= TPars_L5L6_io_rd_data[31:0];
+        //if (reader_ack)    io_rd_data_reg <= reader_out;
+     end
+
+endmodule
+

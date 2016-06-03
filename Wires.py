@@ -163,11 +163,11 @@ for proc in processingmodules :
     if "LR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
-        fp.write("DiskRouter: "+proc+"\n")
+        fp.write("LayerRouter: "+proc+"\n")
     if "VMR_" in proc:
         fp.write("VMRouter: "+proc+"\n")
     if "VMRD_" in proc:
-        fp.write("VMDRouter: "+proc+"\n")
+        fp.write("VMRouter: "+proc+"\n")
     if "TE_" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
     if "TC_L" in proc:
@@ -179,7 +179,7 @@ for proc in processingmodules :
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
-        fp.write("ProjectionDiskRouter: "+proc+"\n")
+        fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
@@ -240,7 +240,7 @@ for mem in inputmemorymodules :
         SL_mem+=1
         found=True
     if "SD" in mem:
-        fp.write("StubsByDisk: "+mem+n+" [36]\n")
+        fp.write("StubsByLayer: "+mem+n+" [36]\n")
         SD_mem+=1
         longmem+=1
         found=True

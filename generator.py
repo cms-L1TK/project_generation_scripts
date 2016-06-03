@@ -672,6 +672,11 @@ if region == 'D3':
     print 'Memories implemented=',len(memories)
     print 'Processing modules implemented=',len(modules)
     string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD3')
+if region == 'D5':
+    print 'Processing D5'
+    print 'Memories implemented=',len(memories)
+    print 'Processing modules implemented=',len(modules)
+    string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD5')
 if region == 'D3D4':
     print 'Processing D3D4'
     print 'Memories implemented =',len(memories)

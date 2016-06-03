@@ -175,6 +175,12 @@ wire [1:0] IL3_D3_start;
 wire [1:0] IL1_D4_start;
 wire [1:0] IL2_D4_start;
 wire [1:0] IL3_D4_start;
+wire [1:0] IL1_D5_start;
+wire [1:0] IL2_D5_start;
+wire [1:0] IL3_D5_start;
+wire [1:0] IL1_D6_start;
+wire [1:0] IL2_D6_start;
+wire [1:0] IL3_D6_start;
 
 assign IL1_D3_start[1] = reset;    // use the top bit of start as reset
 assign IL1_D3_start[0] = (clk_cnt == 6'd0 && en_proc);
@@ -189,5 +195,19 @@ assign IL2_D4_start[1] = reset;    // use the top bit of start as reset
 assign IL2_D4_start[0] = (clk_cnt == 6'd0 && en_proc);
 assign IL3_D4_start[1] = reset;    // use the top bit of start as reset
 assign IL3_D4_start[0] = (clk_cnt == 6'd0 && en_proc);
+
+assign IL1_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+
+assign IL1_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D6_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D6_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D6_start[0] = (clk_cnt == 6'd0 && en_proc);
 
 

@@ -40,7 +40,8 @@ if sys.argv[1]=="D3D4":
 print 'Will read wires.input.fullsector and select ',regions
  
 
-fi = open("wires.input.fullsector","r")
+#fi = open("wires.input.fullsector","r")
+fi = open("newwires.dat","r")
 
 if len(sys.argv) > 1:
     fo = open("wires."+sys.argv[1],"w")

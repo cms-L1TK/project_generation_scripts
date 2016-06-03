@@ -381,28 +381,28 @@ for m in inputmemcount :
                 fp.write(proc)
                 if "SL" in mem:
                     if "_L1" in mem:
-                        fp.write(".stuboutL1")
+                        fp.write(".stubout1")
                     if "_L2" in mem:
-                        fp.write(".stuboutL2")
+                        fp.write(".stubout2")
                     if "_L3" in mem:
-                        fp.write(".stuboutL3")
+                        fp.write(".stubout3")
                     if "_L4" in mem:
-                        fp.write(".stuboutL4")
+                        fp.write(".stubout4")
                     if "_L5" in mem:
-                        fp.write(".stuboutL5")
+                        fp.write(".stubout5")
                     if "_L6" in mem:
-                        fp.write(".stuboutL6")
+                        fp.write(".stubout6")
                 if "SD" in mem:
                     if "_F1" in mem or "_B1" in mem:
-                        fp.write(".stuboutD1")
+                        fp.write(".stubout1")
                     if "_F2" in mem or "_B2" in mem:
-                        fp.write(".stuboutD2")
+                        fp.write(".stubout2")
                     if "_F3" in mem or "_B3" in mem:
-                        fp.write(".stuboutD3")
+                        fp.write(".stubout3")
                     if "_F4" in mem or "_B4" in mem:
-                        fp.write(".stuboutD4")
+                        fp.write(".stubout4")
                     if "_F5" in mem or "_B5" in mem:
-                        fp.write(".stuboutD5")
+                        fp.write(".stubout5")
                 if "VMS_" in mem:
                     fp.write(".vmstubout"+mem[8:14]+n+" ")
                 if "AS_" in mem:

@@ -497,6 +497,11 @@ for x in modules:
             m.parameters = "#(1'b0,1'b0)"
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,1'b0)"
+        elif 'PRD' in m.name:
+            if 'F1' in m.name or 'F3' in m.name or 'F5' in m.name:
+                m.parameters = "#(1'b1,1'b0,1'b0)"
+            if 'F2' in m.name or 'F4' in m.name:
+                m.parameters = "#(1'b0,1'b0,1'b0)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done6_0 = True

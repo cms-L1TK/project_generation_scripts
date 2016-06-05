@@ -163,11 +163,11 @@ for proc in processingmodules :
     if "LR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
-        fp.write("DiskRouter: "+proc+"\n")
+        fp.write("LayerRouter: "+proc+"\n")
     if "VMR_" in proc:
         fp.write("VMRouter: "+proc+"\n")
     if "VMRD_" in proc:
-        fp.write("VMDRouter: "+proc+"\n")
+        fp.write("VMRouter: "+proc+"\n")
     if "TE_" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
     if "TC_L" in proc:
@@ -179,7 +179,7 @@ for proc in processingmodules :
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
-        fp.write("ProjectionDiskRouter: "+proc+"\n")
+        fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
@@ -236,7 +236,7 @@ for mem in inputmemorymodules :
         SL_mem+=1
         found=True
     if "SD" in mem:
-        fp.write("StubsByDisk: "+mem+n+" [36]\n")
+        fp.write("StubsByLayer: "+mem+n+" [36]\n")
         SD_mem+=1
         found=True
     if "AS_" in mem:
@@ -381,28 +381,28 @@ for m in inputmemcount :
                 fp.write(proc)
                 if "SL" in mem:
                     if "_L1" in mem:
-                        fp.write(".stuboutL1")
+                        fp.write(".stubout1")
                     if "_L2" in mem:
-                        fp.write(".stuboutL2")
+                        fp.write(".stubout2")
                     if "_L3" in mem:
-                        fp.write(".stuboutL3")
+                        fp.write(".stubout3")
                     if "_L4" in mem:
-                        fp.write(".stuboutL4")
+                        fp.write(".stubout4")
                     if "_L5" in mem:
-                        fp.write(".stuboutL5")
+                        fp.write(".stubout5")
                     if "_L6" in mem:
-                        fp.write(".stuboutL6")
+                        fp.write(".stubout6")
                 if "SD" in mem:
                     if "_F1" in mem or "_B1" in mem:
-                        fp.write(".stuboutD1")
+                        fp.write(".stubout1")
                     if "_F2" in mem or "_B2" in mem:
-                        fp.write(".stuboutD2")
+                        fp.write(".stubout2")
                     if "_F3" in mem or "_B3" in mem:
-                        fp.write(".stuboutD3")
+                        fp.write(".stubout3")
                     if "_F4" in mem or "_B4" in mem:
-                        fp.write(".stuboutD4")
+                        fp.write(".stubout4")
                     if "_F5" in mem or "_B5" in mem:
-                        fp.write(".stuboutD5")
+                        fp.write(".stubout5")
                 if "VMS_" in mem:
                     fp.write(".vmstubout"+mem[8:14]+n+" ")
                 if "AS_" in mem:

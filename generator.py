@@ -503,6 +503,11 @@ for x in modules:
             m.parameters = "#(1'b0,1'b0)"
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,1'b0)"
+        elif 'PRD' in m.name:
+            if 'F1' in m.name or 'F3' in m.name or 'F5' in m.name:
+                m.parameters = "#(1'b1,1'b0,1'b0)"
+            if 'F2' in m.name or 'F4' in m.name:
+                m.parameters = "#(1'b0,1'b0,1'b0)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done6_0 = True
@@ -678,6 +683,11 @@ if region == 'D3':
     print 'Memories implemented=',len(memories)
     print 'Processing modules implemented=',len(modules)
     string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD3')
+if region == 'D5':
+    print 'Processing D5'
+    print 'Memories implemented=',len(memories)
+    print 'Processing modules implemented=',len(modules)
+    string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD5')
 if region == 'D3D4':
     print 'Processing D3D4'
     print 'Memories implemented =',len(memories)

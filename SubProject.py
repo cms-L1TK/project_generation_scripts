@@ -32,6 +32,10 @@ if sys.argv[1]=="D4":
     regions = ["D4"] 
     vregions = ["D1","D2","D3","D5","D6","D7","D8","_F1","_F2","_F3","_F4","_F5"]
 
+if sys.argv[1]=="D5":
+    regions = ["D5"] 
+    vregions = ["D1","D2","D3","D4","D6","D7","D8","L1L2","F1L","_L1","_L2","_L3","_L4","_L5","_L6","_B1","_B2"]
+
 if sys.argv[1]=="D3D4":
     regions = ["D3","D4"] 
     vregions = ["D1","D2","D5","D6","D7","D8","_F1","_F2","_F3","_F4","_F5","_B1","_B2","_B3","_B4","_B5"]
@@ -40,7 +44,8 @@ if sys.argv[1]=="D3D4":
 print 'Will read wires.input.fullsector and select ',regions
  
 
-fi = open("wires.input.fullsector","r")
+#fi = open("wires.input.fullsector","r")
+fi = open("newwires.dat","r")
 
 if len(sys.argv) > 1:
     fo = open("wires."+sys.argv[1],"w")

@@ -4,11 +4,11 @@ import math
 import sys
 
 if (len(sys.argv) != 2 ) :
-    print "Usage: Wires.py wires.input"
-    exit(1)
+print "Usage: Wires.py wires.input"
+exit(1)
 
 print 'Will read input file', sys.argv[1]
- 
+
 #Build the geometry for layers
 
 inputmemorymodules = []
@@ -16,110 +16,110 @@ outputmemorymodules = []
 processingmodules = []
 
 def matchin(proc,mem):
-    if "FT_L1L2" in proc:
-        if "L3" in mem[8:10]:
-            return "1"
-        if "L4" in mem[8:10]:
-            return "2"
-        if "L5" in mem[8:10]:
-            return "3"
-        if "L6" in mem[8:10]:
-            return "4"
-        if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
-        if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
-        if "F3" in mem[8:10] or "B3" in mem[8:10]:
-            return "2"
-        if "F4" in mem[8:10] or "B4" in mem[8:10]:
-            return "1"
-    if "FT_L3L4" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "L2" in mem[8:10]:
-            return "2"
-        if "L5" in mem[8:10]:
-            return "3"
-        if "L6" in mem[8:10]:
-            return "4"
-        if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
-        if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
-    if "FT_L5L6" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "L2" in mem[8:10]:
-            return "2"
-        if "L3" in mem[8:10]:
-            return "3"
-        if "L4" in mem[8:10]:
-            return "4"
-    if "FT_F1F2" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "F3" in mem[8:10]:
-            return "2"
-        if "F4" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_B1B2" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "B3" in mem[8:10]:
-            return "2"
-        if "B4" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_F3F4" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "F1" in mem[8:10]:
-            return "2"
-        if "F2" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_B3B4" in proc:
-        if "L1" in mem[8:10]:
-            return "1"
-        if "B1" in mem[8:10]:
-            return "2"
-        if "B2" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_F1L" in proc:
-        if "F2" in mem[8:10]:
-            return "1"
-        if "F3" in mem[8:10]:
-            return "2"
-        if "F4" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
-    if "FT_B1L" in proc:
-        if "B2" in mem[8:10]:
-            return "1"
-        if "B3" in mem[8:10]:
-            return "2"
-        if "B4" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
-            
-    print "Unknown in matchin : ",proc,mem,mem[8:10]
-    return "0"
+if "FT_L1L2" in proc:
+if "L3" in mem[8:10]:
+    return "1"
+if "L4" in mem[8:10]:
+    return "2"
+if "L5" in mem[8:10]:
+    return "3"
+if "L6" in mem[8:10]:
+    return "4"
+if "F1" in mem[8:10] or "B1" in mem[8:10]:
+    return "4"
+if "F2" in mem[8:10] or "B2" in mem[8:10]:
+    return "3"
+if "F3" in mem[8:10] or "B3" in mem[8:10]:
+    return "2"
+if "F4" in mem[8:10] or "B4" in mem[8:10]:
+    return "1"
+if "FT_L3L4" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "L2" in mem[8:10]:
+    return "2"
+if "L5" in mem[8:10]:
+    return "3"
+if "L6" in mem[8:10]:
+    return "4"
+if "F1" in mem[8:10] or "B1" in mem[8:10]:
+    return "4"
+if "F2" in mem[8:10] or "B2" in mem[8:10]:
+    return "3"
+if "FT_L5L6" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "L2" in mem[8:10]:
+    return "2"
+if "L3" in mem[8:10]:
+    return "3"
+if "L4" in mem[8:10]:
+    return "4"
+if "FT_F1F2" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "F3" in mem[8:10]:
+    return "2"
+if "F4" in mem[8:10]:
+    return "3"
+if "F5" in mem[8:10]:
+    return "4"
+if "L2" in mem[8:10]:
+    return "4"
+if "FT_B1B2" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "B3" in mem[8:10]:
+    return "2"
+if "B4" in mem[8:10]:
+    return "3"
+if "B5" in mem[8:10]:
+    return "4"
+if "L2" in mem[8:10]:
+    return "4"
+if "FT_F3F4" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "F1" in mem[8:10]:
+    return "2"
+if "F2" in mem[8:10]:
+    return "3"
+if "F5" in mem[8:10]:
+    return "4"
+if "L2" in mem[8:10]:
+    return "4"
+if "FT_B3B4" in proc:
+if "L1" in mem[8:10]:
+    return "1"
+if "B1" in mem[8:10]:
+    return "2"
+if "B2" in mem[8:10]:
+    return "3"
+if "B5" in mem[8:10]:
+    return "4"
+if "L2" in mem[8:10]:
+    return "4"
+if "FT_F1L" in proc:
+if "F2" in mem[8:10]:
+    return "1"
+if "F3" in mem[8:10]:
+    return "2"
+if "F4" in mem[8:10]:
+    return "3"
+if "F5" in mem[8:10]:
+    return "4"
+if "FT_B1L" in proc:
+if "B2" in mem[8:10]:
+    return "1"
+if "B3" in mem[8:10]:
+    return "2"
+if "B4" in mem[8:10]:
+    return "3"
+if "B5" in mem[8:10]:
+    return "4"
+    
+print "Unknown in matchin : ",proc,mem,mem[8:10]
+return "0"
 
 
 
@@ -130,21 +130,21 @@ lines = []
 fp = open("processingmodules_inputs.dat","w")
 
 for line in fi:
-    if not ">" in line:
-        continue
-    substr = line.split(">")
-    lines.append(line)
-    if len(substr) != 3 :
-        print substr
-    inputmems = substr[0].split() 
-    processing = substr[1]
-    outputmems = substr[2].split()
-    fp.write(processing+" has "+str(len(inputmems))+" inputs\n")
-    for mems in inputmems :
-        inputmemorymodules.append(mems)
-    for mems in outputmems :
-        outputmemorymodules.append(mems)
-    processingmodules.append(processing)
+if not ">" in line:
+continue
+substr = line.split(">")
+lines.append(line)
+if len(substr) != 3 :
+print substr
+inputmems = substr[0].split() 
+processing = substr[1]
+outputmems = substr[2].split()
+fp.write(processing+" has "+str(len(inputmems))+" inputs\n")
+for mems in inputmems :
+inputmemorymodules.append(mems)
+for mems in outputmems :
+outputmemorymodules.append(mems)
+processingmodules.append(processing)
 print "Number of processing modules : ",len(processingmodules)
 print "Number of input memories     : ",len(inputmemorymodules)
 print "Number of output memories    : ",len(outputmemorymodules)
@@ -153,17 +153,17 @@ region = sys.argv[1].split('.')[-1]
 fp = open("processingmodules_"+region+".dat","w")
 
 for mem in outputmemorymodules :
-    if not mem in inputmemorymodules :
-        print mem," is not in inputmemorymodules"
-        if "TF_" in mem:
-            inputmemorymodules.append(mem)
+if not mem in inputmemorymodules :
+print mem," is not in inputmemorymodules"
+if "TF_" in mem:
+    inputmemorymodules.append(mem)
 
 for proc in processingmodules :
-    proc=proc.strip()
+proc=proc.strip()
     if "LR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
-        fp.write("DiskRouter: "+proc+"\n")
+        fp.write("LayerRouter: "+proc+"\n")
     if "VMR_" in proc:
         fp.write("VMRouter: "+proc+"\n")
     if "VMRD_" in proc:
@@ -183,7 +183,7 @@ for proc in processingmodules :
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
-        fp.write("ProjectionDiskRouter: "+proc+"\n")
+        fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
@@ -244,7 +244,7 @@ for mem in inputmemorymodules :
         SL_mem+=1
         found=True
     if "SD" in mem:
-        fp.write("StubsByDisk: "+mem+n+" [36]\n")
+        fp.write("StubsByLayer: "+mem+n+" [36]\n")
         SD_mem+=1
         found=True
     if "AS_" in mem:
@@ -389,28 +389,28 @@ for m in inputmemcount :
                 fp.write(proc)
                 if "SL" in mem:
                     if "_L1" in mem:
-                        fp.write(".stuboutL1")
+                        fp.write(".stubout1")
                     if "_L2" in mem:
-                        fp.write(".stuboutL2")
+                        fp.write(".stubout2")
                     if "_L3" in mem:
-                        fp.write(".stuboutL3")
+                        fp.write(".stubout3")
                     if "_L4" in mem:
-                        fp.write(".stuboutL4")
+                        fp.write(".stubout4")
                     if "_L5" in mem:
-                        fp.write(".stuboutL5")
+                        fp.write(".stubout5")
                     if "_L6" in mem:
-                        fp.write(".stuboutL6")
+                        fp.write(".stubout6")
                 if "SD" in mem:
                     if "_F1" in mem or "_B1" in mem:
-                        fp.write(".stuboutD1")
+                        fp.write(".stubout1")
                     if "_F2" in mem or "_B2" in mem:
-                        fp.write(".stuboutD2")
+                        fp.write(".stubout2")
                     if "_F3" in mem or "_B3" in mem:
-                        fp.write(".stuboutD3")
+                        fp.write(".stubout3")
                     if "_F4" in mem or "_B4" in mem:
-                        fp.write(".stuboutD4")
+                        fp.write(".stubout4")
                     if "_F5" in mem or "_B5" in mem:
-                        fp.write(".stuboutD5")
+                        fp.write(".stubout5")
                 if "VMS_" in mem:
                     fp.write(".vmstubout"+mem[8:14]+n+" ")
                 if "AS_" in mem:

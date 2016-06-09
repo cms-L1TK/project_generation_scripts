@@ -49,10 +49,11 @@ Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
-if "D5" in region:
-  p = open('prologue_disk.txt')
-else:
-  p = open('prologue.txt')
+p = open('prologue.txt')
+#if "D5" in region:
+#  p = open('prologue_disk.txt')
+#else:
+#  p = open('prologue.txt')
 prologue = []
 for line in p:
     prologue.append(line)
@@ -386,6 +387,13 @@ for x in modules:
         m.outputs = m.outputs + valids
         m.out_names = m.out_names + valids2
     if m.module == 'TrackletEngine':
+        m.out_names.append('valid_data')
+        m.outputs.append(m.outputs[0]+'_wr_en')
+        m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.done = m.name+'_start'
+        seen_done3_0 = True
+        m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
+    if m.module == 'DiskTrackletEngine':
         m.out_names.append('valid_data')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'

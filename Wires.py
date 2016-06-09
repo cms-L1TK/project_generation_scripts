@@ -306,7 +306,7 @@ print "Stub Disk       ","{:4.0f}".format(SD_mem),"{:10.0f}".format(36),"{:7.0f}
 print "All Stubs       ","{:4.0f}".format(AS_mem),"{:10.0f}".format(36),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(AS_mem*36*64*8*1e-3),"{:10.0f}".format(AS_mem*2)
 print "VM Stubs (TE)   ","{:4.0f}".format(VMS_short_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(VMS_short_mem*18*32*2*1e-3),"{:10.0f}".format(VMS_short_mem*1)
 print "VM Stubs (ME)   ","{:4.0f}".format(VMS_long_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(8),"{:14.3f}".format(VMS_long_mem*18*32*8*1e-3),"{:10.0f}".format(VMS_long_mem*1)
-print "ME LUT          ","{:4.0f}".format(2*SP_mem),"{:10.0f}".format(1),"{:7.0f}".format(16384),"{:5.0f}".format(1),"{:14.3f}".format(2*SP_mem*16384*1e-3),"{:10.0f}".format(2*SP_mem)
+print "TE LUT          ","{:4.0f}".format(2*SP_mem),"{:10.0f}".format(1),"{:7.0f}".format(16384),"{:5.0f}".format(1),"{:14.3f}".format(2*SP_mem*16384*1e-3),"{:10.0f}".format(2*SP_mem)
 print "Stub Pair       ","{:4.0f}".format(SP_mem),"{:10.0f}".format(18),"{:7.0f}".format(32),"{:5.0f}".format(2),"{:14.3f}".format(SP_mem*18*32*2*1e-3),"{:10.0f}".format(SP_mem*1)
 print "TPROJ           ","{:4.0f}".format(TPROJ_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPROJ_mem*54*64*8*1e-3),"{:10.0f}".format(TPROJ_mem*3)
 print "TPAR            ","{:4.0f}".format(TPAR_mem),"{:10.0f}".format(54),"{:7.0f}".format(64),"{:5.0f}".format(8),"{:14.3f}".format(TPAR_mem*54*64*8*1e-3),"{:10.0f}".format(TPAR_mem*3)

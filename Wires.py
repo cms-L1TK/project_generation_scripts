@@ -163,7 +163,7 @@ for proc in processingmodules :
     if "LR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
-        fp.write("LayerRouter: "+proc+"\n")
+        fp.write("DiskRouter: "+proc+"\n")
     if "VMR_" in proc:
         fp.write("VMRouter: "+proc+"\n")
     if "VMRD_" in proc:

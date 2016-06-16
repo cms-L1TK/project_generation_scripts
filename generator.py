@@ -363,16 +363,20 @@ for x in modules:
                 enables_2.append(o+'_wr_en')
         m.out_names = m.out_names + enables
         m.outputs = m.outputs + enables_2
-        if 'L1' in m.name or 'L3' in m.name or 'L5' in m.name: # CHANGE THIS
-            if 'L1' in m.name or 'L3' in m.name:
-                m.parameters = "#(1'b1,1'b1)"
-            else:
-                m.parameters = "#(1'b0,1'b1)"
-        else:
-            if 'L2' in m.name:
-                m.parameters = "#(1'b1,1'b0)"
-            else:
-                m.parameters = "#(1'b0,1'b0)"
+	if 'F2' in m.name or 'F4' in m.name or 'B2' in m.name or 'B4' in m.name:
+	    m.parameters = "#(1'b1,1'b0)"
+	else:
+	    m.parameters = "#(1'b1,1'b1)"
+        #if 'L1' in m.name or 'L3' in m.name or 'L5' in m.name: # CHANGE THIS
+        #    if 'L1' in m.name or 'L3' in m.name:
+        #        m.parameters = "#(1'b1,1'b1)"
+        #    else:
+        #        m.parameters = "#(1'b0,1'b1)"
+        #else:
+        #    if 'L2' in m.name:
+        #        m.parameters = "#(1'b1,1'b0)"
+        #    else:
+        #        m.parameters = "#(1'b0,1'b0)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done2_0 = True
@@ -457,14 +461,15 @@ for x in modules:
         for o in m.out_names:
             ons.append('valid_'+o)
         m.out_names = m.out_names + ons    
-        if not seen_done_proj:    
-            m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        #if not seen_done_proj:    
+        m.out_names = m.out_names + ['done_proj'] # Done signal for projections
         seen_done_proj = True
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
-        m.outputs = m.outputs+['done_proj4_0']
+        m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
+        #m.outputs = m.outputs+['done_proj4_0']
         m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'

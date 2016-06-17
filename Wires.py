@@ -155,7 +155,7 @@ fp = open("processingmodules_"+region+".dat","w")
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
         print mem," is not in inputmemorymodules"
-        if "TF_" in mem:
+        if "CT_" in mem:
             inputmemorymodules.append(mem)
 
 for proc in processingmodules :
@@ -190,6 +190,8 @@ for proc in processingmodules :
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:
         fp.write("FitTrack: "+proc+"\n")
+    if "PD" in proc:
+        fp.write("PurgeDuplicate: "+proc+"\n")
 
 fp = open("memorymodules_"+region+".dat","w")
 
@@ -210,6 +212,7 @@ VMPROJ_mem=0
 CM_mem=0
 FM_mem=0
 TF_mem=0
+CT_mem=0
 
 for mem in inputmemorymodules :
     count=0
@@ -226,6 +229,7 @@ for mem in inputmemorymodules :
     if inputmemorymodules.count(mem) == 1 :
         if "AS_" in mem or "VMS_" in mem:
             n="n1"
+    print mem
     found=False
     if "IL" in mem:
         fp.write("InputLink: "+mem+n+" [36]\n")
@@ -281,6 +285,10 @@ for mem in inputmemorymodules :
     if "TF_" in mem:
         fp.write("TrackFit: "+mem+n+" [126]\n")
         TF_mem+=1
+        found=True
+    if "CT_" in mem:
+        fp.write("CleanTrack: "+mem+n+" [126]\n")
+        CT_mem+=1
         found=True
     if not found :
         print "Did not print memorymodule : ",mem
@@ -359,7 +367,9 @@ cmin=[]
 fmin=[]
 fmin2=[]
 ftin=[]
+tfin=[]
 mtout=[]
+ctout=[]
 
 for m in inputmemcount :
     mem=m[0]
@@ -444,6 +454,16 @@ for m in inputmemcount :
                             fp.write(".matchout"+str(ii)+" ")
                 if "TF_" in mem:
                     fp.write(".trackout")
+                if "CT_" in mem:
+                    ii=0
+                    for f in ctout :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii=f[1]
+                    if ii==0:
+                        ctout.append([proc,1])
+                        ii=1
+                    fp.write(".trackout"+str(ii)+" ")
                 if "TPAR_" in mem:
                     fp.write(".trackpar")
         fp.write(" output=> ")
@@ -527,6 +547,16 @@ for m in inputmemcount :
                         cmin.append([proc,1])
                         ii=1
                     fp.write(".match"+str(ii)+"in")
+                if "TF_" in mem:
+                    ii=0
+                    for f in tfin :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii=f[1]
+                    if ii==0:
+                        tfin.append([proc,1])
+                        ii=1
+                    fp.write(".trackin"+str(ii)+" ")
                 if "FM_" in mem:
                     if "MT_" in proc :
                         ii=0

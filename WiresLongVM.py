@@ -159,7 +159,7 @@ def matchin(proc,mem):
             return "2"
         if "D3" in mem[8:10]:
             return "3"
-        if "D4" in mem[8:10]:
+        if "D4" in mem[8:10] or "D1" in mem[8:10]:
             return "4"
     if "FT_B1L" in proc:
         if "B2" in mem[8:10]:

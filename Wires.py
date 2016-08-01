@@ -163,33 +163,27 @@ for proc in processingmodules :
     if "LR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
-        fp.write("DiskRouter: "+proc+"\n")
-    if "VMR_" in proc:
+        fp.write("LayerRouter: "+proc+"\n")
+    if "VMR" in proc:
         fp.write("VMRouter: "+proc+"\n")
-    if "VMRD_" in proc:
-        fp.write("VMDRouter: "+proc+"\n")
-    if "TE_L" in proc:
+    if "TE" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
-    if "TE_F" in proc:
-        fp.write("DiskTrackletEngine: "+proc+"\n")
-    if "TE_B" in proc:
-        fp.write("DiskTrackletEngine: "+proc+"\n")
     if "TC_L" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
     if "TC_F" in proc:
         fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "TC_B" in proc:
         fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "PR_" in proc:
-        fp.write("ProjectionRouter: "+proc+"\n")
-    if "PRD_" in proc:
+    if "PR" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
         fp.write("MatchEngine: "+proc+"\n")
-    if "MC_" in proc:
-        fp.write("MatchCalculator: "+proc+"\n")
+    if "MC_F" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
+    if "MC_B" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
     if "MT_" in proc:
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:

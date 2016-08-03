@@ -173,7 +173,7 @@ for proc in processingmodules :
     if "TC_L" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
     if "TC_F" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
+        fp.write("TrackletCalculator: "+proc+"\n")
     if "TC_B" in proc:
         fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "PR_" in proc:
@@ -229,7 +229,6 @@ for mem in inputmemorymodules :
     if inputmemorymodules.count(mem) == 1 :
         if "AS_" in mem or "VMS_" in mem:
             n="n1"
-    print mem
     found=False
     if "IL" in mem:
         fp.write("InputLink: "+mem+n+" [36]\n")
@@ -556,7 +555,7 @@ for m in inputmemcount :
                     if ii==0:
                         tfin.append([proc,1])
                         ii=1
-                    fp.write(".trackin"+str(ii)+" ")
+                    fp.write(".trackin"+str(ii))
                 if "FM_" in mem:
                     if "MT_" in proc :
                         ii=0
@@ -578,7 +577,7 @@ for m in inputmemcount :
                         if ii==0:
                             fmin2.append([proc+num,1])
                             ii=1
-                        fp.write(".fullmatch"+num+"in"+str(ii))
+                        fp.write(".fullmatch"+str(ii)+"in"+num)
                 if "TPAR_" in mem:
                     ii=0
                     for f in ftin :

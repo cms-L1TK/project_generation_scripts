@@ -4,7 +4,7 @@ import math
 import sys
 
 if (len(sys.argv) != 2 ) :
-    print "Usage: SubProject.py wires.D3|D4|D3D4|D5D6"
+    print "Usage: SubProject.py wires.D3|D4|D3D4|D5|D5D6"
     exit(1)
 
 print 'Will process', sys.argv[1]

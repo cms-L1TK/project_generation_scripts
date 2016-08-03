@@ -49,12 +49,19 @@ Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
-p  = open('prologue.txt')
+p = open('prologue.txt')
+#if "D5" in region:
+#  p = open('prologue_disk.txt')
+#else:
+#  p = open('prologue.txt')
 prologue = []
 for line in p:
     prologue.append(line)
 # Read final lines for IPbus and possible reader
-ep  = open('epilogue.txt')
+if "D5" in region:
+  ep  = open('epilogue_disk.txt')
+else:
+  ep  = open('epilogue.txt')
 epilogue = []
 for line in ep:
     epilogue.append(line)
@@ -292,17 +299,6 @@ for x in modules:
         #print out_names
         m.out_names = m.out_names + out_names
         m.outputs = m.outputs + outputs
-    if m.module == 'DiskRouter':
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.done = m.name+'_start'
-        seen_done1_0 = True
-        out_names = []
-        outputs = []
-        for cnt,out in enumerate(m.outputs):
-            out_names.append(str('wr_en%d' %(cnt+1))) # Write enable for every disk
-            outputs.append(out+'_wr_en')
-        m.out_names = m.out_names + out_names
-        m.outputs = m.outputs + outputs
     if m.module == 'VMRouter':
         enables = []
         enables_2 = []
@@ -346,37 +342,11 @@ for x in modules:
                 vs = vs + 1
                 valids.append(o+'_wr_en')
                 valids2.append('valid_data%d'%vs)
-        m.outputs = m.outputs + valids
-        m.out_names = m.out_names + valids2
-    if m.module == 'VMDRouter': # VM router for the disks. Make sure the parameters are set correctly
-        enables = []
-        enables_2 = []
-        for o in m.out_names:
-            if 'vmstubout' in o:
-                enables.append(o+'_wr_en')
-        for o in m.outputs:
-            if 'VMRD' in o and 'VMS' in o:  # Output going to VMStub memory
-                enables_2.append(o+'_wr_en')
-        m.out_names = m.out_names + enables
-        m.outputs = m.outputs + enables_2
-        if 'L1' in m.name or 'L3' in m.name or 'L5' in m.name: # CHANGE THIS
-            if 'L1' in m.name or 'L3' in m.name:
-                m.parameters = "#(1'b1,1'b1)"
-            else:
-                m.parameters = "#(1'b0,1'b1)"
-        else:
-            if 'L2' in m.name:
-                m.parameters = "#(1'b1,1'b0)"
-            else:
-                m.parameters = "#(1'b0,1'b0)"
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.done = m.name+'_start'
-        seen_done2_0 = True
-        vs = 0
-        valids = []
-        valids2 = []
-        for o in m.outputs:
-            if 'VMR_F' in o and '_AS_F' in o: # Output going to AllStub memory
+            elif 'VMRD_F' in o and '_AS_F' in o: # Output going to AllStub memory
+                vs = vs + 1
+                valids.append(o+'_wr_en')
+                valids2.append('valid_data%d'%vs)
+            elif 'VMRD_B' in o and '_AS_B' in o: # Output going to AllStub memory
                 vs = vs + 1
                 valids.append(o+'_wr_en')
                 valids2.append('valid_data%d'%vs)
@@ -388,9 +358,11 @@ for x in modules:
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done3_0 = True
-        m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
-        if 'TE_F' in m.name:
-            m.parameters = m.parameters.replace(')',",1'b0)")
+        if 'TE_F' in m.name or 'TE_B' in m.name:
+            m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt",'"1'b0"')'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
+        else:
+            m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
+
     if m.module == 'TrackletCalculator':
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'stubin' in n:
@@ -448,15 +420,25 @@ for x in modules:
         for o in m.out_names:
             ons.append('valid_'+o)
         m.out_names = m.out_names + ons    
-        if not seen_done_proj:    
-            m.out_names = m.out_names + ['done_proj'] # Done signal for projections
+        #if not seen_done_proj:    
+        m.out_names = m.out_names + ['done_proj'] # Done signal for projections
         seen_done_proj = True
         outs = []
         for o in m.outputs:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
-        m.outputs = m.outputs+['done_proj4_0']
-        m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
+        m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
+        #m.outputs = m.outputs+['done_proj4_0']
+        diskTC_index = ''
+        if 'F1' in m.name:
+            if 'D5F2D5' in m.name:
+                diskTC_index = "4'b0100" 
+                m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+")"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
+        if 'F3' in m.name:
+            if 'D5F4D5' in m.name:
+                diskTC_index = "4'b0100"
+                m.parameters = '#(0,"InvRTable_TC_F3D5F4D5.dat","InvTTable_TC_F3D5F4D5.dat",'+diskTC_index+")"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
+        #m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done4_0 = True
@@ -503,34 +485,22 @@ for x in modules:
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,1'b0)"
         elif 'PRD' in m.name:
-            if 'F1' in m.name or 'F3' in m.name or 'F5' in m.name:
+            if 'PRD_F1' in m.name or 'PRD_F3' in m.name or 'PRD_F5' in m.name:
                 m.parameters = "#(1'b1,1'b0,1'b0)"
-            if 'F2' in m.name or 'F4' in m.name:
+            if 'PRD_F2' in m.name or 'PRD_F4' in m.name:
                 m.parameters = "#(1'b0,1'b0,1'b0)"
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.done = m.name+'_start'
-        seen_done6_0 = True
-    if m.module == 'ProjectionDiskRouter': # Disk Router. CHECK PARAMETERS
-        m.outputs.append(m.outputs[-1]+'_wr_en') # Write enable signal to AllProjection memory
-        m.out_names.append('valid_data')
-        m.outputs = m.outputs + [x+'_wr_en' for x in m.outputs[:-2]] # Write enable to VMProjection memory
-        m.out_names = m.out_names + [x+'_wr_en' for x in m.out_names[:-2]]
-        if 'PR_L1' in m.name or 'PR_L3' in m.name:
-            m.parameters = "#(1'b1,1'b1)"
-        elif 'PR_L2' in m.name:
-            m.parameters = "#(1'b0,1'b1)"
-        elif 'PR_L4' in m.name or 'PR_L6' in m.name:
-            m.parameters = "#(1'b0,1'b0)"
-        elif 'PR_L5' in m.name:
-            m.parameters = "#(1'b1,1'b0)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done6_0 = True
     if m.module == 'MatchEngine':
         m.outputs.append(m.outputs[0]+'_wr_en') 
         m.out_names.append('valid_data')
-        m.start = m.inputs[1].replace(m.name,'')+'start'
-        m.done = m.name+'_start'
+	if 'VMPROJ' in m.inputs[1]: #default
+          m.start = m.inputs[1].replace(m.name,'')+'start'
+          m.done = m.name+'_start'
+	elif 'VMPROJ' in m.inputs[0]: #for F5 or B5 VMS is m.inputs[1] b/c these do not have TrackletEngines which change order of wires
+          m.start = m.inputs[0].replace(m.name,'')+'start'
+          m.done = m.name+'_start'
         seen_done7_0 = True
     if m.module == 'MatchCalculator':
         for i,n in enumerate(m.in_names): # Count the inputs
@@ -594,6 +564,32 @@ for x in modules:
             m.parameters = "#(3'b"+dtcregion+",1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L3,`MC_z_L5L6_L3,`MC_zfactor_INNER)"
         if 'MC_L5L6_L4' in m.name:
             m.parameters = "#(3'b"+dtcregion+",1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L5L6_L4,`MC_z_L5L6_L4,`MC_zfactor_OUTER)"
+        m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.done = m.name+'_start'
+        seen_done8_0 = True
+    if m.module == 'DiskMatchCalculator':
+	m.parameters = '#("rDSS_LUT.dat")'
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'allprojin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AP_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
+
+        for i,n in enumerate(m.in_names): # Count the inputs
+            if 'allstubin' in n:
+                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
+        for i,n in enumerate(m.inputs): # Count the inputs
+            if 'AS_' in n:
+                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
+        m.outputs.append(m.outputs[0]+'_wr_en') # Write enable for local and neighbor matches
+        m.outputs.append(m.outputs[1]+'_wr_en')
+        m.outputs.append(m.outputs[2]+'_wr_en')
+        m.out_names.append('valid_matchminus')
+        m.out_names.append('valid_matchplus')
+        m.out_names.append('valid_match')
+        #if 'MC_L1L2_L3' in m.name: # Parameter for constants # Will be moved to header file
+        #    m.parameters = "#(1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L1L2_L3,`MC_z_L1L2_L3,`MC_zfactor_INNER)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done8_0 = True

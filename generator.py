@@ -634,6 +634,12 @@ for x in modules:
             m.parameters = '#("L3L4")'
         elif 'L5L6' in m.name:
             m.parameters = '#("L5L6")'
+        elif 'F1L' in m.name:
+            m.parameters = '#("F1L")'
+        elif 'F1F2' in m.name or 'B1B2' in m.name:
+            m.parameters = '#("F1F2")'
+        elif 'F3F4' in m.name or 'B3B4' in m.name:
+            m.parameters = '#("F3F4")'
                 
         m.out_names.append('valid_fit')
         m.outputs.append(m.outputs[0]+'_wr_en')

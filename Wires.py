@@ -26,13 +26,13 @@ def matchin(proc,mem):
         if "L6" in mem[8:10]:
             return "4"
         if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
+            return "5"
         if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
+            return "6"
         if "F3" in mem[8:10] or "B3" in mem[8:10]:
-            return "2"
+            return "7"
         if "F4" in mem[8:10] or "B4" in mem[8:10]:
-            return "1"
+            return "8"
     if "FT_L3L4" in proc:
         if "L1" in mem[8:10]:
             return "1"
@@ -43,9 +43,9 @@ def matchin(proc,mem):
         if "L6" in mem[8:10]:
             return "4"
         if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
+            return "5"
         if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
+            return "6"
     if "FT_L5L6" in proc:
         if "L1" in mem[8:10]:
             return "1"
@@ -80,25 +80,25 @@ def matchin(proc,mem):
     if "FT_F3F4" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "F1" in mem[8:10]:
-            return "2"
-        if "F2" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "F1" in mem[8:10]:
+            return "3"
+        if "F2" in mem[8:10]:
             return "4"
+        if "F5" in mem[8:10]:
+            return "5"
     if "FT_B3B4" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "B1" in mem[8:10]:
-            return "2"
-        if "B2" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "B1" in mem[8:10]:
+            return "3"
+        if "B2" in mem[8:10]:
             return "4"
+        if "B5" in mem[8:10]:
+            return "5"
     if "FT_F1L" in proc:
         if "F2" in mem[8:10]:
             return "1"

@@ -17,7 +17,7 @@
 
 * To generate verilog top level code:
 
-python generator.py mem mod
+python generator.py D3(or D3D4, D5, etc.)
 
 
 * To plot:

@@ -622,8 +622,6 @@ for x in modules:
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'FitTrack':
-        print m.inputs
-        print m.in_names
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'tpar1' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back

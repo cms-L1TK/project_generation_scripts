@@ -193,8 +193,7 @@ for x in memories:
             m.outputs.append(m.outputs[-1]+'_read_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-    if m.module == 'TrackFit':
-        print m.name,m.inputs
+    if m.module == 'TrackFit':        
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'
@@ -568,7 +567,18 @@ for x in modules:
         m.done = m.name+'_start'
         seen_done8_0 = True
     if m.module == 'DiskMatchCalculator':
-	m.parameters = '#("rDSS_LUT.dat")'
+        if 'D5' in m.name:
+            dtcregion = '100'
+        elif 'D6' in m.name:
+            dtcregion = '101'
+        elif 'D7' in m.name:
+            dtcregion = '110'
+        elif 'D8' in m.name:
+            dtcregion = '111'
+        
+        m.parameters = '#("rDSS_LUT.dat",'
+        m.parameters += "3'b"+dtcregion+')'
+        
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'allprojin' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
@@ -612,6 +622,8 @@ for x in modules:
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'FitTrack':
+        print m.inputs
+        print m.in_names
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'tpar1' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back

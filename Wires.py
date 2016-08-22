@@ -58,25 +58,25 @@ def matchin(proc,mem):
     if "FT_F1F2" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "F3" in mem[8:10]:
-            return "2"
-        if "F4" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "F3" in mem[8:10]:
+            return "3"
+        if "F4" in mem[8:10]:
             return "4"
+        if "F5" in mem[8:10]:
+            return "5"
     if "FT_B1B2" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "B3" in mem[8:10]:
-            return "2"
-        if "B4" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "B3" in mem[8:10]:
+            return "3"
+        if "B4" in mem[8:10]:
             return "4"
+        if "B5" in mem[8:10]:
+            return "5"
     if "FT_F3F4" in proc:
         if "L1" in mem[8:10]:
             return "1"
@@ -247,7 +247,7 @@ for mem in inputmemorymodules :
         AS_mem+=1
         found=True
     if "VMS_" in mem:
-        fp.write("VMStubs: "+mem+n+" [18]\n")
+        fp.write("VMStubs: "+mem+n+" [19]\n")
         if count<3:
             VMS_long_mem+=1
         else:
@@ -270,7 +270,7 @@ for mem in inputmemorymodules :
         AP_mem+=1
         found=True
     if "VMPROJ_" in mem:
-        fp.write("VMProjections: "+mem+n+" [13]\n")
+        fp.write("VMProjections: "+mem+n+" [14]\n")
         VMPROJ_mem+=1
         found=True
     if "CM_" in mem:

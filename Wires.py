@@ -26,13 +26,13 @@ def matchin(proc,mem):
         if "L6" in mem[8:10]:
             return "4"
         if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
+            return "5"
         if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
+            return "6"
         if "F3" in mem[8:10] or "B3" in mem[8:10]:
-            return "2"
+            return "7"
         if "F4" in mem[8:10] or "B4" in mem[8:10]:
-            return "1"
+            return "8"
     if "FT_L3L4" in proc:
         if "L1" in mem[8:10]:
             return "1"
@@ -43,9 +43,9 @@ def matchin(proc,mem):
         if "L6" in mem[8:10]:
             return "4"
         if "F1" in mem[8:10] or "B1" in mem[8:10]:
-            return "4"
+            return "5"
         if "F2" in mem[8:10] or "B2" in mem[8:10]:
-            return "3"
+            return "6"
     if "FT_L5L6" in proc:
         if "L1" in mem[8:10]:
             return "1"
@@ -58,47 +58,47 @@ def matchin(proc,mem):
     if "FT_F1F2" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "F3" in mem[8:10]:
-            return "2"
-        if "F4" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "F3" in mem[8:10]:
+            return "3"
+        if "F4" in mem[8:10]:
             return "4"
+        if "F5" in mem[8:10]:
+            return "5"
     if "FT_B1B2" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "B3" in mem[8:10]:
-            return "2"
-        if "B4" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "B3" in mem[8:10]:
+            return "3"
+        if "B4" in mem[8:10]:
             return "4"
+        if "B5" in mem[8:10]:
+            return "5"
     if "FT_F3F4" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "F1" in mem[8:10]:
-            return "2"
-        if "F2" in mem[8:10]:
-            return "3"
-        if "F5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "F1" in mem[8:10]:
+            return "3"
+        if "F2" in mem[8:10]:
             return "4"
+        if "F5" in mem[8:10]:
+            return "5"
     if "FT_B3B4" in proc:
         if "L1" in mem[8:10]:
             return "1"
-        if "B1" in mem[8:10]:
-            return "2"
-        if "B2" in mem[8:10]:
-            return "3"
-        if "B5" in mem[8:10]:
-            return "4"
         if "L2" in mem[8:10]:
+            return "2"
+        if "B1" in mem[8:10]:
+            return "3"
+        if "B2" in mem[8:10]:
             return "4"
+        if "B5" in mem[8:10]:
+            return "5"
     if "FT_F1L" in proc:
         if "F2" in mem[8:10]:
             return "1"
@@ -155,7 +155,7 @@ fp = open("processingmodules_"+region+".dat","w")
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
         print mem," is not in inputmemorymodules"
-        if "TF_" in mem:
+        if "CT_" in mem:
             inputmemorymodules.append(mem)
 
 for proc in processingmodules :
@@ -164,11 +164,9 @@ for proc in processingmodules :
         fp.write("LayerRouter: "+proc+"\n")
     if "DR" in proc:
         fp.write("LayerRouter: "+proc+"\n")
-    if "VMR_" in proc:
+    if "VMR" in proc:
         fp.write("VMRouter: "+proc+"\n")
-    if "VMRD_" in proc:
-        fp.write("VMRouter: "+proc+"\n")
-    if "TE_" in proc:
+    if "TE" in proc:
         fp.write("TrackletEngine: "+proc+"\n")
     if "TC_L" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
@@ -176,20 +174,24 @@ for proc in processingmodules :
         fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "TC_B" in proc:
         fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "PR_" in proc:
-        fp.write("ProjectionRouter: "+proc+"\n")
-    if "PRD_" in proc:
+    if "PR" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:
         fp.write("ProjectionTransceiver: "+proc+"\n")
     if "ME_" in proc:
         fp.write("MatchEngine: "+proc+"\n")
-    if "MC_" in proc:
+    if "MC_L" in proc:
         fp.write("MatchCalculator: "+proc+"\n")
+    if "MC_F" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
+    if "MC_B" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
     if "MT_" in proc:
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:
         fp.write("FitTrack: "+proc+"\n")
+    if "PD" in proc:
+        fp.write("PurgeDuplicate: "+proc+"\n")
 
 fp = open("memorymodules_"+region+".dat","w")
 
@@ -210,6 +212,7 @@ VMPROJ_mem=0
 CM_mem=0
 FM_mem=0
 TF_mem=0
+CT_mem=0
 
 for mem in inputmemorymodules :
     count=0
@@ -244,7 +247,7 @@ for mem in inputmemorymodules :
         AS_mem+=1
         found=True
     if "VMS_" in mem:
-        fp.write("VMStubs: "+mem+n+" [18]\n")
+        fp.write("VMStubs: "+mem+n+" [19]\n")
         if count<3:
             VMS_long_mem+=1
         else:
@@ -267,7 +270,7 @@ for mem in inputmemorymodules :
         AP_mem+=1
         found=True
     if "VMPROJ_" in mem:
-        fp.write("VMProjections: "+mem+n+" [13]\n")
+        fp.write("VMProjections: "+mem+n+" [14]\n")
         VMPROJ_mem+=1
         found=True
     if "CM_" in mem:
@@ -281,6 +284,10 @@ for mem in inputmemorymodules :
     if "TF_" in mem:
         fp.write("TrackFit: "+mem+n+" [126]\n")
         TF_mem+=1
+        found=True
+    if "CT_" in mem:
+        fp.write("CleanTrack: "+mem+n+" [126]\n")
+        CT_mem+=1
         found=True
     if not found :
         print "Did not print memorymodule : ",mem
@@ -359,7 +366,9 @@ cmin=[]
 fmin=[]
 fmin2=[]
 ftin=[]
+tfin=[]
 mtout=[]
+ctout=[]
 
 for m in inputmemcount :
     mem=m[0]
@@ -444,6 +453,16 @@ for m in inputmemcount :
                             fp.write(".matchout"+str(ii)+" ")
                 if "TF_" in mem:
                     fp.write(".trackout")
+                if "CT_" in mem:
+                    ii=0
+                    for f in ctout :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii=f[1]
+                    if ii==0:
+                        ctout.append([proc,1])
+                        ii=1
+                    fp.write(".trackout"+str(ii)+" ")
                 if "TPAR_" in mem:
                     fp.write(".trackpar")
         fp.write(" output=> ")
@@ -527,6 +546,16 @@ for m in inputmemcount :
                         cmin.append([proc,1])
                         ii=1
                     fp.write(".match"+str(ii)+"in")
+                if "TF_" in mem:
+                    ii=0
+                    for f in tfin :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii=f[1]
+                    if ii==0:
+                        tfin.append([proc,1])
+                        ii=1
+                    fp.write(".trackin"+str(ii))
                 if "FM_" in mem:
                     if "MT_" in proc :
                         ii=0

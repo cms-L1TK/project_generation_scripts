@@ -666,6 +666,12 @@ for x in modules:
         string_processing += '\n'
         string_processing += '\n' +  m.module + ' ' +m.parameters + ' ' +m.name + '('
         k = 1
+        if m.module == 'ProjectionRouter':
+            #print m.inputs
+            while len(m.inputs) < 7:
+                m.inputs.append("1'b0")
+                m.in_names.append('proj'+str(len(m.inputs))+'in')
+        
         for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names 
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
                 if n == 'tpar1in':
@@ -688,12 +694,16 @@ for x in modules:
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
                 elif 'trackin' in n:
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
+                elif "1'b0" in i:
+                    string_processing += '\n' +  '.number_in_'+n+"(6'b0),"
                 else:
                     string_processing += '\n' +  '.number_in_'+n+'('+i+'_number),'
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
-            string_processing += '\n' +  '.'+n+'('+i+'),' # Write the signal name
+            if "1'b0" not in i:
+                string_processing += '\n' +  '.'+n+'('+i+'),' # Write the signal name
             k = k + 1
 
+            
         for n,o in zip(m.out_names,m.outputs): # Loop over outputs and output names 
             string_processing += '\n' +  '.'+n+'('+o+'),'
         string_processing += '\n' +  '.start('+m.start+'),'

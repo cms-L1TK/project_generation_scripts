@@ -181,7 +181,7 @@ for x in memories:
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done7_5 = True
-    if m.module == 'FullMatch':        
+    if m.module == 'FullMatch':
         m.out_names.append('read_en')
         if 'From' in m.name:
             m.parameters = "#(128)"
@@ -193,7 +193,7 @@ for x in memories:
             m.outputs.append(m.outputs[-1]+'_read_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-    if m.module == 'TrackFit':        
+    if m.module == 'TrackFit':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'
@@ -622,6 +622,7 @@ for x in modules:
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
     if m.module == 'FitTrack':
+        '''
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'tpar1' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
@@ -637,7 +638,7 @@ for x in modules:
         for i,n in enumerate(m.inputs):
             if 'TPAR' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i))
-
+        '''
         if 'L1L2' in m.name:
             m.parameters = '#("L1L2")'
         elif 'L3L4' in m.name:
@@ -742,6 +743,11 @@ if region == 'D3D6':
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD3D6')
+if region == 'D5D6':
+    print 'Processing D5D6'
+    print 'Memories implemented =',len(memories)
+    print 'Processing modules implemented =',len(modules)
+    string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD5D6')
     
 g = open('test.txt','w')
 g.write(string_prologue)

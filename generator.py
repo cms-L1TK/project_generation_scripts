@@ -169,7 +169,12 @@ for x in memories:
         m.done = m.name+'_start'
     if m.module == 'AllProj':
         if 'L4D' in m.name or 'L5D' in m.name or 'L6D' in m.name:
-            m.parameters = "#(1'b0)"
+            m.parameters = "#(1'b0,1'b0)"   #inner,disk
+	if 'F1D' in m.name or 'F2D' in m.name or 'F3D' in m.name or 'F4D' in m.name or 'F5D' in m.name: 
+            m.parameters = "#(1'b0,1'b1)"   #inner,disk
+	if 'B1D' in m.name or 'B2D' in m.name or 'B3D' in m.name or 'B4D' in m.name or 'B5D' in m.name: 
+            m.parameters = "#(1'b0,1'b1)"   #inner,disk
+
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'

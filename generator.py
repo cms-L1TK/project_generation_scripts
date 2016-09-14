@@ -574,15 +574,22 @@ for x in modules:
     if m.module == 'DiskMatchCalculator':
         if 'D5' in m.name:
             dtcregion = '100'
+	    inner = True 
         elif 'D6' in m.name:
             dtcregion = '101'
+	    inner = False
         elif 'D7' in m.name:
             dtcregion = '110'
+	    inner = True
         elif 'D8' in m.name:
             dtcregion = '111'
+	    inner = False
         
-        m.parameters = '#("rDSS_LUT.dat",'
-        m.parameters += "3'b"+dtcregion+')'
+        m.parameters = "#(3'b"+dtcregion
+	if inner:
+	    m.parameters += ",1'b1)"
+	else:
+	    m.parameters += ",1'b0)"
         
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'allprojin' in n:

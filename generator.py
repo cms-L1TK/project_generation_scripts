@@ -489,10 +489,15 @@ for x in modules:
         elif 'PR_L5' in m.name:
             m.parameters = "#(1'b1,1'b0)"
         elif 'PRD' in m.name:
-            if 'PRD_F1' in m.name or 'PRD_F3' in m.name or 'PRD_F5' in m.name:
-                m.parameters = "#(1'b1,1'b0,1'b0)"
-            if 'PRD_F2' in m.name or 'PRD_F4' in m.name:
-                m.parameters = "#(1'b0,1'b0,1'b0)"
+            if 'PRD_F1' in m.name or 'PRD_F3' in m.name or 'PRD_F5' in m.name or 'PRD_B1' in m.name or 'PRD_B3' in m.name or 'PRD_B5' in m.name:
+                m.parameters = "#(1'b1,"  # odd
+            if 'PRD_F2' in m.name or 'PRD_F4' in m.name or 'PRD_B2' in m.name or 'PRD_B4' in m.name:
+                m.parameters = "#(1'b0,"  # even
+	    if 'D5' in m.name or 'D7' in m.name:
+		m.parameters += "1'b0"	  # inner (PS modules)
+	    if 'D6' in m.name or 'D8' in m.name:
+		m.parameters += "1'b1"	  # outer (2S modules)
+	    m.parameters += ",1'b0)"	  # barrel
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done6_0 = True

@@ -472,8 +472,10 @@ for x in modules:
             m.parameters = '#(0)'
         elif 'L3L4' in m.name:
             m.parameters = '#(1)'
-        if 'L5L6' in m.name:
+        elif 'L5L6' in m.name:
             m.parameters = '#(2)'
+	elif 'FF' in m.name:
+	    m.parameters = '#(3)'
         
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en') # Write enable signal to AllProjection memory

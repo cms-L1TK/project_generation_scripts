@@ -651,7 +651,7 @@ for x in modules:
         elif 'L5L6' in m.name:
             m.parameters = '#("L5L6")'
         elif 'F1L' in m.name:
-            m.parameters = '#("F1L")'
+            m.parameters = '#("L1F1")'
         elif 'F1F2' in m.name or 'B1B2' in m.name:
             m.parameters = '#("F1F2")'
         elif 'F3F4' in m.name or 'B3B4' in m.name:
@@ -753,6 +753,11 @@ if region == 'D5D6':
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD5D6')
+if region == 'D4D5':
+    print 'Processing D4D5'
+    print 'Memories implemented =',len(memories)
+    print 'Processing modules implemented =',len(modules)
+    string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD4D5')
     
 g = open('test.txt','w')
 g.write(string_prologue)

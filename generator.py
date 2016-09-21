@@ -640,6 +640,8 @@ for x in modules:
         m.in_names = m.in_names+['incomming_match_data_stream'] # Input signals from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
+	if 'F1F2' in m.name or 'F3F4' in m.name:
+	    m.parameters = '#(1)'
     if m.module == 'FitTrack':
         '''
         for i,n in enumerate(m.in_names): # Count the inputs

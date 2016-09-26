@@ -1,4 +1,5 @@
 import os,sys
+import PTdict
 
 # Define the module class with all the properties
 class Module:
@@ -447,36 +448,57 @@ for x in modules:
         m.done = m.name+'_start'
         seen_done4_0 = True
     if m.module == 'ProjectionTransceiver':
-        ons = []
-        for i,o in enumerate(m.out_names): # Count the outputs
-            ons.append(o+'_%d'%(i+1)) # Enumerate them
-        for i,o in enumerate(m.out_names):
-            ons.append('valid_%d'%(i+1)) # Valid outputs
-        m.out_names = ons        
-        valids = []
-        for o in m.outputs:
-            valids.append(o+'_wr_en')
-        m.outputs = m.outputs + valids
-        ins = []
-        for i,o in enumerate(m.in_names): # Count the inputs
-            ins.append(o+'_%d'%(i+1)) # Enumerate them
-        m.in_names = ins
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-        seen_done5_0 = True
+
+        if 'L3F3F5' in m.name:
+            m.parameters = '#("L3F3F5")'
+            d_ins = PTdict.L3F3F5_ins
+            d_outs = PTdict.L3F3F5_outs
+        elif 'L2L4F2' in m.name:
+            m.parameters = '#("L2L4F2")'
+            d_ins = PTdict.L2L4F2_ins
+            d_outs = PTdict.L2L4F2_outs
+        elif 'F1L5' in m.name:
+            m.parameters = '#("F1L5")'
+            d_ins = PTdict.F1L5_ins
+            d_outs = PTdict.F1L5_outs
+        elif 'L1L6F4' in m.name:
+            m.parameters = '#("L1L6F4")'
+            d_ins = PTdict.L1L6F4_ins
+            d_outs = PTdict.L1L6F4_outs
+            
+        m.in_names = ['projin_disk_'+str(x) for x in range(1,10)] + ['projin_layer_'+str(x) for x in range(1,14)]
+        ins = []
+        for x in d_ins:
+            found = False
+            z = ''
+            for y in m.inputs:
+                if x in y:
+                    found = True
+                    z = y
+            if found:
+                ins.append(z)
+            else:
+                ins.append("1'b0")
+        m.inputs = ins
+        outs = []
+        for o in m.outputs:
+            if 'wr' not in o:
+                outs.append([d_outs[o.split('_')[-2]+'_'+o.split('_')[-1]],o])
+        m.outputs = []
+        m.out_names = []
+        for x in outs:
+            m.out_names.append(x[0])
+            m.out_names.append(x[0].replace('projout','valid'))
+            m.outputs.append(x[1])
+            m.outputs.append(x[1]+'_wr_en')
+        
         m.out_names = m.out_names+['valid_proj_data_stream','proj_data_stream'] # Outputs to links
         m.in_names = m.in_names+['incomming_proj_data_stream'] # Input from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
-        m.inputs = m.inputs+[m.name+'_From_DataStream']
-        if 'L1L2' in m.name:
-            m.parameters = '#(0)'
-        elif 'L3L4' in m.name:
-            m.parameters = '#(1)'
-        elif 'L5L6' in m.name:
-            m.parameters = '#(2)'
-	elif 'FF' in m.name:
-	    m.parameters = '#(3)'
-        
+        m.inputs = m.inputs+[m.name+'_From_DataStream']        
+                
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en') # Write enable signal to AllProjection memory
         m.out_names.append('valid_data')
@@ -642,24 +664,7 @@ for x in modules:
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
 	if 'F1F2' in m.name or 'F3F4' in m.name:
 	    m.parameters = '#(1)'
-    if m.module == 'FitTrack':
-        '''
-        for i,n in enumerate(m.in_names): # Count the inputs
-            if 'tpar1' in n:
-                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
-        for i,n in enumerate(m.in_names): # Count the inputs
-            if 'tpar2' in n:
-                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
-        for i,n in enumerate(m.in_names): # Count the inputs
-            if 'tpar3' in n:
-                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
-        for i,n in enumerate(m.inputs):
-            if 'TPAR' in n:
-                m.inputs.insert(len(m.inputs),m.inputs.pop(i))
-        for i,n in enumerate(m.inputs):
-            if 'TPAR' in n:
-                m.inputs.insert(len(m.inputs),m.inputs.pop(i))
-        '''
+    if m.module == 'FitTrack':        
         if 'L1L2' in m.name:
             m.parameters = '#("L1L2")'
         elif 'L3L4' in m.name:
@@ -693,7 +698,19 @@ for x in modules:
             while len(m.inputs) < 7:
                 m.inputs.append("1'b0")
                 m.in_names.append('proj'+str(len(m.inputs))+'in')
-        
+        '''        
+        if m.module == 'ProjectionTransceiver':
+            ls = [x for x in m.in_names if 'layer' in x]
+            ds = [x for x in m.in_names if 'disk' in x]
+            while len(ds) < 9:
+                m.inputs.append("1'b0")
+                m.in_names.append('projin_disk_'+str(len(ds)+1))
+                ds.append('projin_disk_'+str(len(ds)))
+            while len(ls) < 13:
+                m.inputs.append("1'b0")
+                m.in_names.append('projin_layer_'+str(len(ls)+1))
+                ls.append('projin_layer_'+str(len(ls)))                  
+        '''
         for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names 
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
                 if n == 'tpar1in':

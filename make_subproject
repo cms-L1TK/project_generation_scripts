@@ -1,0 +1,29 @@
+./Wires.py wires.input.fullsector
+cp wires_fullsector.dat ../fpga_emulation/wires_full.dat
+cp memorymodules_fullsector.dat ../fpga_emulation/memorymodules_full.dat
+cp processingmodules_fullsector.dat ../fpga_emulation/processingmodules_full.dat
+
+./SubProject.py D3
+./Wires.py wires.D3 
+cp *_D3.dat ../fpga_emulation/.
+
+./SubProject.py D4
+./Wires.py wires.D4 
+cp *_D4.dat ../fpga_emulation/.
+
+./SubProject.py D5
+./Wires.py wires.D5 
+cp *_D5.dat ../fpga_emulation/.
+
+./SubProject.py D3D4
+./Wires.py wires.D3D4 
+cp *_D3D4.dat ../fpga_emulation/.
+
+./SubProject.py D3D6
+./Wires.py wires.D3D6 
+cp *_D3D6.dat ../fpga_emulation/.
+
+./SubProject.py D5D6
+./Wires.py wires.D5D6 
+cp *_D5D6.dat ../fpga_emulation/.
+

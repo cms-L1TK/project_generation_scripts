@@ -33,6 +33,8 @@ def matchin(proc,mem):
             return "7"
         if "F4" in mem[8:10] or "B4" in mem[8:10]:
             return "8"
+        if "F5" in mem[8:10] or "B5" in mem[8:10]:
+            return "9"
     if "FT_L3L4" in proc:
         if "L1" in mem[8:10]:
             return "1"

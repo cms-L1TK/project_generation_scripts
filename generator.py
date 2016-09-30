@@ -161,6 +161,7 @@ for x in memories:
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'
     if m.module == 'TrackletProjections':
+        #print m.name
         m.start = m.inputs[0].replace(m.name,'')+'proj_start'
         if 'From' in m.name:
             m.start = m.start.replace('proj_','')
@@ -626,7 +627,6 @@ for x in modules:
         for i,n in enumerate(m.inputs): # Count the inputs
             if 'AP_' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
-
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'allstubin' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllStubs and AllProjections to the back
@@ -639,13 +639,16 @@ for x in modules:
         m.out_names.append('valid_matchminus')
         m.out_names.append('valid_matchplus')
         m.out_names.append('valid_match')
-        #if 'MC_L1L2_L3' in m.name: # Parameter for constants # Will be moved to header file
-        #    m.parameters = "#(1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L1L2_L3,`MC_z_L1L2_L3,`MC_zfactor_INNER)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done8_0 = True
     if m.module == 'MatchTransceiver':
         ons = []
+        m.parameters = '#("Layer")'
+        if 'FDSK' in m.name:
+            m.parameters = '#("Disk")'
+            m.inputs = sorted(m.inputs, key=lambda i:(i.split('FM_')[1])[0:1])
+            m.outputs = sorted(m.outputs, key=lambda o:(o.split('FM_')[1])[0:1])
         for i,o in enumerate(m.out_names): # Count the outputs
             ons.append(o)
         for i,o in enumerate(m.out_names):
@@ -657,13 +660,10 @@ for x in modules:
         m.outputs = m.outputs + valids
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-        seen_done9_0 = True
         m.out_names = m.out_names+['valid_match_data_stream','match_data_stream'] # Output signals to links
         m.in_names = m.in_names+['incomming_match_data_stream'] # Input signals from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
         m.inputs = m.inputs+[m.name+'_From_DataStream']        
-	if 'F1F2' in m.name or 'F3F4' in m.name:
-	    m.parameters = '#(1)'
     if m.module == 'FitTrack':        
         if 'L1L2' in m.name:
             m.parameters = '#("L1L2")'
@@ -698,20 +698,15 @@ for x in modules:
             while len(m.inputs) < 7:
                 m.inputs.append("1'b0")
                 m.in_names.append('proj'+str(len(m.inputs))+'in')
-        '''        
-        if m.module == 'ProjectionTransceiver':
-            ls = [x for x in m.in_names if 'layer' in x]
-            ds = [x for x in m.in_names if 'disk' in x]
-            while len(ds) < 9:
+                
+        if m.module == 'MatchTransceiver':
+            ins = [x for x in m.inputs if 'Stream' not in x]
+            while len(ins) < 24:
                 m.inputs.append("1'b0")
-                m.in_names.append('projin_disk_'+str(len(ds)+1))
-                ds.append('projin_disk_'+str(len(ds)))
-            while len(ls) < 13:
-                m.inputs.append("1'b0")
-                m.in_names.append('projin_layer_'+str(len(ls)+1))
-                ls.append('projin_layer_'+str(len(ls)))                  
-        '''
-        for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names 
+                ins.append("1'b0")
+                m.in_names.append('proj'+str(len(ins))+'in')
+        
+        for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names              
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
                 if n == 'tpar1in':
                     string_processing += '\n' +  '.read_add_pars1('+i+'_read_add),'

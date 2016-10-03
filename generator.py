@@ -387,6 +387,7 @@ for x in modules:
             outs.append(o+'_wr_en')
         m.outputs = m.outputs+outs
         m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
+        
         TC_index = ''
         if 'L1' in m.name:
             if 'D3L2D3' in m.name:
@@ -395,7 +396,7 @@ for x in modules:
                 TC_index = "4'b0001"
             if 'D4L2D4' in m.name:
                 TC_index = "4'b0010"
-            m.parameters = '#("InvRTable_TC_L1D3L2D3.dat",'+"`TC_L1L2_krA,`TC_L1L2_krB,1'b1,1'b1,"+TC_index+")"
+            m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L1D3L2D3.dat"),'+".R1MEAN(`TC_L1L2_krA),.R2MEAN(`TC_L1L2_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b1))"
         if 'L3' in m.name:
             if 'D3L4D3' in m.name:
                 TC_index = "4'b0000"
@@ -403,7 +404,7 @@ for x in modules:
                 TC_index = "4'b0001"
             if 'D4L4D4' in m.name:
                 TC_index = "4'b0010"
-            m.parameters = '#("InvRTable_TC_L3D3L4D3.dat",'+"`TC_L3L4_krA,`TC_L3L4_krB,1'b1,1'b0,"+TC_index+")"
+            m.parameters = "#(.BARREL(1'b1,"+'.InvR_FILE("InvRTable_TC_L3D3L4D3.dat"),'+".R1MEAN(`TC_L3L4_krA),.R2MEAN(`TC_L3L4_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b0))"
         if 'L5' in m.name:
             if 'D3L6D3' in m.name:
                 TC_index = "4'b0000"
@@ -411,39 +412,18 @@ for x in modules:
                 TC_index = "4'b0001"
             if 'D4L6D4' in m.name:
                 TC_index = "4'b0010"            
-            m.parameters = '#("InvRTable_TC_L5D3L6D3.dat",'+"`TC_L5L6_krA,`TC_L5L6_krB,1'b0,1'b0,"+TC_index+")"
+            m.parameters = "#(.BARREL(1'b1,"+'.InvR_FILE("InvRTable_TC_L5D3L6D3.dat"),'+".R1MEAN(`TC_L5L6_krA),.R2MEAN(`TC_L5L6_krB),.TC_index("+TC_index+"),.IsInner1(1'b0),.IsInner2(1'b0))"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-        seen_done4_0 = True
-    if m.module == 'TrackletDiskCalculator':
-        for i,n in enumerate(m.in_names): # Count the inputs
-            if 'stubin' in n:
-                m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back
-        for i,n in enumerate(m.inputs): # Count the inputs
-            if 'AS_' in n:
-                m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
-        ons = []
-        for o in m.out_names:
-            ons.append('valid_'+o)
-        m.out_names = m.out_names + ons    
-        #if not seen_done_proj:    
-        m.out_names = m.out_names + ['done_proj'] # Done signal for projections
-        seen_done_proj = True
-        outs = []
-        for o in m.outputs:
-            outs.append(o+'_wr_en')
-        m.outputs = m.outputs+outs
-        m.outputs = m.outputs+[m.name+'_proj_start'] # Hardcoded signal name
-        #m.outputs = m.outputs+['done_proj4_0']
         diskTC_index = ''
         if 'F1' in m.name:
             if 'D5F2D5' in m.name:
                 diskTC_index = "4'b0100" 
-                m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+")"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
+                m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5F2D5.dat"),.InvT_FILE("InvTTable_TC_F1D5F2D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         if 'F3' in m.name:
             if 'D5F4D5' in m.name:
                 diskTC_index = "4'b0100"
-                m.parameters = '#(0,"InvRTable_TC_F3D5F4D5.dat","InvTTable_TC_F3D5F4D5.dat",'+diskTC_index+")"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
+                m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F3D5F4D5.dat"),.InvT_FILE("InvTTable_TC_F3D5F4D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         #m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
@@ -619,7 +599,7 @@ for x in modules:
 	if inner:
 	    m.parameters += ",1'b1)"
 	else:
-	    m.parameters += ",1'b0)"
+	    m.parameters += ",1'b0,32'sd700921,32'sd128)"
         
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'allprojin' in n:

@@ -404,7 +404,7 @@ for x in modules:
                 TC_index = "4'b0001"
             if 'D4L4D4' in m.name:
                 TC_index = "4'b0010"
-            m.parameters = "#(.BARREL(1'b1,"+'.InvR_FILE("InvRTable_TC_L3D3L4D3.dat"),'+".R1MEAN(`TC_L3L4_krA),.R2MEAN(`TC_L3L4_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b0))"
+            m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L3D3L4D3.dat"),'+".R1MEAN(`TC_L3L4_krA),.R2MEAN(`TC_L3L4_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b0))"
         if 'L5' in m.name:
             if 'D3L6D3' in m.name:
                 TC_index = "4'b0000"
@@ -412,7 +412,7 @@ for x in modules:
                 TC_index = "4'b0001"
             if 'D4L6D4' in m.name:
                 TC_index = "4'b0010"            
-            m.parameters = "#(.BARREL(1'b1,"+'.InvR_FILE("InvRTable_TC_L5D3L6D3.dat"),'+".R1MEAN(`TC_L5L6_krA),.R2MEAN(`TC_L5L6_krB),.TC_index("+TC_index+"),.IsInner1(1'b0),.IsInner2(1'b0))"
+            m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L5D3L6D3.dat"),'+".R1MEAN(`TC_L5L6_krA),.R2MEAN(`TC_L5L6_krB),.TC_index("+TC_index+"),.IsInner1(1'b0),.IsInner2(1'b0))"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         diskTC_index = ''

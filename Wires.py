@@ -173,9 +173,9 @@ for proc in processingmodules :
     if "TC_L" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
     if "TC_F" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
+        fp.write("TrackletCalculator: "+proc+"\n")
     if "TC_B" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
+        fp.write("TrackletCalculator: "+proc+"\n")
     if "PR" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PT_" in proc:

@@ -191,18 +191,20 @@ for x in memories:
     if m.module == 'FullMatch':
         m.out_names.append('read_en')
         if 'From' in m.name:
-            m.parameters = "#(128)"
+            m.parameters = "#(64)"
             m.outputs.append(m.outputs[-1]+'_read_en')
         elif 'To' in m.name:
-            m.parameters = "#(128)"
+            m.parameters = "#(64)"
             m.outputs.append("1'b1")
         else:
             m.outputs.append(m.outputs[-1]+'_read_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
     if m.module == 'TrackFit':
-        m.out_names = m.out_names[1:] # These memories don't have to send number out
-        m.outputs = m.outputs[1:]
+        #m.out_names = m.out_names[1:] # These memories don't have to send number out
+        #m.outputs = m.outputs[1:]
+        m.out_names.append('index_out')
+        m.outputs.append(m.outputs[-1]+'_index')
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done10_5 = True
@@ -225,6 +227,8 @@ for x in memories:
                 string_memories += '\n' +  '//wire '+o+';'
             elif 'number' in o:
                 string_memories += '\n' +  'wire [5:0] '+o+';' # Number of objects in memory
+            elif '_index' in o:
+                string_memories += '\n' +  'wire [53:0] '+o+' [`tmux-1:0];' # Matrix of stub indices for PD
             elif 'read' in o:
                 if m.module == 'VMStubs' or m.module == 'AllStubs' or m.module == 'TrackletParameters' : # These memories have to cross the link
                     string_memories += '\n' +  'wire [10:0] '+o+';' # Deeper for latency
@@ -232,7 +236,7 @@ for x in memories:
                     if '_en' in o:
                         string_memories += '\n' +  'wire '+o+';'
                     else:
-                        string_memories += '\n' +  'wire [9:0] '+o+';'
+                        string_memories += '\n' +  'wire [9:0] '+o+';'                
                 else:
                     string_memories += '\n' +  'wire [8:0] '+o+';' # Standard depth 6 bits of number plus 3 of BX
                 #print 'wire [5:0] '+o+';'
@@ -668,6 +672,7 @@ for x in modules:
     if m.module == 'PurgeDuplicate':
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
+        m.in_names.append('')
     ####################################################
     if('mod' not in sys.argv): # If you don't want processing modules in the print out
         string_processing += '\n'
@@ -707,7 +712,9 @@ for x in modules:
                 elif 'allprojin' in n:
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
                 elif 'trackin' in n:
+                    string_processing += '\n' +  '.numberin'+n[-1]+'('+i+'_number),'
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
+                    string_processing += '\n' +  '.index_in'+n[-1]+'('+i+'_index),'
                 elif "1'b0" in i:
                     string_processing += '\n' +  '.number_in_'+n+"(6'b0),"
                 else:

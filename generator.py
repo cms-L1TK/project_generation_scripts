@@ -429,6 +429,10 @@ for x in modules:
                 diskTC_index = "4'b0100"
                 m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F3D5F4D5.dat"),.InvT_FILE("InvTTable_TC_F3D5F4D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         #m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
+        if 'F1' in m.name:
+            if 'D5L1D4' in m.name:
+                diskTC_index = "4'b0011" 
+                m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5L1D4.dat"),.InvT_FILE("InvTTable_TC_F1D5L1D4.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done4_0 = True
@@ -537,9 +541,13 @@ for x in modules:
         m.outputs.append(m.outputs[0]+'_wr_en') # Write enable for local and neighbor matches
         m.outputs.append(m.outputs[1]+'_wr_en')
         m.outputs.append(m.outputs[2]+'_wr_en')
+        if ('L5L6_L1D4' in m.name or 'L5L6_L2D4' in m.name):
+	    m.outputs.append(m.outputs[3]+'_wr_en')
         m.out_names.append('valid_matchminus')
         m.out_names.append('valid_matchplus')
         m.out_names.append('valid_match')
+        if ('L5L6_L1D4' in m.name or 'L5L6_L2D4' in m.name):
+	    m.out_names.append('valid_match2')
         dtcregion = '010'
         if 'D1' in m.name:
             dtcregion = '000'

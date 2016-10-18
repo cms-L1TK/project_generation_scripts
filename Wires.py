@@ -507,7 +507,12 @@ for m in inputmemcount :
                     if ("MC_" in proc) :
                         fp.write(".allstubin")
                     else :
-                        if ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
+			if ( "TC_F1D5L1D4" in proc or "TC_B1D7L1D1" in proc):
+			    if ( "AS_L1" in mem ):
+				fp.write(".innerallstubin")
+			    if ( "AS_F1" in mem or "AS_B1" in mem ):
+			    	fp.write(".outerallstubin") 
+                        elif ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
                             fp.write(".innerallstubin")
                         else :
                             fp.write(".outerallstubin")

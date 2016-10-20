@@ -1,6 +1,21 @@
 import os,sys
 import PTdict
 
+def topOfList(l,string):
+    l1 = [x for x in l if string not in x]
+    l2 = [x for x in l if string in x]
+    for x in l2:
+        l1.insert(0,x)
+    return l1
+def endOfList(l,string):
+    l1 = [x for x in l if string not in x]
+    l2 = [x for x in l if string in x]
+    print '1',l1
+    print '2',l2
+    for x in l1:
+        l2.append(x)
+    return l2
+
 # Define the module class with all the properties
 class Module:
     def __init__(self):
@@ -625,12 +640,39 @@ for x in modules:
         for i,n in enumerate(m.inputs): # Count the inputs
             if 'AS_' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
-        m.outputs.append(m.outputs[0]+'_wr_en') # Write enable for local and neighbor matches
-        m.outputs.append(m.outputs[1]+'_wr_en')
-        m.outputs.append(m.outputs[2]+'_wr_en')
-        m.out_names.append('valid_matchminus')
-        m.out_names.append('valid_matchplus')
-        m.out_names.append('valid_match')
+
+        m.outputs = topOfList(m.outputs,'FM_'+m.name.split('_')[1]) # Put at the top of the list
+                
+        m.outputs = topOfList(m.outputs,'ToMinus') # Put at the top of the list
+        m.out_names = topOfList(m.out_names,'minus') # Put at the top of the list
+        m.outputs = topOfList(m.outputs,'ToPlus') # Put at the top of the list
+        m.out_names = topOfList(m.out_names,'plus') # Put at the top of the list
+
+        os = []        
+        for o in m.outputs:
+            os.append(o+'_wr_en')
+        m.outputs = m.outputs + os        
+        ons = []
+        p = 1
+        n = 1
+        for on in m.out_names:
+            if 'plus' in on:
+                ons.append('matchoutplus'+str(p))
+                p = p+1            
+            elif 'minus' in on:
+                ons.append('matchoutminus'+str(n))
+                n = n+1
+            else:
+                ons.append(on)
+        m.out_names = ons
+        os = []
+        ons = []
+        for o in m.out_names:
+            ons.append('valid_'+o)
+        for o in outputs:
+            os.append(o+'_wr_en')    
+        m.out_names = m.out_names + ons
+        m.outputs = m.outputs + os
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done8_0 = True

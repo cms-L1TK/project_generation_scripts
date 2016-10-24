@@ -438,12 +438,13 @@ for x in modules:
         if 'F1' in m.name:
             if 'D5F2D5' in m.name:
                 diskTC_index = "4'b0100" 
-                m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5F2D5.dat"),.InvT_FILE("InvTTable_TC_F1D5F2D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
+                m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+")"                
+                # m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5F2D5.dat"),.InvT_FILE("InvTTable_TC_F1D5F2D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         if 'F3' in m.name:
             if 'D5F4D5' in m.name:
                 diskTC_index = "4'b0100"
-                m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F3D5F4D5.dat"),.InvT_FILE("InvTTable_TC_F3D5F4D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
-        #m.parameters = '#(47,17,"",981,1515)' # Parameter string for possible LUT file
+                m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+",14'sd981,14'sd1515,14'sd3294,14'sd3917)"
+                #m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F3D5F4D5.dat"),.InvT_FILE("InvTTable_TC_F3D5F4D5.dat"),.TC_index('+diskTC_index+"),.Z1MEAN(14'sd3294),.Z2MEAN(14'sd3917))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file #HERE!!!!
         if 'F1' in m.name:
             if 'D5L1D4' in m.name:
                 diskTC_index = "4'b0011" 

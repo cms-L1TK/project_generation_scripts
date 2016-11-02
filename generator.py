@@ -639,6 +639,13 @@ for x in modules:
 
         m.outputs = topOfList(m.outputs,'FM_'+m.name.split('_')[1]) # Put at the top of the list
                 
+        m.outputs = topOfList(m.outputs,'FM_FL3FL4') # Put at the top of the list	
+        m.outputs = topOfList(m.outputs,'FM_L1') # Put at the top of the list
+        m.outputs = topOfList(m.outputs,'FM_L4') # Put at the top of the list
+        m.outputs = topOfList(m.outputs,'FM_F1L1') # Put at the top of the list
+        m.outputs = topOfList(m.outputs,'FM_F1F') # Put at the top of the list
+        m.outputs = topOfList(m.outputs,'FM_F3F') # Put at the top of the list
+
         m.outputs = topOfList(m.outputs,'ToMinus') # Put at the top of the list
         m.out_names = topOfList(m.out_names,'minus') # Put at the top of the list
         m.outputs = topOfList(m.outputs,'ToPlus') # Put at the top of the list

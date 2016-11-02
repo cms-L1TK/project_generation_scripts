@@ -210,7 +210,7 @@ for x in memories:
             m.outputs.append(m.outputs[-1]+'_read_en')
         elif 'To' in m.name:
             m.parameters = "#(64)"
-            m.outputs.append("1'b1")
+            m.outputs.append(m.outputs[-1]+'_read_en')
         else:
             m.outputs.append(m.outputs[-1]+'_read_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
@@ -418,36 +418,36 @@ for x in modules:
             m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L1D3L2D3.dat"),'+".R1MEAN(`TC_L1L2_krA),.R2MEAN(`TC_L1L2_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b1))"
         if 'L3' in m.name:
             if 'D3L4D3' in m.name:
-                TC_index = "4'b0000"
+                TC_index = "4'b0011"
             if 'D3L4D4' in m.name:
-                TC_index = "4'b0001"
+                TC_index = "4'b0100"
             if 'D4L4D4' in m.name:
-                TC_index = "4'b0010"
+                TC_index = "4'b0101"
             m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L3D3L4D3.dat"),'+".R1MEAN(`TC_L3L4_krA),.R2MEAN(`TC_L3L4_krB),.TC_index("+TC_index+"),.IsInner1(1'b1),.IsInner2(1'b0))"
         if 'L5' in m.name:
             if 'D3L6D3' in m.name:
-                TC_index = "4'b0000"
+                TC_index = "4'b0011"
             if 'D3L6D4' in m.name:
-                TC_index = "4'b0001"
+                TC_index = "4'b0100"
             if 'D4L6D4' in m.name:
-                TC_index = "4'b0010"            
+                TC_index = "4'b0101"            
             m.parameters = "#(.BARREL(1'b1),"+'.InvR_FILE("InvRTable_TC_L5D3L6D3.dat"),'+".R1MEAN(`TC_L5L6_krA),.R2MEAN(`TC_L5L6_krB),.TC_index("+TC_index+"),.IsInner1(1'b0),.IsInner2(1'b0))"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         diskTC_index = ''
         if 'F1' in m.name:
             if 'D5F2D5' in m.name:
-                diskTC_index = "4'b0100" 
+                diskTC_index = "4'b0111" 
                 m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+")"                
                 # m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5F2D5.dat"),.InvT_FILE("InvTTable_TC_F1D5F2D5.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         if 'F3' in m.name:
             if 'D5F4D5' in m.name:
-                diskTC_index = "4'b0100"
+                diskTC_index = "4'b0111"
                 m.parameters = '#(0,"InvRTable_TC_F1D5F2D5.dat","InvTTable_TC_F1D5F2D5.dat",'+diskTC_index+",14'sd981,14'sd1515,14'sd3294,14'sd3917)"
                 #m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F3D5F4D5.dat"),.InvT_FILE("InvTTable_TC_F3D5F4D5.dat"),.TC_index('+diskTC_index+"),.Z1MEAN(14'sd3294),.Z2MEAN(14'sd3917))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file #HERE!!!!
         if 'F1' in m.name:
             if 'D5L1D4' in m.name:
-                diskTC_index = "4'b0011" 
+                diskTC_index = "4'b0110" 
                 m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_TC_F1D5L1D4.dat"),.InvT_FILE("InvTTable_TC_F1D5L1D4.dat"),.TC_index('+diskTC_index+"))"#,981,1515,2341,2778,512)' # Parameter string for possible LUT file
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
@@ -682,8 +682,11 @@ for x in modules:
         m.parameters = '#("Layer")'
         if 'FDSK' in m.name:
             m.parameters = '#("Disk")'
-            m.inputs = sorted(m.inputs, key=lambda i:(i.split('FM_')[1])[0:1])
-            m.outputs = sorted(m.outputs, key=lambda o:(o.split('FM_')[1])[0:1])
+            m.inputs = sorted(m.inputs, key=lambda i:(i.split('_')[2])[3])
+            for x in xrange(6):
+                m.inputs.insert(6,"1'bX")
+                m.in_names.append('matchin'+str(x+13))
+            m.outputs = sorted(m.outputs, key=lambda o:(o.split('_')[2])[3])
         for i,o in enumerate(m.out_names): # Count the outputs
             ons.append(o)
         for i,o in enumerate(m.out_names):
@@ -695,6 +698,7 @@ for x in modules:
         m.outputs = m.outputs + valids
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
+             
         m.out_names = m.out_names+['valid_match_data_stream','match_data_stream'] # Output signals to links
         m.in_names = m.in_names+['incomming_match_data_stream'] # Input signals from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
@@ -707,7 +711,7 @@ for x in modules:
         elif 'L5L6' in m.name:
             m.parameters = '#("L5L6")'
         elif 'F1L' in m.name:
-            m.parameters = '#("L1F1")'
+            m.parameters = '#("F1L1")'
         elif 'F1F2' in m.name or 'B1B2' in m.name:
             m.parameters = '#("F1F2")'
         elif 'F3F4' in m.name or 'B3B4' in m.name:
@@ -721,6 +725,12 @@ for x in modules:
         m.done = m.name+'_start'
         seen_done10_0 = True
     if m.module == 'PurgeDuplicate':
+        for x in range(1,len(m.outputs)+1):
+            m.out_names.append('valid_out_'+str(x))
+        os = []
+        for o in m.outputs:
+            os.append(o+'_wr_en')
+        m.outputs += os
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         m.in_names.append('')
@@ -740,7 +750,7 @@ for x in modules:
             while len(ins) < 24:
                 m.inputs.append("1'b0")
                 ins.append("1'b0")
-                m.in_names.append('proj'+str(len(ins))+'in')
+                m.in_names.append('matchin'+str(len(ins)))
         
         for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names              
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
@@ -768,10 +778,17 @@ for x in modules:
                     string_processing += '\n' +  '.index_in'+n[-1]+'('+i+'_index),'
                 elif "1'b0" in i:
                     string_processing += '\n' +  '.number_in_'+n+"(6'b0),"
+                elif "1'bX" in i:
+                    string_processing += '\n' +  '.number_in'+n.split('matchin')[-1]+"(6'b0),"
+                elif 'matchin' in n:
+                    string_processing += '\n' +  '.number_in'+n.split('matchin')[-1]+'('+i+'_number),'
+                    string_processing += '\n' +  '.read_add'+n.split('matchin')[-1]+'('+i+'_read_add),'
+                    string_processing += '\n' +  '.read_en'+n.split('matchin')[-1]+'('+i+'_read_en),'
+
                 else:
                     string_processing += '\n' +  '.number_in_'+n+'('+i+'_number),'
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
-            if "1'b0" not in i:
+            if "1'b0" not in i and "1'bX" not in i:
                 string_processing += '\n' +  '.'+n+'('+i+'),' # Write the signal name
             k = k + 1
 

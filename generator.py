@@ -618,12 +618,15 @@ for x in modules:
             dtcregion = '111'
 	    inner = False
         
-        m.parameters = "#(3'b"+dtcregion
+        m.parameters = "#(.DTC_INDEX(3'b"+dtcregion+")"
 	if inner:
-	    m.parameters += ",1'b1)"
+	    m.parameters += ",.INNER(1'b1)"
 	else:
-	    m.parameters += ",1'b0,32'sd700921,32'sd128)"
-        
+	    m.parameters += ",.INNER(1'b0),.PHICUT(32'sd700921),.RCUT(32'sd128)"
+	if 'F3F4' in m.name and 'F5' not in m.name:
+	    m.parameters += ",.F1F2SEED(1'b0)"  
+	m.parameters += ")"
+ 
         for i,n in enumerate(m.in_names): # Count the inputs
             if 'allprojin' in n:
                 m.in_names.insert(len(m.in_names),m.in_names.pop(i)) # Move the AllProjections to the back

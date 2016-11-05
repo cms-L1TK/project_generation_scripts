@@ -757,8 +757,8 @@ for x in modules:
                 m.inputs.append("1'b0")
                 ins.append("1'b0")
                 m.in_names.append('matchin'+str(len(ins)))
-        
-        for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names              
+
+        for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
                 if n == 'tpar1in':
                     string_processing += '\n' +  '.read_add_pars1('+i+'_read_add),'
@@ -783,14 +783,16 @@ for x in modules:
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'
                     string_processing += '\n' +  '.index_in'+n[-1]+'('+i+'_index),'
                 elif "1'b0" in i:
-                    string_processing += '\n' +  '.number_in_'+n+"(6'b0),"
+		    if 'matchin' in n:
+                    	string_processing += '\n' +  '.number_in'+n.split('matchin')[-1]+"(6'b0),"
+		    else:
+                    	string_processing += '\n' +  '.number_in_'+n+"(6'b0),"
                 elif "1'bX" in i:
                     string_processing += '\n' +  '.number_in'+n.split('matchin')[-1]+"(6'b0),"
                 elif 'matchin' in n:
                     string_processing += '\n' +  '.number_in'+n.split('matchin')[-1]+'('+i+'_number),'
                     string_processing += '\n' +  '.read_add'+n.split('matchin')[-1]+'('+i+'_read_add),'
                     string_processing += '\n' +  '.read_en'+n.split('matchin')[-1]+'('+i+'_read_en),'
-
                 else:
                     string_processing += '\n' +  '.number_in_'+n+'('+i+'_number),'
                     string_processing += '\n' +  '.read_add_'+n+'('+i+'_read_add),'

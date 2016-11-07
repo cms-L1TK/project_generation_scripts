@@ -467,9 +467,12 @@ for x in modules:
             m.parameters = '#("L1L6F4")'
             d_ins = PTdict.L1L6F4_ins
             d_outs = PTdict.L1L6F4_outs
-            
-        m.in_names = ['projin_disk_'+str(x) for x in range(1,10)] + ['projin_layer_'+str(x) for x in range(1,14)]
+
+        #print m.inputs[0].split('_')
+                                        
+        m.in_names = ['projin_disk_'+str(x) for x in range(1,8)] + ['projin_layer_'+str(x) for x in range(1,14)]
         ins = []
+        #m.inputs = sorted(sorted(m.inputs, key=lambda i:(i.split('_')[2])[3]), key=lambda j:(j.split('_')[2])[7])
         for x in d_ins:
             found = False
             z = ''
@@ -482,6 +485,7 @@ for x in modules:
             else:
                 ins.append("1'b0")
         m.inputs = ins
+
         outs = []
         for o in m.outputs:
             if 'wr' not in o:

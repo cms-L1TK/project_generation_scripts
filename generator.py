@@ -689,9 +689,10 @@ for x in modules:
         if 'FDSK' in m.name:
             m.parameters = '#("Disk")'
             m.inputs = sorted(m.inputs, key=lambda i:(i.split('_')[2])[3])
-            for x in xrange(6):
-                m.inputs.insert(6,"1'bX")
-                m.in_names.append('matchin'+str(x+13))
+            if len(m.inputs) > 6:
+                for x in xrange(6):
+                    m.inputs.insert(6,"1'bX")
+                    m.in_names.append('matchin'+str(x+13))
             m.outputs = sorted(m.outputs, key=lambda o:(o.split('_')[2])[3])
         for i,o in enumerate(m.out_names): # Count the outputs
             ons.append(o)

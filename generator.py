@@ -854,6 +854,11 @@ if region == 'D4D5':
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD4D5')
+if region == 'D4D6':
+    print 'Processing D4D6'
+    print 'Memories implemented =',len(memories)
+    print 'Processing modules implemented =',len(modules)
+    string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD4D6')
     
 g = open('test.txt','w')
 g.write(string_prologue)

@@ -4,7 +4,7 @@ import math
 import sys
 
 if (len(sys.argv) != 2 ) :
-    print "Usage: SubProject.py wires.D3|D4|D3D4|D5|D5D6"
+    print "Usage: SubProject.py wires.D3|D4|D3D4|D5|D5D6|D4D6|D3D6"
     exit(1)
 
 print 'Will process', sys.argv[1]
@@ -39,6 +39,10 @@ if sys.argv[1]=="D3D4":
 if sys.argv[1]=="D4D5":
     regions = ["D5","D4"] 
     vregions = ["D1","D2","D3","D6","D7","D8","_B1","_B2","_B3","_B4","_B5"]
+
+if sys.argv[1]=="D4D6":
+    regions = ["D4","D5","D6"] 
+    vregions = ["D1","D2","D3","D7","D8","_B1","_B2","_B3","_B4","_B5"]
 
 
 print 'Will read wires.input.fullsector and select ',regions

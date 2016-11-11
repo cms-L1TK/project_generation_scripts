@@ -55,6 +55,12 @@ input [31:0] input_link5_reg1,
 input [31:0] input_link5_reg2,
 input [31:0] input_link6_reg1,
 input [31:0] input_link6_reg2,
+input [31:0] input_link7_reg1,
+input [31:0] input_link7_reg2,
+input [31:0] input_link8_reg1,
+input [31:0] input_link8_reg2,
+input [31:0] input_link9_reg1,
+input [31:0] input_link9_reg2,
 // outputs
 input [15:0] BRAM_OUTPUT_addr, // 1 for now, add more later
 input BRAM_OUTPUT_clk,

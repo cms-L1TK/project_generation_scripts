@@ -691,7 +691,10 @@ for x in modules:
         ons = []
         m.parameters = '#("Layer")'
         if 'FDSK' in m.name:
-            m.parameters = '#("Disk")'
+	    if region == 'D4D6' or region == 'D3D6':
+		m.parameters = '#("Hybrid")'
+            else:
+		m.parameters = '#("Disk")'
             m.inputs = sorted(m.inputs, key=lambda i:(i.split('_')[2])[3])
             if len(m.inputs) > 6:
                 for x in xrange(6):
@@ -736,6 +739,18 @@ for x in modules:
         m.done = m.name+'_start'
         seen_done10_0 = True
     if m.module == 'PurgeDuplicate':
+	if region=='D3D6':
+	    m.parameters = '#(.SCOPE("D3D6"))'
+	if region=='D4D6':
+	    m.parameters = '#(.SCOPE("D4D6"))'
+	if region=='D3':
+	    m.parameters = '#(.SCOPE("D3"))'
+	if region=='D3D4':
+	    m.parameters = '#(.SCOPE("D3D4"))'
+	if region=='D5':
+	    m.parameters = '#(.SCOPE("D5"))'
+	if region=='D5D6':
+	    m.parameters = '#(.SCOPE("D5D6"))'
         for x in range(1,len(m.outputs)+1):
             m.out_names.append('valid_out_'+str(x))
         os = []

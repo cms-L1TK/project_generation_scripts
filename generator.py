@@ -532,6 +532,8 @@ for x in modules:
     if m.module == 'MatchEngine':
         m.outputs.append(m.outputs[0]+'_wr_en') 
         m.out_names.append('valid_data')
+	if ('_F1D' in m.name or '_F2D' in m.name or '_F3D' in m.name or '_F4D' in m.name or '_F5D' in m.name):
+	    m.parameters += "#(.DISK(1'b1))"
 	if 'VMPROJ' in m.inputs[1]: #default
           m.start = m.inputs[1].replace(m.name,'')+'start'
           m.done = m.name+'_start'

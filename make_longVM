@@ -1,0 +1,5 @@
+./WiresLongVM.py wires.input.longVM_sector
+cp wires.dat ../fpga_emulation_longVM/wires_new.dat
+cp memorymodules.dat ../fpga_emulation_longVM/memorymodules_new.dat
+cp processingmodules.dat ../fpga_emulation_longVM/processingmodules_new.dat
+

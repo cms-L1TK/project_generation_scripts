@@ -1,0 +1,306 @@
+`timescale 1ns / 1ps
+`include "constants.vh"
+
+module Tracklet_processing(
+input clk,
+input reset,
+input en_proc,
+// programming interface
+// inputs
+input wire io_clk,                    // programming clock
+input wire io_sel,                    // this module has been selected for an I/O operation
+input wire io_sync,
+// start the I/O operation
+input wire [15:0] io_addr,        // slave address, memory or register. Top 12 bits already consumed.
+input wire io_rd_en,                // this is a read operation
+input wire io_wr_en,                // this is a write operation
+input wire [31:0] io_wr_data,    // data to write for write operations
+// outputs
+output wire [31:0] io_rd_data,    // data returned for read operations
+output wire io_rd_ack,                // 'read' data from this module is ready
+//clocks
+input wire [2:0] BX,
+input wire first_clk,
+input wire not_first_clk,
+// inputs
+input [31:0] input_link1_reg1,
+input [31:0] input_link1_reg2,
+input [31:0] input_link2_reg1,
+input [31:0] input_link2_reg2,
+input [31:0] input_link3_reg1,
+input [31:0] input_link3_reg2,
+input [31:0] input_link4_reg1,
+input [31:0] input_link4_reg2,
+input [31:0] input_link5_reg1,
+input [31:0] input_link5_reg2,
+input [31:0] input_link6_reg1,
+input [31:0] input_link6_reg2,
+input [31:0] input_link7_reg1,
+input [31:0] input_link7_reg2,
+input [31:0] input_link8_reg1,
+input [31:0] input_link8_reg2,
+input [31:0] input_link9_reg1,
+input [31:0] input_link9_reg2,
+// outputs
+input [15:0] BRAM_OUTPUT_addr, // 1 for now, add more later
+input BRAM_OUTPUT_clk,
+input [31:0] BRAM_OUTPUT_din,
+output [31:0] BRAM_OUTPUT_dout,
+input BRAM_OUTPUT_en,
+input BRAM_OUTPUT_rst,
+input [3:0] BRAM_OUTPUT_we,
+// Projections L1
+output wire [54:0] PT_L1_Plus_To_DataStream,
+output wire PT_L1_Plus_To_DataStream_en,
+output wire [54:0] PT_L1_Minus_To_DataStream,
+output wire PT_L1_Minus_To_DataStream_en,
+input wire [54:0] PT_L1_Plus_From_DataStream,
+input wire PT_L1_Plus_From_DataStream_en,
+input wire [54:0] PT_L1_Minus_From_DataStream,
+input wire PT_L1_Minus_From_DataStream_en,
+// Projections L2
+output wire [54:0] PT_L2_Plus_To_DataStream,
+output wire PT_L2_Plus_To_DataStream_en,
+output wire [54:0] PT_L2_Minus_To_DataStream,
+output wire PT_L2_Minus_To_DataStream_en,
+input wire [54:0] PT_L2_Plus_From_DataStream,
+input wire PT_L2_Plus_From_DataStream_en,
+input wire [54:0] PT_L2_Minus_From_DataStream,
+input wire PT_L2_Minus_From_DataStream_en,
+// Projections L3D4
+output wire [54:0] PT_L3D4_Plus_To_DataStream,
+output wire PT_L3D4_Plus_To_DataStream_en,
+output wire [54:0] PT_L3D4_Minus_To_DataStream,
+output wire PT_L3D4_Minus_To_DataStream_en,
+input wire [54:0] PT_L3D4_Plus_From_DataStream,
+input wire PT_L3D4_Plus_From_DataStream_en,
+input wire [54:0] PT_L3D4_Minus_From_DataStream,
+input wire PT_L3D4_Minus_From_DataStream_en,
+// Projections L4D3
+output wire [54:0] PT_L4D3_Plus_To_DataStream,
+output wire PT_L4D3_Plus_To_DataStream_en,
+output wire [54:0] PT_L4D3_Minus_To_DataStream,
+output wire PT_L4D3_Minus_To_DataStream_en,
+input wire [54:0] PT_L4D3_Plus_From_DataStream,
+input wire PT_L4D3_Plus_From_DataStream_en,
+input wire [54:0] PT_L4D3_Minus_From_DataStream,
+input wire PT_L4D3_Minus_From_DataStream_en,
+// Projections L5D2
+output wire [54:0] PT_L5D2_Plus_To_DataStream,
+output wire PT_L5D2_Plus_To_DataStream_en,
+output wire [54:0] PT_L5D2_Minus_To_DataStream,
+output wire PT_L5D2_Minus_To_DataStream_en,
+input wire [54:0] PT_L5D2_Plus_From_DataStream,
+input wire PT_L5D2_Plus_From_DataStream_en,
+input wire [54:0] PT_L5D2_Minus_From_DataStream,
+input wire PT_L5D2_Minus_From_DataStream_en,
+// Projections L6D1
+output wire [54:0] PT_L6D1_Plus_To_DataStream,
+output wire PT_L6D1_Plus_To_DataStream_en,
+output wire [54:0] PT_L6D1_Minus_To_DataStream,
+output wire PT_L6D1_Minus_To_DataStream_en,
+input wire [54:0] PT_L6D1_Plus_From_DataStream,
+input wire PT_L6D1_Plus_From_DataStream_en,
+input wire [54:0] PT_L6D1_Minus_From_DataStream,
+input wire PT_L6D1_Minus_From_DataStream_en,
+// Projections D5
+output wire [54:0] PT_D5_Plus_To_DataStream,
+output wire PT_D5_Plus_To_DataStream_en,
+output wire [54:0] PT_D5_Minus_To_DataStream,
+output wire PT_D5_Minus_To_DataStream_en,
+input wire [54:0] PT_D5_Plus_From_DataStream,
+input wire PT_D5_Plus_From_DataStream_en,
+input wire [54:0] PT_D5_Minus_From_DataStream,
+input wire PT_D5_Minus_From_DataStream_en,
+// Matches L1
+output wire [44:0] MT_L1_Plus_To_DataStream,
+output wire MT_L1_Plus_To_DataStream_en,
+output wire [44:0] MT_L1_Minus_To_DataStream,
+output wire MT_L1_Minus_To_DataStream_en,
+input wire [44:0] MT_L1_Plus_From_DataStream,
+input wire MT_L1_Plus_From_DataStream_en,
+input wire [44:0] MT_L1_Minus_From_DataStream,
+input wire MT_L1_Minus_From_DataStream_en,
+// Matches L2
+output wire [44:0] MT_L2_Plus_To_DataStream,
+output wire MT_L2_Plus_To_DataStream_en,
+output wire [44:0] MT_L2_Minus_To_DataStream,
+output wire MT_L2_Minus_To_DataStream_en,
+input wire [44:0] MT_L2_Plus_From_DataStream,
+input wire MT_L2_Plus_From_DataStream_en,
+input wire [44:0] MT_L2_Minus_From_DataStream,
+input wire MT_L2_Minus_From_DataStream_en,
+// Matches L3
+output wire [44:0] MT_L3_Plus_To_DataStream,
+output wire MT_L3_Plus_To_DataStream_en,
+output wire [44:0] MT_L3_Minus_To_DataStream,
+output wire MT_L3_Minus_To_DataStream_en,
+input wire [44:0] MT_L3_Plus_From_DataStream,
+input wire MT_L3_Plus_From_DataStream_en,
+input wire [44:0] MT_L3_Minus_From_DataStream,
+input wire MT_L3_Minus_From_DataStream_en,
+// Matches L4
+output wire [44:0] MT_L4_Plus_To_DataStream,
+output wire MT_L4_Plus_To_DataStream_en,
+output wire [44:0] MT_L4_Minus_To_DataStream,
+output wire MT_L4_Minus_To_DataStream_en,
+input wire [44:0] MT_L4_Plus_From_DataStream,
+input wire MT_L4_Plus_From_DataStream_en,
+input wire [44:0] MT_L4_Minus_From_DataStream,
+input wire MT_L4_Minus_From_DataStream_en,
+// Matches L5
+output wire [44:0] MT_L5_Plus_To_DataStream,
+output wire MT_L5_Plus_To_DataStream_en,
+output wire [44:0] MT_L5_Minus_To_DataStream,
+output wire MT_L5_Minus_To_DataStream_en,
+input wire [44:0] MT_L5_Plus_From_DataStream,
+input wire MT_L5_Plus_From_DataStream_en,
+input wire [44:0] MT_L5_Minus_From_DataStream,
+input wire MT_L5_Minus_From_DataStream_en,
+// Matches L6
+output wire [44:0] MT_L6_Plus_To_DataStream,
+output wire MT_L6_Plus_To_DataStream_en,
+output wire [44:0] MT_L6_Minus_To_DataStream,
+output wire MT_L6_Minus_To_DataStream_en,
+input wire [44:0] MT_L6_Plus_From_DataStream,
+input wire MT_L6_Plus_From_DataStream_en,
+input wire [44:0] MT_L6_Minus_From_DataStream,
+input wire MT_L6_Minus_From_DataStream_en,
+// Matches D1
+output wire [44:0] MT_D1_Plus_To_DataStream,
+output wire MT_D1_Plus_To_DataStream_en,
+output wire [44:0] MT_D1_Minus_To_DataStream,
+output wire MT_D1_Minus_To_DataStream_en,
+input wire [44:0] MT_D1_Plus_To_DataStream,
+input wire MT_D1_Plus_To_DataStream_en,
+input wire [44:0] MT_D1_Minus_To_DataStream,
+input wire MT_D1_Minus_To_DataStream_en,
+// Matches D2
+output wire [44:0] MT_D2_Plus_To_DataStream,
+output wire MT_D2_Plus_To_DataStream_en,
+output wire [44:0] MT_D2_Minus_To_DataStream,
+output wire MT_D2_Minus_To_DataStream_en,
+input wire [44:0] MT_D2_Plus_To_DataStream,
+input wire MT_D2_Plus_To_DataStream_en,
+input wire [44:0] MT_D2_Minus_To_DataStream,
+input wire MT_D2_Minus_To_DataStream_en,
+// Matches D3
+output wire [44:0] MT_D3_Plus_To_DataStream,
+output wire MT_D3_Plus_To_DataStream_en,
+output wire [44:0] MT_D3_Minus_To_DataStream,
+output wire MT_D3_Minus_To_DataStream_en,
+input wire [44:0] MT_D3_Plus_To_DataStream,
+input wire MT_D3_Plus_To_DataStream_en,
+input wire [44:0] MT_D3_Minus_To_DataStream,
+input wire MT_D3_Minus_To_DataStream_en,
+// Matches D4
+output wire [44:0] MT_D4_Plus_To_DataStream,
+output wire MT_D4_Plus_To_DataStream_en,
+output wire [44:0] MT_D4_Minus_To_DataStream,
+output wire MT_D4_Minus_To_DataStream_en,
+input wire [44:0] MT_D4_Plus_To_DataStream,
+input wire MT_D4_Plus_To_DataStream_en,
+input wire [44:0] MT_D4_Minus_To_DataStream,
+input wire MT_D4_Minus_To_DataStream_en,
+// Matches D5
+output wire [44:0] MT_D5_Plus_To_DataStream,
+output wire MT_D5_Plus_To_DataStream_en,
+output wire [44:0] MT_D5_Minus_To_DataStream,
+output wire MT_D5_Minus_To_DataStream_en,
+input wire [44:0] MT_D5_Plus_To_DataStream,
+input wire MT_D5_Plus_To_DataStream_en,
+input wire [44:0] MT_D5_Minus_To_DataStream,
+input wire MT_D5_Minus_To_DataStream_en,
+// Track Fits
+output wire [125:0] CT_L1L2_DataStream,
+output wire [125:0] CT_L3L4_DataStream,
+output wire [125:0] CT_L5L6_DataStream,
+output wire [125:0] CT_D1D2_DataStream,
+output wire [125:0] CT_D3D4_DataStream,
+output wire [125:0] CT_D1L1_DataStream,
+output wire [125:0] CT_D1L2_Datastream
+
+);
+// Address bits "io_addr[31:30] = 2'b01" are consumed when selecting 'slave6'
+// Address bits "io_addr[29:28] = 2'b01" are consumed when selecting 'tracklet_processing'
+wire InputLink_R1Link1_io_sel, TPars_L1L2_io_sel;
+wire InputLink_R1Link2_io_sel, TPars_L3L4_io_sel;
+wire InputLink_R1Link3_io_sel, TPars_L5L6_io_sel;
+wire io_sel_R3_io_block;
+assign InputLink_R1Link1_io_sel = io_sel && (io_addr[13:10] == 4'b0001);
+assign InputLink_R1Link2_io_sel = io_sel && (io_addr[13:10] == 4'b0010);
+assign InputLink_R1Link3_io_sel = io_sel && (io_addr[13:10] == 4'b0011);
+assign TPars_L1L2_io_sel  = io_sel && (io_addr[13:10] == 4'b0100);
+assign TPars_L3L4_io_sel  = io_sel && (io_addr[13:10] == 4'b0101);
+assign TPars_L5L6_io_sel  = io_sel && (io_addr[13:10] == 4'b0110);
+assign io_sel_R3_io_block = io_sel && (io_addr[13:10] == 4'b1000);
+// data busses for readback
+wire [31:0] InputLink_R1Link1_io_rd_data, TPars_L1L2_io_rd_data;
+wire [31:0] InputLink_R1Link2_io_rd_data, TPars_L3L4_io_rd_data;
+wire [31:0] InputLink_R1Link3_io_rd_data, TPars_L5L6_io_rd_data;
+
+wire IL1_D3_LR1_D3_empty;
+wire IL2_D3_LR2_D3_empty;
+wire IL3_D3_LR3_D3_empty;
+
+reg [5:0] clk_cnt;
+
+//wire enable_gen;
+//enable_generator en_gen(
+//.clk(clk),
+//.in( (~IL1_D3_LR1_D3_empty | ~IL2_D3_LR2_D3_empty | ~IL3_D3_LR3_D3_empty) & bc0_i ),
+//.out(enable_gen)
+//);
+
+initial
+clk_cnt = 6'b0;
+always @(posedge clk) begin
+if(en_proc)
+clk_cnt <= clk_cnt + 1'b1;
+else begin
+clk_cnt <= 6'b0;
+end
+if(clk_cnt == (`tmux - 1'b1))
+clk_cnt <= 6'b0;
+end
+
+wire [1:0] IL1_D3_start;
+wire [1:0] IL2_D3_start;
+wire [1:0] IL3_D3_start;
+wire [1:0] IL1_D4_start;
+wire [1:0] IL2_D4_start;
+wire [1:0] IL3_D4_start;
+wire [1:0] IL1_D5_start;
+wire [1:0] IL2_D5_start;
+wire [1:0] IL3_D5_start;
+wire [1:0] IL1_D6_start;
+wire [1:0] IL2_D6_start;
+wire [1:0] IL3_D6_start;
+
+assign IL1_D3_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D3_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D3_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D3_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D3_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D3_start[0] = (clk_cnt == 6'd0 && en_proc);
+
+assign IL1_D4_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D4_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D4_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D4_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D4_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D4_start[0] = (clk_cnt == 6'd0 && en_proc);
+
+assign IL1_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D5_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D5_start[0] = (clk_cnt == 6'd0 && en_proc);
+
+assign IL1_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL1_D6_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL2_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL2_D6_start[0] = (clk_cnt == 6'd0 && en_proc);
+assign IL3_D6_start[1] = reset;    // use the top bit of start as reset
+assign IL3_D6_start[0] = (clk_cnt == 6'd0 && en_proc);

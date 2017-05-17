@@ -1,5 +1,4 @@
 import os,sys
-import PTdict
 
 def topOfList(l,string):
     l1 = [x for x in l if string not in x]
@@ -73,10 +72,7 @@ prologue = []
 for line in p:
     prologue.append(line)
 # Read final lines for IPbus and possible reader
-if "D5" in region:
-  ep  = open('epilogue_disk.txt')
-else:
-  ep  = open('epilogue.txt')
+ep  = open('epilogue.txt')
 epilogue = []
 for line in ep:
     epilogue.append(line)
@@ -92,9 +88,10 @@ string_epilogue = ''
 il = 0
 
 # Always write the initial lines
+print 'write prologue'
 for p in prologue:
     string_prologue += '\n' +  p.strip()
-    
+print 'start memory loop'
 # Start looping over the memories first
 for x in memories:
     h = open('wires_'+region+'.dat') # Open the wire connections file
@@ -269,6 +266,7 @@ seen_done8_0 = False
 seen_done9_0 = False
 seen_done10_0 = False
 
+print 'start processing module loop'
 # Start looping over the processing modules
 for x in modules:
     h = open('wires_'+region+'.dat') # Open the wire connections file
@@ -279,6 +277,7 @@ for x in modules:
     o_n = [] # List of output names
     m.module = x[0] # Module nice name from processing list
     m.name = x[1]  # Module instance name from processing list
+
     for line in h: # Loop over connections
         if line.split(' ')[-1].strip().split('.')[0] == x[1]: # If instance corresponds to current processing
             i.append(line.split(' ')[0]+'_'+x[1]) # Add input to module's list
@@ -405,7 +404,6 @@ for x in modules:
     if m.module == 'ProjectionTransceiver':
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
-
         # depend on the actual instantiation of the module
         # for now
         if 'L1' in m.name:
@@ -428,19 +426,22 @@ for x in modules:
         # This won't work with current ProjTransceiver out of box. [TODO]
         m.in_names = ['projin_'+str(x) for x in range(1,14)]
         # ground the empty input ports
-        m.inputs += [0]*(14-len(m.inputs))
-
-        outs = m.outputs
-        outnames = m.out_names
-        for o in outs:
-            m.outputs.append(o+'_wr_en')
-        for on in outnames:
-            m.out_names.append(on.replace('projout','valid_'))
-        
+        while len(m.inputs) < len(m.in_names):
+            m.inputs.append("1'b0")
+        outs = []
+        outnames = []
+        for o in m.outputs:
+            outs.append(o)
+            outs.append(o+'_wr_en')
+        for on in m.out_names:
+            outnames.append(on)
+            outnames.append(on.replace('projout','valid_'))
+        m.outputs = outs
+        m.out_names = outnames
         m.out_names = m.out_names+['valid_proj_data_stream','proj_data_stream'] # Outputs to links
         m.in_names = m.in_names+['incomming_proj_data_stream'] # Input from links
         m.outputs = m.outputs+[m.name+'_To_DataStream_en',m.name+'_To_DataStream']
-        m.inputs = m.inputs+[m.name+'_From_DataStream']        
+        m.inputs = m.inputs+[m.name+'_From_DataStream']
                 
     if m.module == 'ProjectionRouter':
         m.outputs.append(m.outputs[-1]+'_wr_en') # Write enable signal to AllProjection memory
@@ -490,11 +491,18 @@ for x in modules:
         for i,n in enumerate(m.inputs): # Count the inputs
             if 'AS_' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
-        ons = m.out_names
-        for i,n in enumerate(ons):
-            m.outputs.append(m.outputs[i]+'_wr_en') # write enable for matches
-            m.out_names.append('valid_'+n)
 
+        outs = []
+        outnames = []
+        for o in m.outputs:
+            outs.append(o)
+            outs.append(o+'_wr_en')
+        for on in m.out_names:
+            outnames.append(on)
+            outnames.append('valid_'+on)
+        m.outputs = outs
+        m.out_names = outnames
+            
         phiregion = '00'
         if 'PHI1' in m.name:
             phiregion = '00'
@@ -608,20 +616,29 @@ for x in modules:
         #    os.append(o+'_wr_en')    
         #m.out_names = m.out_names + ons
         #m.outputs = m.outputs + os
-        ons = m.out_names
-        for i,n in enumerate(ons):
-            m.outputs.append(m.outputs[i]+'_wr_en') # write enable for matches
-            m.out_names.append('valid_'+n)
+        outs = []
+        outnames = []
+        for o in m.outputs:
+            outs.append(o)
+            outs.append(o+'_wr_en')
+        for on in m.out_names:
+            outnames.append(on)
+            outnames.append('valid_'+on)
+        m.outputs = outs
+        m.out_names = outnames
+      
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.done = m.name+'_start'
         seen_done8_0 = True
         
-    if m.module == 'MatchTransceiver':
-        
-        ons = m.out_names
+    if m.module == 'MatchTransceiver':      
+        ons = []
         #m.parameters = '#("Layer")'
-        for i,o in enumerate(ons):
-            m.out_names.append('valid_matchout%d'%(i+1))
+        for i,o in enumerate(m.out_names): # Count the outputs
+            ons.append(o)
+        for i,o in enumerate(m.out_names):
+            ons.append('valid_matchout%d'%(i+1))
+        m.out_names = ons
         valids = []
         for o in m.outputs:
             valids.append(o+'_wr_en')
@@ -687,18 +704,18 @@ for x in modules:
         string_processing += '\n'
         string_processing += '\n' +  m.module + ' ' +m.parameters + ' ' +m.name + '('
         k = 1
-        if m.module == 'ProjectionRouter':
-            #print m.inputs
-            while len(m.inputs) < 7:
-                m.inputs.append("1'b0")
-                m.in_names.append('proj'+str(len(m.inputs))+'in')
-                
-        if m.module == 'MatchTransceiver':
-            ins = [x for x in m.inputs if 'Stream' not in x]
-            while len(ins) < 24:
-                m.inputs.append("1'b0")
-                ins.append("1'b0")
-                m.in_names.append('matchin'+str(len(ins)))
+        #if m.module == 'ProjectionRouter':
+        #    #print m.inputs
+        #    while len(m.inputs) < 7:
+        #        m.inputs.append("1'b0")
+        #        m.in_names.append('proj'+str(len(m.inputs))+'in')
+        #        
+        #if m.module == 'MatchTransceiver':
+        #    ins = [x for x in m.inputs if 'Stream' not in x]
+        #    while len(ins) < 24:
+        #        m.inputs.append("1'b0")
+        #        ins.append("1'b0")
+        #        m.in_names.append('matchin'+str(len(ins)))
 
         for n,i in zip(m.in_names,m.inputs): # Loop over inputs and input names
             if m.module != 'LayerRouter' and m.module != 'DiskRouter': # Special cases for signals without normal read_add
@@ -749,7 +766,7 @@ for x in modules:
         string_processing += '\n' +  '.done('+m.done+'),'
         string_processing += '\n' +  m.common
         string_processing += '\n' +  ');'
-
+        
 # Write the final lines
 
 for ep in epilogue:

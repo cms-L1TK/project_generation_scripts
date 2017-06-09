@@ -213,9 +213,9 @@ for mem in inputmemorymodules :
 
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
-        if "TF_" not in mem :
+        if "CT_" not in mem :
             print mem," is not in inputmemorymodules"
-        if "TF_" in mem:
+        if "CT_" in mem:
             inputmemorymodules.append(mem)
 
 for proc in processingmodules :

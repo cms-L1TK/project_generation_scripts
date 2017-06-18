@@ -29,6 +29,8 @@ class Module:
         self.size = 0 # Memory sizes for connecting wires
         self.start = '' 
         self.done = ''
+        self.reset = ''
+        self.resetdone=''
 
 # Read the processing modules
 #if len(sys.argv) > 1:
@@ -63,7 +65,8 @@ for line in g:
     memories.append(signals) # Add to the list of triplets
 
 # Common signals for every module # IPBus might go away
-Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
+#Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
+Common = '.clk(clk),\n.'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
@@ -140,34 +143,55 @@ for x in memories:
         m.in_names.append('read_en')
         m.out_names.append('empty')
         m.outputs.append(m.outputs[-1]+'_empty')
-        m.common = m.common.replace('//.reset(','.reset(')
+        #m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:] # They are accessed directly by TC and MC
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         if 'MC' in m.outputs[0]:
             m.out_names = ['read_add_MC','data_out_MC'] # If the memory is read by an MC change the output names # TODO not needed anymore
+            
     if 'VMStubs' in m.module:  # VMStubsTE or VMStubsME
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done2_5 = True
+        if 'VMStubsTE' in m.module: # VMStubsTE
+            if m.name[7] in ['1','3','5']:
+                m.parameters = "#(.ISODD(1'b1))"
+            else:
+                m.parameters = "#(.ISODD(1'b0))"
+            # special cases
+            if m.name[6:12] in ['L2PHIW','L2PHIQ']:
+                m.parameters = "#(.IDODD(1'b1))"
+            if m.name[6:12] in ['D1PHIW','D1PHIQ']:
+                m.parameters = "#(.ISODD(1'b0))"
+            
     if m.module == 'StubPairs':
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done3_5 = True
     if m.module == 'TrackletParameters':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
     if m.module == 'TrackletProjections':
         #print m.name
         m.start = m.inputs[0].replace(m.name,'')+'proj_start'
+        m.reset = m.inputs[0].replace(m.name,'')+'proj_reset'
         if 'From' in m.name:
             m.start = m.start.replace('proj_','')
+            m.reset = m.reset.replace('proj_','')
             m.parameters = "#(1'b1)"
         if 'To' in m.name:
             m.parameters = "#(1'b1)"
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
     if m.module == 'AllProj':
         if m.name[-6:-4] in ['L4','L5','L6']:
             m.parameters = "#(1'b0,1'b0)"   #inner,disk
@@ -176,13 +200,18 @@ for x in memories:
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
     if m.module == 'VMProjections':
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done6_5 = True
     if m.module == 'CandidateMatch':
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done7_5 = True
     if m.module == 'FullMatch':
         m.out_names.append('read_en')
@@ -195,22 +224,28 @@ for x in memories:
         else:
             m.outputs.append(m.outputs[-1]+'_read_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
     if m.module == 'TrackFit':
         #m.out_names = m.out_names[1:] # These memories don't have to send number out
         #m.outputs = m.outputs[1:]
         #m.out_names.append('index_out')
         #m.outputs.append(m.outputs[-1]+'_index')
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done10_5 = True
     if m.module == 'CleanTrack':
         m.outputs.append(m.name+'_DataStream') # Final track out
         m.out_names.append('data_out')
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         ####################################################
-    if('mem' not in sys.argv): # If you don't want memories in the print out
+    if('mem' not in sys.argv): # If you don't want memories in the print out  ## FIXME
         string_memories += '\n'
         for i in m.inputs: # Declare the wires to be used in the memory
             if 'input_link' not in i: # Input link memory does not have an enable
@@ -245,8 +280,10 @@ for x in memories:
             string_memories += '\n' +  '.'+n+'('+i+'),'
         for n,o in zip(m.out_names,m.outputs):
             string_memories += '\n' +  '.'+n+'('+o+'),'
-        string_memories += '\n' +  '.start('+m.start+'),'
-        string_memories += '\n' +  '.done('+m.done+'),'
+        string_memories += '\n' + '.start('+m.start+'),'
+        string_memories += '\n' + '.done('+m.done+'),'
+        string_memories += '\n' + '.reset('+m.reset+'),'
+        string_memories += '\n' + '.resetdone('+m.resetdone+'),'
         string_memories += '\n' +  m.common
         string_memories += '\n' +  ');'
 
@@ -306,33 +343,55 @@ for x in modules:
             if 'VMR' in o and 'VMS' in o: # Output going to VMStub memory
                 enables_2.append(o+'_wr_en') # For every output create a write enable
         m.out_names = m.out_names + enables
-        m.outputs = m.outputs + enables_2
+        m.outputs = m.outputs + enables_2 
 
-# add module parameter set here after having LongVM VMR firmware
-        
-#        if 'L1' in m.name or 'L3' in m.name or 'L5' in m.name: # Odd layer parameters
-#            if 'L1' in m.name or 'L3' in m.name: # Inner layer parameter
-#                m.parameters = "#(1'b1,1'b1)"
-#            else:
-#                m.parameters = "#(1'b0,1'b1)"
-#        else:
-#            if 'L2' in m.name:
-#                m.parameters = "#(1'b1,1'b0)"
-#            else:
-#                m.parameters = "#(1'b0,1'b0)"
-#        if 'F1' in m.name or 'F3' in m.name or 'F5' in m.name:
-#            if 'D5' in m.name:
-#                m.parameters = "#(1'b1,1'b1,1'b0)"  # PS module, Odd, barrel
-#            if 'D6' in m.name:
-#                m.parameters = "#(1'b0,1'b1,1'b0)"  # 2S module, Odd, barrel
-#        if 'F2' in m.name or 'F4' in m.name:
-#            if 'D5' in m.name:
-#                m.parameters = "#(1'b1,1'b0,1'b0)"  # PS module, Odd, barrel
-#            if 'D6' in m.name:
-#                m.parameters = "#(1'b0,1'b0,1'b0)"  # 2S module, Odd, barrel
+        # add module parameter set here after having LongVM VMR firmware
+        if 'VMRTE' in m.name: # VMRouterTE
+            overlap = "1'b0"
+            if m.name[-1] in ['Q','W','X','Y']:
+                overlap = "1'b1"
+                
+            inner = "1'b0"
+            if m.name[6:8] in ['L1','L2','L3']:
+                inner = "1'b1"
+                
+            odd = "1'b0"
+            if m.name[7] in ['1','3','5']:
+                odd = "1'b1"
+            # special cases
+            if m.name[6:12] in ['L2PHIW','L2PHIQ']:
+                odd = "1'b1"
+            if m.name[6:12] in ['D1PHIW','D1PHIQ']:
+                odd = "1'b0"
+                
+            table = ""
+            if m.name[6:8]=='L1':
+                if m.name[-1] in ['X','Y']:
+                    # hybrid
+                    table = "TEBinTableDisk1ToLayer1.txt" #?
+                else:
+                    table = "TEBinTableLayer1ToLayer2.txt"
+            elif m.name[6:8]=='L3':
+                table = "TEBinTableLayer3ToLayer4.txt"
+                # TEBinTableLayer3ToLayer2.txt ?
+            elif m.name[6:8]=='L5':
+                table = "TEBinTableLayer5ToLayer6.txt"
+            # for disks 
+            elif m.name[6:8]=='D1':
+                if m.name[-1] in ['A','B','C','D']:
+                    table = "TEBinTableDisk1ToDisk2.txt"
+            elif m.name[6:8]=='D3':
+                table = "TEBinTableDisk3ToDisk4.txt"
+            # hybrid
+            elif m.name[6:8]=='L2' and m.name[-1] in ['Q','W']:
+                table = "TEBinTableDisk1ToLayer2.txt"
+            
+            m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
 
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done2_0 = True
         vs = 0
         valids = []
@@ -349,8 +408,11 @@ for x in modules:
         m.out_names.append('valid_data')
         m.outputs.append(m.outputs[0]+'_wr_en')
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done3_0 = True
+        
         #if 'TE_F' in m.name or 'TE_B' in m.name:
         #    m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt",'"1'b0"')'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
         #else:
@@ -399,11 +461,15 @@ for x in modules:
         elif 'D1L2' in m.name:
             m.parameters = '#(.BARREL(0),.InvR_FILE("InvRTable_'+m.name+'.dat"),.InvT_FILE("InvTTable_'+m.name+'.dat"),.TC_index('+TC_index+"))" # RMEAN ZMEAN?
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done4_0 = True
     if m.module == 'ProjectionTransceiver':
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         # depend on the actual instantiation of the module
         # for now
         if 'L1' in m.name:
@@ -463,7 +529,9 @@ for x in modules:
         elif 'D2PHI' in m.name or 'D4PHI' in m.name:
             m.parameters = "#(1'b0,1'b1,1'b0)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done6_0 = True
     if m.module == 'MatchEngine':
         m.outputs.append(m.outputs[0]+'_wr_en') 
@@ -472,10 +540,14 @@ for x in modules:
 	    m.parameters += "#(.DISK(1'b1))"
 	if 'VMPROJ' in m.inputs[1]: #default
           m.start = m.inputs[1].replace(m.name,'')+'start'
+          m.reset = m.inputs[1].replace(m.name,'')+'reset'
           m.done = m.name+'_start'
+          m.resetdone = m.name+'_reset'
 	elif 'VMPROJ' in m.inputs[0]: # don't think this is needed any more
           m.start = m.inputs[0].replace(m.name,'')+'start'
+          m.reset = m.inputs[0].replace(m.name,'')+'reset'
           m.done = m.name+'_start'
+          m.resetdone = m.name+'_reset'
         seen_done7_0 = True
     if m.module == 'MatchCalculator':
         for i,n in enumerate(m.in_names): # Count the inputs
@@ -536,7 +608,9 @@ for x in modules:
         if 'MC_L5L6_L4' in m.name:
             m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L5L6_L4,`MC_z_L5L6_L4,`MC_zfactor_OUTER)"
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done8_0 = True
         
     if m.module == 'DiskMatchCalculator':
@@ -628,7 +702,9 @@ for x in modules:
         m.out_names = outnames
       
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done8_0 = True
         
     if m.module == 'MatchTransceiver':      
@@ -644,7 +720,9 @@ for x in modules:
             valids.append(o+'_wr_en')
         m.outputs = m.outputs + valids
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
              
         m.out_names = m.out_names+['valid_match_data_stream','match_data_stream'] # Output signals to links
         m.in_names = m.in_names+['incomming_match_data_stream'] # Input signals from links
@@ -672,10 +750,11 @@ for x in modules:
         for i in m.inputs:
             if 'From' in i:
                 m.start = i.replace(m.name,'')+'start'
+                m.reset = i.replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         seen_done10_0 = True
-
-    # TODO: Add PurgeDuplicate in the wires_new.dat    
+    
     if m.module == 'PurgeDuplicate':
 	if region=='D3D6':
 	    m.parameters = '#(.SCOPE("D3D6"))'
@@ -696,7 +775,9 @@ for x in modules:
             os.append(o+'_wr_en')
         m.outputs += os
         m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
+        m.resetdone = m.name+'_reset'
         m.in_names.append('')
         
     ####################################################
@@ -764,6 +845,8 @@ for x in modules:
             string_processing += '\n' +  '.'+n+'('+o+'),'
         string_processing += '\n' +  '.start('+m.start+'),'
         string_processing += '\n' +  '.done('+m.done+'),'
+        string_processing += '\n' +  '.reset('+m.reset+'),'
+        string_processing += '\n' +  '.resetdone('+m.resetdone+'),'
         string_processing += '\n' +  m.common
         string_processing += '\n' +  ');'
         
@@ -772,11 +855,11 @@ for x in modules:
 for ep in epilogue:
     string_epilogue += '\n' +  ep.strip()
     
-starts = [x.split('),')[0] for x in (string_memories+string_processing).split('.start(')]
+#starts = [x.split('),')[0] for x in (string_memories+string_processing).split('.start(')]
 
-for x in set(starts[1:]):
-    if len(x)>1 and 'IL' not in x:
-        string_starts += '\n' +  'wire [1:0] '+ x +';'
+#for x in set(starts[1:]):
+#    if len(x)>1 and 'IL' not in x:
+#        string_starts += '\n' +  'wire [1:0] '+ x +';'
 
 if region == 'D3':
     print 'Processing D3'

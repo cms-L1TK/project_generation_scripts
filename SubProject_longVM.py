@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import proj_dict as pdict
 
 goodseedings=['L1L2','L3L4','L5L6','D1D2','D3D4','D1L1','D1L2']
 
@@ -26,127 +27,260 @@ elif args.region=='H':
     # TODO: hybrid seeding, seeding in barrel(disk) projecting to disk(layer)
     goodseedings=[]
 
-seedings = goodseedings if args.seedings is None else args.seedings
-print seedings
+seeds = goodseedings if args.seedings is None else args.seedings
+print seeds
 
-if not set(seedings).issubset(goodseedings):
+if not set(seeds).issubset(goodseedings):
     print 'Required seedings are not all possible in this detector region'
     print 'available seedings are :', goodseedings
-    exit(1)
+    exit(0)
+
+# dictionary that stores lists of possible projections for a given seeding
+proj_dict = {} 
+if args.region == 'L':
+    proj_dict = pdict.proj_dict_L
+elif args.region == 'D':
+    proj_dict = pdict.proj_dict_D
+elif args.region == 'H':
+    proj_dict = pdict.proj_dict_H
+else:
+    proj_dict = pdict.proj_dict
+
+# match processing modules by seedings and possible projection layers/disks
+def match_proc(proc, seedings, region):
+    if region in ['L','D']: # not hybrid
+        if 'PHIQ' in proc or 'PHIW' in proc or 'PHIX' in proc or 'PHIY' in proc:
+            return False
+    
+    for seeding in seedings:
+        seed1 = seeding[0:2]
+        seed2 = seeding[2:4]
+        projections = proj_dict[seeding]
+        
+        # VMRouterTE
+        if 'VMRTE' in proc:
+            if seed1 in proc or seed2 in proc:
+                return True
+        # VMRouterME
+        elif 'VMRME' in proc:
+            if proc.split('_')[-1][0:2] in projections:
+                return True
+        # TrackletEngine
+        elif 'TE' in proc:
+            if '_'+seed1 in proc and '_'+seed2 in proc:
+                return True
+        # TrackletCalculator
+        elif 'TC' in proc:
+            if seeding in proc:
+                return True
+        # ProjectionTransceiver
+        elif 'PT' in proc:
+            for proj in projections:
+                if proj in proc:
+                    return True
+        # ProjectionRouter, MatchEngine, MatchCalculator
+        elif 'PR' in proc or 'ME' in proc or 'MC' in proc:
+            if seeding in proc and proc.split('_')[-1][0:2] in projections:
+                return True
+        # MatchTransceiver
+        elif 'MT' in proc:
+            for proj in projections:
+                if proj in proc:
+                    return True
+        # FitTrack
+        elif 'FT' in proc:
+            if seeding in proc:
+                return True
+        # PurgeDuplicate
+        elif 'PD' in proc:
+            return True
+        else:
+            print 'WARNING : ', proc, ' not specified!!'
+            exit(1)
+            
+    return False
+
+# veto processing modules based on allowed projection layers/disks
+def veto_proc(proc, seedings):
+    for seeding in seedings:
+        if 'PR' in proc or 'ME' in proc or 'MC' in proc:
+            if proc.split('_')[-1][0:2] in proj_dict[seeding]:
+                return False
+        else:
+            return False
+    
+    return True
+
+# match memory modules by seedings and possible projection layers/disks
+def match_mem(mem, seedings, region):
+    if region in ['L','D']: # not hybrid
+        if 'PHIQ' in mem or 'PHIW' in mem or 'PHIX' in mem or 'PHIY' in mem:
+            return False
+    
+    for seeding in seedings:
+        seed1 = seeding[0:2]
+        seed2 = seeding[2:4]
+        projections = proj_dict[seeding]
+
+        if 'VMSTE' in mem:
+            if seed1 in mem or seed2 in mem:
+                return True
+        elif 'VMSME' in mem:
+            if mem.split('_')[-1][0:2] in projections:
+                return True
+        elif 'SP' in mem:
+            if '_'+seed1 in mem and '_'+seed2 in mem:
+                return True
+        elif 'TPROJ' in mem or 'FM' in mem or 'CM' in mem:
+            if seeding in mem.split('_')[1]:
+                for proj in projections:
+                    if proj in mem.split('_')[2]:
+                        return True
+        elif 'TF' in mem or 'CT' in mem:
+            if seeding in mem.split('_')[1]:
+                return True
+        else:
+            return True
+            
+    return False    
+
+# veto memory modules based on allowed projection layers/disks
+def veto_mem(mem, seedings):
+    for seeding in seedings:
+        seed1 = seeding[0:2]
+        seed2 = seeding[2:4]
+        projections = proj_dict[seeding]
+
+        if 'TPROJ' in mem:
+            for proj in projections:
+                if proj in mem.split('_')[-1]:
+                    return False
+            
+    return True
+
 
 print 'Will read', args.input
 fi = open(args.input,"r")
 fo = open(args.output,"w")
+
+vmproj = []
+tproj_pt = []
 
 for line in fi:
 
     if len(line.split(' > '))!=3:
         continue
     
-    proc = line.split(' > ')[1]
-
-    # check processing module first
-    # seeding
-    match_proc = False
-    for seeding in seedings:
-        seed1 = seeding[0:2]
-        seed2 = seeding[2:4]
-        # VMRouterTE
-        if 'VMRTE' in proc:
-            if seed1 in proc or seed2 in proc:
-                match_proc = True
-                break
-        # VMRouterME, ProjectionTransceiver, MatchTransceiver
-        if 'VMRME' in proc or 'PT' in proc or 'MT' in proc:
-            if seed1 not in proc and seed2 not in proc:
-                match_proc = True
-                break
-        # TrackletEngine
-        if 'TE' in proc:
-            if '_'+seed1 in proc and '_'+seed2 in proc:
-                match_proc = True
-                break
-        # TrackletCalculator, ProjectionRouter, MatchEngine, MatchCalculator,
-        # FitTrack
-        if 'TC' in proc or 'PR' in proc or 'ME' in proc or 'MC' in proc or 'FT' in proc:
-            if seeding in proc:
-                match_proc = True
-                break
-        # PurgeDuplicate
-        if 'PD' in proc:
-            match_proc = True
-            
-    if not match_proc:
-        continue
-
-    # region
-    if args.region in ['L','D']: # not hybrid
-        if 'PHIQ' in proc or 'PHIW' in proc or 'PHIX' in proc or 'PHIY' in proc:
-            continue
-    # VMRTE, VMME, TE, PR, ME, MC, MT
-    if 'VMR' in proc or 'TE' in proc or 'PR' in proc or 'ME' in proc or 'MC' in proc or 'MT' in proc:
-        if args.region=='L' and '_D' in proc:  # barrel only
-            continue
-        if args.region=='D' and '_L' in proc:  # disk only
-            continue
-            
-    if 'PT' in proc:
-        if args.region=='L' and 'D5' in proc:
-            continue
-        if args.region=='D':
-            if 'L1' in proc or 'L2' in proc:
-                continue
-
-            
-    # now pick relevant memories
+    proc = line.split(' > ')[1].split()[0]
     inputmems = line.split(' > ')[0].split()
     outputmems = line.split(' > ')[2].split()
-    
+
     inputmems_new = []
     outputmems_new = []
-
-    for im in inputmems:
-        veto_mem = False
-        # check seeding
-        if 'TPROJ' in im or 'FM' in im or 'TF' in im or 'CT' in im:    
-            mseed = im.split('_')[1][0:4]
-            if mseed not in seedings:
-                veto_mem = True
-        if veto_mem:
-            continue
+    
+    if 'VMR' in proc or 'TE' in proc: # VMRouterTE, VMRouterME, TrackletEngine
+        if match_proc(proc, seeds, args.region) :
+            inputmems_new = inputmems
+            outputmems_new = outputmems
+    elif 'TC' in proc: # TrackletCalculator
+        if match_proc(proc, seeds, args.region):
+            inputmems_new = inputmems
+            for mem in outputmems:
+                if 'TPROJ' not in mem:
+                    outputmems_new.append(mem)
+                else:  # TPROJ memory
+                    if match_mem(mem, seeds, args.region):
+                        outputmems_new.append(mem)                      
+    elif 'PT' in proc: # ProjectionTransceiver
+        if match_proc(proc, seeds, args.region):
+            # TPROJ memories
+            for mem in inputmems:
+                if match_mem(mem, seeds, args.region):
+                    inputmems_new.append(mem)                
+            for mem in outputmems:
+                if match_mem(mem, seeds, args.region):
+                    outputmems_new.append(mem)
+                    tproj_pt.append(mem)
+            if len(outputmems_new)==0: # if empty
+                # some projections from different seedings are merged
+                for mem in outputmems:
+                    if not veto_mem(mem, seeds):
+                        outputmems_new.append(mem)
+                        tproj_pt.append(mem)
+            assert len(outputmems_new)>0
+    elif 'PR' in proc: # ProjectionRouter
+        # do not match by seeding since PR handles mixture of seeding pairs
+        if not veto_proc(proc, seeds):
+            for mem in inputmems: # TPROJ
+                if 'FromPlus' in mem or 'FromMinus' in mem:
+                    if mem in tproj_pt:
+                        inputmems_new.append(mem)
+                else:
+                    if match_mem(mem, seeds, args.region):
+                        inputmems_new.append(mem)
+            if len(inputmems_new) > 0:
+                for mem in outputmems:
+                    outputmems_new.append(mem) # AP, VMPROJ
+                    # keep track of vmproj in case of mixed seeding
+                    if 'VMPROJ' in mem:
+                        vmproj.append(mem)
+    elif 'ME' in proc: # MatchEngine
+        # do not match by seeding since ME handles mixture of seeding pairs
+        if not veto_proc(proc, seeds):
+            assert len(inputmems)==2
+            if inputmems[1] in vmproj:
+                inputmems_new = inputmems
+                outputmems_new = outputmems
+    elif 'MC' in proc: # MatchCalculator
+        ToNeighborFM = []
+        # do not match by seeding since MC handles mixture of seeding pairs
+        if not veto_proc(proc, seeds):
+            for mem in outputmems: # FM
+                if match_mem(mem, seeds, args.region):
+                    outputmems_new.append(mem)
+                if '_ToPlus' in mem or '_ToMinus' in mem:
+                    ToNeighborFM.append(mem)
+                    
+            if len(outputmems_new)>0:
+                inputmems_new = inputmems
+                
+            # add ToPlus and ToMinus memories if not added yet
+            addedNeighbors = False
+            for newmem in outputmems_new:
+                if '_ToPlus' in newmem or '_ToMinus' in newmem:
+                    addedNeighbors = True
+                    break
+            if not addedNeighbors and len(outputmems_new)>0:
+                outputmems_new += ToNeighborFM
+                    
+    elif 'MT' in proc: # MatchTransceiver
+        if match_proc(proc, seeds, args.region):
+            for mem in outputmems:
+                if match_mem(mem, seeds, args.region):
+                    outputmems_new.append(mem)
+            inputmems_new = inputmems
+    elif 'FT' in proc: # FitTrack
+        if match_proc(proc, seeds, args.region):
+            for mem in inputmems:
+                if 'FM' not in mem:
+                    inputmems_new.append(mem)
+                else:
+                    if match_mem(mem, seeds,args.region):
+                        inputmems_new.append(mem)
+            outputmems_new = outputmems
+    elif 'PD' in proc: # PurgeDuplicate
+        for mem in inputmems:
+            if match_mem(mem, seeds, args.region):
+                inputmems_new.append(mem)
+        for mem in outputmems:
+            if match_mem(mem, seeds, args.region):
+                outputmems_new.append(mem)           
         
-        # check region
-        if 'TPROJ' in im or 'FM' in im:
-            target = im.split('_')[2][0:2]
-            if args.region not in target:
-                veto_mem = True
-        if veto_mem:
-            continue
-        
-        inputmems_new.append(im)
-
-
-    for om in outputmems:
-        veto_mem = False
-        # check seeding
-        if 'TPROJ' in om or 'FM' in om or 'TF' in om or 'CT' in om:    
-            mseed = om.split('_')[1][0:4]
-            if mseed not in seedings:
-                veto_mem = True
-        if veto_mem:
-            continue
-        
-        # check region
-        if 'TPROJ' in om or 'FM' in om:
-            target = om.split('_')[2][0:2]
-            if args.region not in target:
-                veto_mem = True
-        if veto_mem:
-            continue
-        
-        outputmems_new.append(om)
-
     # write to output
+    # check if new input and output memories are empty
+    if len(inputmems_new)==0 or len(outputmems_new)==0:
+        continue
+
     for imn in inputmems_new:
         fo.write(imn+" ")
     fo.write("> "+proc+" >")
@@ -155,3 +289,4 @@ for line in fi:
     fo.write("\n")
 
 print 'Output ', args.output
+

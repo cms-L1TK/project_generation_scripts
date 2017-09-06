@@ -183,6 +183,8 @@ lines = []
 fp = open("processingmodules_inputs.dat","w")
 
 for line in fi:
+    if line[0]=="#" :
+        continue
     if not ">" in line:
         continue
     substr = line.split(">")
@@ -211,9 +213,9 @@ for mem in inputmemorymodules :
 
 for mem in outputmemorymodules :
     if not mem in inputmemorymodules :
-        if "CT_" not in mem :
+        if "TF_" not in mem :
             print mem," is not in inputmemorymodules"
-        if "CT_" in mem:
+        if "TF_" in mem:
             inputmemorymodules.append(mem)
 
 for proc in processingmodules :

@@ -46,7 +46,8 @@ class Module:
 #os.system('python Wires.py wires.'+region)
 
 # generate only full project for now
-region = 'new'
+#region = 'new'
+region = 'test'
 
 f = open('processingmodules_'+region+'.dat')
 modules = []
@@ -73,15 +74,17 @@ Common = '.clk(clk)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
-p = open('prologue_longvm.txt')
+#p = open('prologue_longvm.txt')
+p = open('prologue_testbench.txt')
 prologue = []
 for line in p:
     prologue.append(line)
 # Read final lines for IPbus and possible reader
-ep  = open('epilogue.txt')
-epilogue = []
-for line in ep:
-    epilogue.append(line)
+#ep  = open('epilogue.txt')
+#epilogue = []
+#for line in ep:
+#    epilogue.append(line)
+epilogue = ['endmodule']
 
 string_prologue = ''
 string_starts = ''
@@ -155,16 +158,16 @@ for x in memories:
     #    m.outputs.append(m.outputs[-1]+'_empty')
     #    #m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'InputLink':
-        il += 1
         m.module = 'InputLinkStubs'
         m.in_names.append('data_in')
         m.in_names.append('enable')
-        m.inputs.append('input_link%d'%il) # FIXME
-        m.inputs.append('input_link%d_wr_en'%il) # FIXME
-        m.start = 'en_proc'  # FIXME
+        m.inputs.append('input_link[%d]'%il) # FIXME
+        m.inputs.append('input_link_wr_en[%d]'%il) # FIXME
+        m.start = 'IL_start'  # FIXME
         m.reset = 'reset'  # FIXME
         m.size = '`NBITS_STUB'
         m.depth = '`MEM_SIZE'
+        il += 1
         
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:] # These memories don't have to send number out

@@ -1,4 +1,5 @@
 import os,sys
+import re
 
 def topOfList(l,string):
     l1 = [x for x in l if string not in x]
@@ -18,8 +19,9 @@ def endOfList(l,string):
 # Define the module class with all the properties
 class Module:
     def __init__(self):
-        self.module = None
-        self.name = None # Names defined in the DN
+        self.module = None # Module name
+        self.name = None # Instance name
+        self.coname = None # Instance name with copy number ('n1','n2','n3'...) in the end stripped
         self.inputs = None # In and out from master wires file
         self.outputs = None
         self.in_names = None # In and out names should be consistent with Verilog modules
@@ -27,6 +29,7 @@ class Module:
         self.common = None
         self.parameters = '' # Each module has unique parameters
         self.size = 0 # Memory sizes for connecting wires
+        self.depth = 0 # For Memory depth ( number of bits for address - 1)
         self.start = '' 
         self.done = ''
         self.reset = ''
@@ -66,7 +69,7 @@ for line in g:
 
 # Common signals for every module # IPBus might go away
 #Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
-Common = '.clk(clk),\n.'
+Common = '.clk(clk)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
@@ -105,19 +108,21 @@ for x in memories:
     o_n = [] # List of output names
     m.module = x[0] # Module nice name from memory list
     m.name = x[1]  # Module instance name from memory list
+    m.coname = re.sub('n[0-9]+','',x[1]) # strip 'n1','n2',... at the end
     if len(x)>2: # If triplet, get the memory size
-        m.size = x[2]
+        m.size = x[2]  # FIXME
+        
     for line in h: # Loop over connections
-        if line.split(' ')[0] == x[1]:  # If instance corresponds to current memory
+        if line.split(' ')[0] == m.name:  # If instance corresponds to current memory
             if len(line.split(' ')[2].split('.')) > 1: # Memory has inputs
-                i.append(line.split(' ')[2].split('.')[0]+'_'+x[1]) # Add input to module's list
-                i.append(line.split(' ')[2].split('.')[0]+'_'+x[1]+'_wr_en') # Memory inputs usually have a write enable
+                i.append(line.split(' ')[2].split('.')[0]+'_'+m.name) # Add input to module's list
+                i.append(line.split(' ')[2].split('.')[0]+'_'+m.name+'_wr_en') # Memory inputs usually have a write enable
                 i_n.append('data_in') # Names defined in Verilog memory module
                 i_n.append('enable')
             if len(line.split(' ')[-1].split('.')) > 1: # Memory has outputs
-                o.append(x[1]+'_'+line.split(' ')[-1].split('.')[0]+'_number') # Number of items in memory that goes to processing module
-                o.append(x[1]+'_'+line.split(' ')[-1].split('.')[0]+'_read_add')
-                o.append(x[1]+'_'+line.split(' ')[-1].split('.')[0])
+                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0]+'_number') # Number of items in memory that goes to processing module
+                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0]+'_read_add')
+                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0])
                 o_n.append('number_out') # Names defined in Verilog memory module
                 o_n.append('read_add')
                 o_n.append('data_out')
@@ -127,59 +132,83 @@ for x in memories:
     m.in_names = i_n
     m.out_names = o_n
     m.common = Common
+    if len(m.inputs) > 0:
+        m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
+    m.done = m.name+'_start'
+    m.resetdone = m.name+'_reset'
     ####################################################
     # Specific properties of the memories
     # Any new memories added here
     ####################################################
+    #if m.module == 'InputLink':
+    #    il +=  1
+    #    m.outputs = [m.outputs[-1]] # This memory has been gutted and is now a passthrough
+    #    m.in_names.append('data_in1') # Two inputs from the links stiched together
+    #    m.in_names.append('data_in2')
+    #    m.inputs.append('input_link%d_reg1'%il)
+    #    m.inputs.append('input_link%d_reg2'%il)
+    #    m.inputs.append(m.outputs[-1]+'_read_en')
+    #    m.out_names = [m.out_names[-1]]
+    #    m.in_names.append('read_en')
+    #    m.out_names.append('empty')
+    #    m.outputs.append(m.outputs[-1]+'_empty')
+    #    #m.common = m.common.replace('//.reset(','.reset(')
     if m.module == 'InputLink':
-        il +=  1
-        m.outputs = [m.outputs[-1]] # This memory has been gutted and is now a passthrough
-        m.in_names.append('data_in1') # Two inputs from the links stiched together
-        m.in_names.append('data_in2')
-        m.inputs.append('input_link%d_reg1'%il)
-        m.inputs.append('input_link%d_reg2'%il)
-        m.inputs.append(m.outputs[-1]+'_read_en')
-        m.out_names = [m.out_names[-1]]
-        m.in_names.append('read_en')
-        m.out_names.append('empty')
-        m.outputs.append(m.outputs[-1]+'_empty')
-        #m.common = m.common.replace('//.reset(','.reset(')
+        il += 1
+        m.module = 'InputLinkStubs'
+        m.in_names.append('data_in')
+        m.in_names.append('enable')
+        m.inputs.append('input_link%d'%il) # FIXME
+        m.inputs.append('input_link%d_wr_en'%il) # FIXME
+        m.start = 'en_proc'  # FIXME
+        m.reset = 'reset'  # FIXME
+        m.size = '`NBITS_STUB'
+        m.depth = '`MEM_SIZE'
+        
     if m.module == 'AllStubs':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:] # They are accessed directly by TC and MC
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
+        m.done = ''
+        m.resetdone = ''
         if 'MC' in m.outputs[0]:
-            m.out_names = ['read_add_MC','data_out_MC'] # If the memory is read by an MC change the output names # TODO not needed anymore
+            m.parameters = "#(.IsMC(1'b1))"
+        else:
+            m.parameters = "#(.IsMC(1'b0))"
+        m.size = '`NBITS_STUB'
+        m.depth = '4+`MEM_SIZE'
             
     if 'VMStubs' in m.module:  # VMStubsTE or VMStubsME
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        seen_done2_5 = True
-        if 'VMStubsTE' in m.module: # VMStubsTE
-            if m.name[7] in ['1','3','5']:
+        inputs_new = []
+        for i in m.inputs:
+            inputs_new.append(i.replace(m.name, m.coname))
+        m.inputs = inputs_new
+        if 'TE' in m.module: # VMStubsTE
+            if m.name.split('_')[1][0:2] in ['L1','L3','L5','D1','D3']:
                 m.parameters = "#(.ISODD(1'b1))"
             else:
                 m.parameters = "#(.ISODD(1'b0))"
             # special cases
-            if m.name[6:12] in ['L2PHIW','L2PHIQ']:
-                m.parameters = "#(.IDODD(1'b1))"
-            if m.name[6:12] in ['D1PHIW','D1PHIQ']:
-                m.parameters = "#(.ISODD(1'b0))"
+            if m.name.split('_')[1][0:6] in ['L1PHIX','L1PHIY']:
+                m.parameters = "#(.IDODD(1'b0))"
+            m.size = '`NBITS_VMSTE'
+            m.depth = '`MEM_SIZE+`NLONGVMZBITS+2'
+        elif 'ME' in m.module: # VMStubsME
+            m.size = '`NBITS_VMSME'
+            m.depth = '`MEM_SIZE+4'
             
     if m.module == 'StubPairs':
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        seen_done3_5 = True
+        m.size = '`NBITS_SP'
+        m.depth = '`MEM_SIZE'
+        
     if m.module == 'TrackletParameters':
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
+        m.done = ''
+        m.resetdone = ''
+        m.size = '`NBITS_TPar'
+        m.depth = '`MEM_SIZE+4'
+        
     if m.module == 'TrackletProjections':
         #print m.name
         m.start = m.inputs[0].replace(m.name,'')+'proj_start'
@@ -190,102 +219,101 @@ for x in memories:
             m.parameters = "#(1'b1)"
         if 'To' in m.name:
             m.parameters = "#(1'b1)"
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
+        m.size = '`NBITS_TProj'
+        m.depth = '`MEM_SIZE+3'
+            
     if m.module == 'AllProj':
-        if m.name[-6:-4] in ['L4','L5','L6']:
+        if m.name.split('_')[2][0:2] in ['L4','L5','L6']:
             m.parameters = "#(1'b0,1'b0)"   #inner,disk
-        if m.name[-6:-4] in ['D1','D2','D3','D4','D5']:
+        if m.name.split('_')[2][0:2] in ['D1','D2','D3','D4','D5']:
             m.parameters = "#(1'b0,1'b1)"   #inner,disk
         m.out_names = m.out_names[1:] # These memories don't have to send number out
         m.outputs = m.outputs[1:]
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
+        m.done = ''
+        m.resetdone = ''
+        m.size = '`NBITS_AP'
+        m.depth = '`MEM_SIZE+2'
+  
     if m.module == 'VMProjections':
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        seen_done6_5 = True
+        m.size = '`NBITS_VMP'
+        m.depth = '`MEM_SIZE'
+        
     if m.module == 'CandidateMatch':
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        seen_done7_5 = True
+        m.size = '`NBITS_CM'
+        m.depth = '`MEM_SIZE'
+
     if m.module == 'FullMatch':
         m.out_names.append('read_en')
-        if 'From' in m.name:
-            m.parameters = "#(64)"
-            m.outputs.append(m.outputs[-1]+'_read_en')
-        elif 'To' in m.name:
-            m.parameters = "#(64)"
-            m.outputs.append(m.outputs[-1]+'_read_en')
+        m.outputs.append(m.outputs[-1]+'_read_en')
+        if 'From' in m.name or 'To' in m.name:
+            m.parameters = "#(.NEIGHBOR(1'b1))"
         else:
-            m.outputs.append(m.outputs[-1]+'_read_en')
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
+            m.parameters = "#(.NEIGHBOR(1'b0))"
+        m.size = '`NBITS_FM'
+        m.depth = '`MEM_SIZE+3'
+            
     if m.module == 'TrackFit':
         #m.out_names = m.out_names[1:] # These memories don't have to send number out
         #m.outputs = m.outputs[1:]
-        #m.out_names.append('index_out')
-        #m.outputs.append(m.outputs[-1]+'_index')
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        seen_done10_5 = True
+        m.out_names.append('index_out')
+        m.outputs.append(m.outputs[-1]+'_index')
+        m.size = '`NBITS_TF'
+        m.depth = '`MEM_SIZE+2'
+
     if m.module == 'CleanTrack':
         m.outputs.append(m.name+'_DataStream') # Final track out
         m.out_names.append('data_out')
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-        m.done = m.name+'_start'
-        m.resetdone = m.name+'_reset'
-        ####################################################
-    if('mem' not in sys.argv): # If you don't want memories in the print out  ## FIXME
-        string_memories += '\n'
-        for i in m.inputs: # Declare the wires to be used in the memory
-            if 'input_link' not in i: # Input link memory does not have an enable
-                if '_en' in i:
-                    string_memories += '\n' +  'wire '+i+';'
-                else:
-                    string_memories += '\n' +  'wire ['+str(m.size-1)+':0] '+i+';' # Size of the wire
-        for o in m.outputs: # Declare the wires to be used in the memory
-            if 'empty' in o or 'CT_' in o: # Not needed wires
-                string_memories += '\n' +  '//wire '+o+';'
-            elif 'number' in o:
-                string_memories += '\n' +  'wire [5:0] '+o+';' # Number of objects in memory
-            elif '_index' in o:
-                string_memories += '\n' +  'wire [53:0] '+o+' [`tmux-1:0];' # Matrix of stub indices for PD
-            elif 'read' in o:
-                if m.module == 'VMStubsME' or m.module == 'AllStubs' or m.module == 'TrackletParameters' : # These memories have to cross the link
-                    string_memories += '\n' +  'wire [10:0] '+o+';' # Deeper for latency
-                elif m.module == 'TrackletProjections' or m.module == 'FullMatch': # Not as deep
-                    if '_en' in o:
-                        string_memories += '\n' +  'wire '+o+';'
-                    else:
-                        string_memories += '\n' +  'wire [9:0] '+o+';'                
-                else:
-                    string_memories += '\n' +  'wire [8:0] '+o+';' # Standard depth 6 bits of number plus 3 of BX
-                #print 'wire [5:0] '+o+';'
-            elif "1'b1" in o:
-                continue
+        m.size = '`NBITS_TF'
+        
+    ####################################################
+    # Declare wires to be used in the memory
+    string_memories += '\n'
+    for i in m.inputs:
+        if 'input_link' in i:  # FIXME
+            continue
+        
+        if ('VMS' in m.name) and not m.name.lstrip(m.coname) in ['','n1']:
+            continue
+            # This VMS memory module is not the first copy
+            # Use the same input wires defined earlier for the first copy"
+            
+        if '_en' in i:
+            string_memories += '\n' + 'wire '+i+';'
+        else:
+            string_memories += '\n' + 'wire ['+m.size+'-1:0] ' + i+';'
+
+    for o in m.outputs:
+        if 'empty' in o or 'CT_' in o: # No wires needed
+            string_memories += '\n' + '//wire '+o+';'
+        elif 'number' in o: # Number of objects in memory
+            if m.module == 'VMStubsTE' and "ISODD(1'b0)" in m.parameters:
+                    string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'    
             else:
-                string_memories += '\n' +  'wire ['+str(m.size-1)+':0] '+o+';' # Wire size
-        string_memories += '\n' +  m.module + ' ' + m.parameters +  ' ' + m.name + '(' # Parameters here
-        for n,i in zip(m.in_names,m.inputs): # Loop over signals and names
-            string_memories += '\n' +  '.'+n+'('+i+'),'
-        for n,o in zip(m.out_names,m.outputs):
-            string_memories += '\n' +  '.'+n+'('+o+'),'
-        string_memories += '\n' + '.start('+m.start+'),'
-        string_memories += '\n' + '.done('+m.done+'),'
-        string_memories += '\n' + '.reset('+m.reset+'),'
-        string_memories += '\n' + '.resetdone('+m.resetdone+'),'
-        string_memories += '\n' +  m.common
-        string_memories += '\n' +  ');'
+                string_memories += '\n' + 'wire [`MEM_SIZE:0] '+o+';'
+        elif '_index' in o: # Matrix of stub indices for PD
+            string_memories += '\n' + 'wire [53:0] '+o+' [`NCLKPROC-1:0];'
+        elif 'read' in o:
+            if '_en' in o: # read enable
+                string_memories += '\n' + 'wire '+o+';'
+            else:
+                string_memories += '\n' + 'wire ['+m.depth+':0] '+o+';'
+        elif "1'b1" in o:
+            continue
+        else:
+            string_memories += '\n' + 'wire ['+m.size+'-1:0] ' + o+';'+'\n'
+
+    string_memories += '\n' +  m.module + ' ' + m.parameters +  ' ' + m.name + '(' # Parameters here
+    for n,i in zip(m.in_names,m.inputs): # Loop over signals and names
+        string_memories += '\n' +  '.'+n+'('+i+'),'
+    for n,o in zip(m.out_names,m.outputs):
+        string_memories += '\n' +  '.'+n+'('+o+'),'
+    string_memories += '\n' + '.start('+m.start+'),'
+    string_memories += '\n' + '.done('+m.done+'),'
+    string_memories += '\n' + '.reset('+m.reset+'),'
+    string_memories += '\n' + '.resetdone('+m.resetdone+'),'
+    string_memories += '\n' +  m.common
+    string_memories += '\n' +  ');'
+    string_memories += '\n'
 
 ####################################################
 ####################################################
@@ -333,6 +361,38 @@ for x in modules:
     # Any new processing added here
     ####################################################
     if 'VMRouter' in m.module: # VMRouterTE or VMRouterME
+        # inputs
+        si = 1
+        in_names_new = []
+        for i_n in m.in_names:
+            if i_n == 'stubin':
+                in_names_new.append(i_n+'%d'%si)
+                si+=1
+        m.in_names = in_names_new
+        # outputs
+        # rename outputs to match firmware
+        out_names_new = []
+        outputs_new = []
+        for o_n, o in zip(m.out_names, m.outputs):
+            if 'vmstubout' in o_n:
+                # temporary fix for VMRTE to have the same output format as VMRME
+                # modify WiresLongVM.py to get rid of the following lines
+                o_n = o_n.replace('A','PHI')
+                o_n = o_n.replace('B','PHI')
+                o_n = o_n.replace('C','PHI')
+                o_n = o_n.replace('D','PHI')
+                
+                # drop n1, n2, n3... at the end of string
+                o_n = re.sub('n[0-9]+','',o_n)
+                if o_n not in out_names_new:
+                    out_names_new.append(o_n)
+                    outputs_new.append(re.sub('n[0-9]+','',o)) # drop the 'n1' at the end
+            else:
+                out_names_new.append(o_n)
+                outputs_new.append(o)
+        m.out_names = out_names_new
+        m.outputs = outputs_new
+
         enables = []
         enables_2 = []
         for o in m.out_names: 
@@ -343,48 +403,42 @@ for x in modules:
             if 'VMR' in o and 'VMS' in o: # Output going to VMStub memory
                 enables_2.append(o+'_wr_en') # For every output create a write enable
         m.out_names = m.out_names + enables
-        m.outputs = m.outputs + enables_2 
-
-        # add module parameter set here after having LongVM VMR firmware
+        m.outputs = m.outputs + enables_2
+        
+        # parameters
         if 'VMRTE' in m.name: # VMRouterTE
             overlap = "1'b0"
             if m.name[-1] in ['Q','W','X','Y']:
-                overlap = "1'b1"
-                
+                overlap = "1'b1"          
             inner = "1'b0"
-            if m.name[6:8] in ['L1','L2','L3']:
-                inner = "1'b1"
-                
+            if m.name.split('_')[1][0:2] in ['L1','L2','L3']:
+                inner = "1'b1"     
             odd = "1'b0"
-            if m.name[7] in ['1','3','5']:
+            if m.name.split('_')[1][1] in ['1','3','5']:
                 odd = "1'b1"
             # special cases
-            if m.name[6:12] in ['L2PHIW','L2PHIQ']:
+            if m.name.split('_')[1][0:6] in ['L1PHIX','L1PHIY']:
                 odd = "1'b1"
-            if m.name[6:12] in ['D1PHIW','D1PHIQ']:
-                odd = "1'b0"
-                
+            # todo: disk
+
+            # zbin LUTs
             table = ""
-            if m.name[6:8]=='L1':
-                if m.name[-1] in ['X','Y']:
-                    # hybrid
-                    table = "TEBinTableDisk1ToLayer1.txt" #?
-                else:
-                    table = "TEBinTableLayer1ToLayer2.txt"
-            elif m.name[6:8]=='L3':
+            if m.name.split('_')[1][0:2]=='L1':
+                table = "TEBinTableLayer1ToLayer2.txt"
+            elif m.name.split('_')[1][0:2]=='L3':
                 table = "TEBinTableLayer3ToLayer4.txt"
                 # TEBinTableLayer3ToLayer2.txt ?
-            elif m.name[6:8]=='L5':
+            elif m.name.split('_')[1][0:2]=='L5':
                 table = "TEBinTableLayer5ToLayer6.txt"
-            # for disks 
-            elif m.name[6:8]=='D1':
+            elif m.name.split('_')[1][0:2]=='D1':
                 if m.name[-1] in ['A','B','C','D']:
                     table = "TEBinTableDisk1ToDisk2.txt"
-            elif m.name[6:8]=='D3':
+                elif m.name[-1] in ['X','Y']:
+                    table = "TEBinTableDisk1ToLayer1.txt"
+                elif m.name[-1] in ['Q','W']:
+                    table = "TEBinTableDisk1ToLayer2.txt"
+            elif m.name.split('_')[1][0:2]=='D3':
                 table = "TEBinTableDisk3ToDisk4.txt"
-            # hybrid
-            elif m.name[6:8]=='L2' and m.name[-1] in ['Q','W']:
-                table = "TEBinTableDisk1ToLayer2.txt"
             
             m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
 
@@ -400,7 +454,7 @@ for x in modules:
             if 'VMR' in o and '_AS_' in o: # Output going to AllStub memory
                 vs += 1
                 valids.append(o+'_wr_en')
-                valids2.append('valid_data%d'%vs)
+                valids2.append('valid_out%d'%vs)
         m.outputs = m.outputs + valids
         m.out_names = m.out_names + valids2
         
@@ -782,7 +836,7 @@ for x in modules:
         
     ####################################################
     if('mod' not in sys.argv): # If you don't want processing modules in the print out
-        string_processing += '\n'
+        #string_processing += '\n'
         string_processing += '\n' +  m.module + ' ' +m.parameters + ' ' +m.name + '('
         k = 1
         #if m.module == 'ProjectionRouter':
@@ -849,11 +903,12 @@ for x in modules:
         string_processing += '\n' +  '.resetdone('+m.resetdone+'),'
         string_processing += '\n' +  m.common
         string_processing += '\n' +  ');'
+        string_processing += '\n'
         
 # Write the final lines
 
 for ep in epilogue:
-    string_epilogue += '\n' +  ep.strip()
+    string_epilogue += ep.strip()
     
 #starts = [x.split('),')[0] for x in (string_memories+string_processing).split('.start(')]
 

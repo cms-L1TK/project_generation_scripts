@@ -25,7 +25,7 @@ elif args.region=='D':
     goodseedings=['D1D2','D3D4']
 elif args.region=='H':
     # TODO: hybrid seeding, seeding in barrel(disk) projecting to disk(layer)
-    goodseedings=[]
+    goodseedings=['D1L1', 'D1L2']
 
 seeds = goodseedings if args.seedings is None else args.seedings
 print seeds

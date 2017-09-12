@@ -1,0 +1,6 @@
+*.dat
+*.*~
+*.pyc
+
+test.txt
+wires.reduced

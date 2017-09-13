@@ -869,6 +869,16 @@ for x in modules:
                     string_processing += '\n' +  '.read_add_pars2('+i+'_read_add),'
                 elif n == 'tpar3in':
                     string_processing += '\n' +  '.read_add_pars3('+i+'_read_add),'
+                elif n == 'tpar4in':
+                    string_processing += '\n' +  '.read_add_pars4('+i+'_read_add),'
+                elif n == 'tpar5in':
+                    string_processing += '\n' +  '.read_add_pars5('+i+'_read_add),'
+                elif n == 'tpar6in':
+                    string_processing += '\n' +  '.read_add_pars6('+i+'_read_add),'
+                elif n == 'tpar7in':
+                    string_processing += '\n' +  '.read_add_pars7('+i+'_read_add),'
+                elif n == 'tpar8in':
+                    string_processing += '\n' +  '.read_add_pars8('+i+'_read_add),'
                 elif n == 'incomming_proj_data_stream':
                     string_processing += '\n' +  '.valid_incomming_proj_data_stream('+i+'_en),'
                 elif n == 'incomming_match_data_stream':

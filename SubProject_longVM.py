@@ -15,6 +15,8 @@ parser.add_argument('-i','--input', type=str, default='wires.input.longVM_sector
                     help='input file')
 parser.add_argument('-o','--output', type=str, default='wires.reduced',
                     help='output name')
+parser.add_argument('-l', '--local', action='store_true',
+                    help='In-sector project without neighboring sector communication')
 
 args = parser.parse_args()
 
@@ -113,6 +115,10 @@ def veto_proc(proc, seedings):
 
 # match memory modules by seedings and possible projection layers/disks
 def match_mem(mem, seedings, region):
+    if args.local:
+        if 'ToMinus' in mem or 'ToPlus' in mem or 'FromMinus' in mem or 'FromPlus' in mem:
+            return False
+    
     if region in ['L','D']: # not hybrid
         if 'PHIQ' in mem or 'PHIW' in mem or 'PHIX' in mem or 'PHIY' in mem:
             return False
@@ -192,7 +198,7 @@ for line in fi:
                     if match_mem(mem, seeds, args.region):
                         outputmems_new.append(mem)                      
     elif 'PT' in proc: # ProjectionTransceiver
-        if match_proc(proc, seeds, args.region):
+        if match_proc(proc, seeds, args.region) and not args.local:
             # TPROJ memories
             for mem in inputmems:
                 if match_mem(mem, seeds, args.region):
@@ -213,7 +219,7 @@ for line in fi:
         if not veto_proc(proc, seeds):
             for mem in inputmems: # TPROJ
                 if 'FromPlus' in mem or 'FromMinus' in mem:
-                    if mem in tproj_pt:
+                    if mem in tproj_pt and not args.local:
                         inputmems_new.append(mem)
                 else:
                     if match_mem(mem, seeds, args.region):
@@ -238,7 +244,7 @@ for line in fi:
             for mem in outputmems: # FM
                 if match_mem(mem, seeds, args.region):
                     outputmems_new.append(mem)
-                if '_ToPlus' in mem or '_ToMinus' in mem:
+                if ('_ToPlus' in mem or '_ToMinus' in mem) and not args.local:
                     ToNeighborFM.append(mem)
                     
             if len(outputmems_new)>0:
@@ -254,7 +260,7 @@ for line in fi:
                 outputmems_new += ToNeighborFM
                     
     elif 'MT' in proc: # MatchTransceiver
-        if match_proc(proc, seeds, args.region):
+        if match_proc(proc, seeds, args.region) and not args.local:
             for mem in outputmems:
                 if match_mem(mem, seeds, args.region):
                     outputmems_new.append(mem)

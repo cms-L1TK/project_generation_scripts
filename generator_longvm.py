@@ -175,9 +175,9 @@ for x in memories:
         m.done = ''
         m.resetdone = ''
         if 'MC' in m.outputs[0]:
-            m.parameters = "#(.IsMC(1'b1))"
+            m.parameters = "#(.ISMC(1'b1))"
         else:
-            m.parameters = "#(.IsMC(1'b0))"
+            m.parameters = "#(.ISMC(1'b0))"
         m.size = '`NBITS_STUB'
         m.depth = '4+`MEM_SIZE'
             
@@ -425,23 +425,23 @@ for x in modules:
             # todo: disk
 
             # zbin LUTs
-            table = ""
+            table = '""'
             if m.name.split('_')[1][0:2]=='L1':
-                table = "TEBinTableLayer1ToLayer2.txt"
+                table = '"TEBinTableLayer1ToLayer2.txt"'
             elif m.name.split('_')[1][0:2]=='L3':
-                table = "TEBinTableLayer3ToLayer4.txt"
+                table = '"TEBinTableLayer3ToLayer4.txt"'
                 # TEBinTableLayer3ToLayer2.txt ?
             elif m.name.split('_')[1][0:2]=='L5':
-                table = "TEBinTableLayer5ToLayer6.txt"
+                table = '"TEBinTableLayer5ToLayer6.txt"'
             elif m.name.split('_')[1][0:2]=='D1':
                 if m.name[-1] in ['A','B','C','D']:
-                    table = "TEBinTableDisk1ToDisk2.txt"
+                    table = '"TEBinTableDisk1ToDisk2.txt"'
                 elif m.name[-1] in ['X','Y']:
-                    table = "TEBinTableDisk1ToLayer1.txt"
+                    table = '"TEBinTableDisk1ToLayer1.txt"'
                 elif m.name[-1] in ['Q','W']:
-                    table = "TEBinTableDisk1ToLayer2.txt"
+                    table = '"TEBinTableDisk1ToLayer2.txt"'
             elif m.name.split('_')[1][0:2]=='D3':
-                table = "TEBinTableDisk3ToDisk4.txt"
+                table = '"TEBinTableDisk3ToDisk4.txt"'
             
             m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
 
@@ -482,6 +482,12 @@ for x in modules:
         for i,n in enumerate(m.inputs): # Count the inputs
             if 'AS_' in n:
                 m.inputs.insert(len(m.inputs),m.inputs.pop(i)) # Move the AllProjections to the back
+        on = []
+        for o in m.out_names:
+            o = o.replace("projoutL3To","projoutL3D4To")  
+            o = o.replace("projoutL4To","projoutL4D3To")
+            on.append(o)
+        m.out_names = on
         ons = []
         for o in m.out_names:
             ons.append('valid_'+o)

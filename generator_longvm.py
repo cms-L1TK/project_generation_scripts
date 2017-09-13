@@ -99,7 +99,7 @@ il = 0
 # Always write the initial lines
 print 'write prologue'
 for p in prologue:
-    string_prologue += '\n' +  p.strip()
+    string_prologue += p.strip() + '\n'
 print 'start memory loop'
 # Start looping over the memories first
 for x in memories:
@@ -198,7 +198,7 @@ for x in memories:
             m.depth = '`MEM_SIZE+`NLONGVMZBITS+2'
         elif 'ME' in m.module: # VMStubsME
             m.size = '`NBITS_VMSME'
-            m.depth = '`MEM_SIZE+4'
+            m.depth = '`MEM_SIZE+`NLONGVMZBITS+4'#'`MEM_SIZE+4'
             
     if m.module == 'StubPairs':
         m.size = '`NBITS_SP'
@@ -275,7 +275,7 @@ for x in memories:
         if 'input_link' in i:  # FIXME
             continue
         
-        if ('VMS' in m.name) and not m.name.lstrip(m.coname) in ['','n1']:
+        if ('VMS' in m.name) and not m.name.replace(m.coname,'') in ['','n1']:
             continue
             # This VMS memory module is not the first copy
             # Use the same input wires defined earlier for the first copy"
@@ -290,7 +290,9 @@ for x in memories:
             string_memories += '\n' + '//wire '+o+';'
         elif 'number' in o: # Number of objects in memory
             if m.module == 'VMStubsTE' and "ISODD(1'b0)" in m.parameters:
-                    string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'    
+                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'
+            elif m.module == 'VMStubsME':
+                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'
             else:
                 string_memories += '\n' + 'wire [`MEM_SIZE:0] '+o+';'
         elif '_index' in o: # Matrix of stub indices for PD

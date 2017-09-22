@@ -215,7 +215,8 @@ for x in memories:
     if m.module == 'TrackletProjections':
         #print m.name
         m.start = m.inputs[0].replace(m.name,'')+'proj_start'
-        m.reset = m.inputs[0].replace(m.name,'')+'proj_reset'
+        #m.reset = m.inputs[0].replace(m.name,'')+'proj_reset'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         if 'From' in m.name:
             m.start = m.start.replace('proj_','')
             m.reset = m.reset.replace('proj_','')
@@ -446,6 +447,16 @@ for x in modules:
                 table = '"TEBinTableDisk3ToDisk4.txt"'
             
             m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
+        if 'VMRME' in m.name: # VMRouterME
+            inner = "1'b0"
+            if m.name.split('_')[1][0:2] in ['L1','L2','L3']:
+                inner = "1'b1"     
+            odd = "1'b0"
+            if m.name.split('_')[1][1] in ['1','3','5']:
+                odd = "1'b1"
+            # specical case?
+
+            m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"))"
 
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.reset = m.inputs[0].replace(m.name,'')+'reset'

@@ -823,10 +823,13 @@ for x in modules:
                 
         m.out_names.append('valid_fit')
         m.outputs.append(m.outputs[0]+'_wr_en')
-        for i in m.inputs:
-            if 'From' in i:
-                m.start = i.replace(m.name,'')+'start'
-                m.reset = i.replace(m.name,'')+'reset'
+        #for i in m.inputs:
+            #print i
+            #if 'From' in i:
+            #    m.start = i.replace(m.name,'')+'start'
+            #    m.reset = i.replace(m.name,'')+'reset'
+        m.start = m.inputs[0].replace(m.name,'')+'start'
+        m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
         m.resetdone = m.name+'_reset'
         seen_done10_0 = True

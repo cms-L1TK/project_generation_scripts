@@ -651,38 +651,40 @@ for x in modules:
         m.outputs = outs
         m.out_names = outnames
             
-        phiregion = '00'
+        phiregion = '000'
         if 'PHI1' in m.name:
-            phiregion = '00'
+            phiregion = '000'
         elif 'PHI2' in m.name:
-            phiregion = '01'
+            phiregion = '001'
         elif 'PHI3' in m.name:
-            phiregion = '10'
+            phiregion = '010'
+        elif 'PHI4' in m.name:
+            phiregion = '011'
 
         if 'MC_L1L2_L3' in m.name: # Parameter for constants # Will be moved to header file
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L1L2_L3,`MC_z_L1L2_L3,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L1L2_L3),.zcut(`MC_z_L1L2_L3),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L1L2_L4' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L4,`MC_z_L1L2_L4,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L4),.zcut(`MC_z_L1L2_L4),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L1L2_L5' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L5,`Z_L5,`R_L5,`PHID_L5,`ZD_L5,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L5,`MC_z_L1L2_L5,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L5),.zcut(`MC_z_L1L2_L5),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L1L2_L6' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L6,`Z_L6,`R_L6,`PHID_L6,`ZD_L6,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L1L2_L6,`MC_z_L1L2_L6,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L6),.zcut(`MC_z_L1L2_L6),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L3L4_L1' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L1,`MC_z_L3L4_L1,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L3L4_L1),.zcut(`MC_z_L3L4_L1),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L3L4_L2' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L2,`Z_L2,`R_L2,`PHID_L2,`ZD_L2,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L3L4_L2,`MC_z_L3L4_L2,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L3L4_L2),.zcut(`MC_z_L3L4_L2),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L3L4_L5' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L5,`Z_L5,`R_L5,`PHID_L5,`ZD_L5,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L5,`MC_z_L3L4_L5,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L5),.zcut(`MC_z_L3L4_L5),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L3L4_L6' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L6,`Z_L6,`R_L6,`PHID_L6,`ZD_L6,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L3L4_L6,`MC_z_L3L4_L6,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L6),.zcut(`MC_z_L3L4_L6),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L5L6_L1' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L1,`Z_L1,`R_L1,`PHID_L1,`ZD_L1,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L1,`MC_z_L5L6_L1,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L1),.zcut(`MC_z_L5L6_L1),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L5L6_L2' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L2,`Z_L2,`R_L2,`PHID_L2,`ZD_L2,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L2,`MC_z_L5L6_L2,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L2),.zcut(`MC_z_L5L6_L2),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L5L6_L3' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b1,`PHI_L3,`Z_L3,`R_L3,`PHID_L3,`ZD_L3,`MC_k1ABC_INNER,`MC_k2ABC_INNER,`MC_phi_L5L6_L3,`MC_z_L5L6_L3,`MC_zfactor_INNER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L3),.zcut(`MC_z_L5L6_L3),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L5L6_L4' in m.name:
-            m.parameters = "#(2'b"+phiregion+",1'b0,`PHI_L4,`Z_L4,`R_L4,`PHID_L4,`ZD_L4,`MC_k1ABC_OUTER,`MC_k2ABC_OUTER,`MC_phi_L5L6_L4,`MC_z_L5L6_L4,`MC_zfactor_OUTER)"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L5L6_L4),.zcut(`MC_z_L5L6_L4),.zfactor(`MC_zfactor_OUTER))"
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'
@@ -862,7 +864,7 @@ for x in modules:
     ####################################################
     if('mod' not in sys.argv): # If you don't want processing modules in the print out
         #string_processing += '\n'
-        string_processing += '\n' +  m.module + ' ' +m.parameters + ' ' +m.name + '('
+        string_processing += '\n' +  m.module + ' ' +m.parameters + '\n' +m.name + '('
         k = 1
         #if m.module == 'ProjectionRouter':
         #    #print m.inputs

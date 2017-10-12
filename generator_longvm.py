@@ -662,29 +662,33 @@ for x in modules:
             phiregion = '011'
 
         if 'MC_L1L2_L3' in m.name: # Parameter for constants # Will be moved to header file
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L1L2_L3),.zcut(`MC_z_L1L2_L3),.zfactor(`MC_zfactor_INNER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.SEED1(3'b000),.phicut1(`MC_phi_L1L2_L3),.zcut1(`MC_z_L1L2_L3),.SEED2(3'b010),.phicut2(`MC_phi_L5L6_L3),.zcut2(`MC_z_L5L6_L3),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L1L2_L4' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L4),.zcut(`MC_z_L1L2_L4),.zfactor(`MC_zfactor_OUTER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.SEED1(3'b000),.phicut1(`MC_phi_L1L2_L4),.zcut1(`MC_z_L1L2_L4),.SEED2(3'b010),.phicut2(`MC_phi_L5L6_L4),.zcut2(`MC_z_L5L6_L4),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L1L2_L5' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L5),.zcut(`MC_z_L1L2_L5),.zfactor(`MC_zfactor_OUTER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.SEED1(3'b000),.phicut1(`MC_phi_L1L2_L5),.zcut1(`MC_z_L1L2_L5),.SEED2(3'b001),.phicut2(`MC_phi_L3L4_L5),.zcut2(`MC_z_L3L4_L5),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L1L2_L6' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L1L2_L6),.zcut(`MC_z_L1L2_L6),.zfactor(`MC_zfactor_OUTER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.SEED1(3'b000),.phicut1(`MC_phi_L1L2_L6),.zcut1(`MC_z_L1L2_L6),.SEED2(3'b001),.phicut2(`MC_phi_L3L4_L6),.zcut2(`MC_z_L3L4_L6),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L3L4_L1' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L3L4_L1),.zcut(`MC_z_L3L4_L1),.zfactor(`MC_zfactor_INNER))"
-        if 'MC_L3L4_L2' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L3L4_L2),.zcut(`MC_z_L3L4_L2),.zfactor(`MC_zfactor_INNER))"
-        if 'MC_L3L4_L5' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L5),.zcut(`MC_z_L3L4_L5),.zfactor(`MC_zfactor_OUTER))"
-        if 'MC_L3L4_L6' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L6),.zcut(`MC_z_L3L4_L6),.zfactor(`MC_zfactor_OUTER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.SEED1(3'b001),.phicut1(`MC_phi_L3L4_L1),.zcut1(`MC_z_L3L4_L1),.zfactor(`MC_zfactor_INNER))"
+        if 'MC_L3L4_L2' in m.name or 'MC_L3L4_L5' in m.name or 'MC_L3L4_L6' in m.name:
+            print 'WARNING!! ', m.name, ' DO exist!!'
+        #if 'MC_L3L4_L2' in m.name:
+        #    m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L3L4_L2),.zcut(`MC_z_L3L4_L2),.phicut_alt(),.zcut_alt(),.zfactor(`MC_zfactor_INNER))"
+        #if 'MC_L3L4_L5' in m.name:
+        #    m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L5),.Z_BITS(`Z_L5),.R_BITS(`R_L5),.PHID_BITS(`PHID_L5),.ZD_BITS(`ZD_L5),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L5),.zcut(`MC_z_L3L4_L5),.phicut_alt(),.zcut_alt(),.zfactor(`MC_zfactor_OUTER))"
+        #if 'MC_L3L4_L6' in m.name:
+        #    m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L6),.Z_BITS(`Z_L6),.R_BITS(`R_L6),.PHID_BITS(`PHID_L6),.ZD_BITS(`ZD_L6),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L3L4_L6),.zcut(`MC_z_L3L4_L6),.phicut_alt(),.zcut_alt(),.zfactor(`MC_zfactor_OUTER))"
         if 'MC_L5L6_L1' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L1),.zcut(`MC_z_L5L6_L1),.zfactor(`MC_zfactor_INNER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L1),.Z_BITS(`Z_L1),.R_BITS(`R_L1),.PHID_BITS(`PHID_L1),.ZD_BITS(`ZD_L1),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.SEED1(3'b010),.phicut1(`MC_phi_L5L6_L1),.zcut1(`MC_z_L5L6_L1),.zfactor(`MC_zfactor_INNER))"
         if 'MC_L5L6_L2' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L2),.zcut(`MC_z_L5L6_L2),.zfactor(`MC_zfactor_INNER))"
-        if 'MC_L5L6_L3' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L3),.zcut(`MC_z_L5L6_L3),.zfactor(`MC_zfactor_INNER))"
-        if 'MC_L5L6_L4' in m.name:
-            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L5L6_L4),.zcut(`MC_z_L5L6_L4),.zfactor(`MC_zfactor_OUTER))"
+            m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L2),.Z_BITS(`Z_L2),.R_BITS(`R_L2),.PHID_BITS(`PHID_L2),.ZD_BITS(`ZD_L2),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.SEED1(3'b001),.phicut1(`MC_phi_L3L4_L2),.zcut1(`MC_z_L3L4_L2),.SEED2(3'b010),.phicut2(`MC_phi_L5L6_L2),.zcut2(`MC_z_L5L6_L2),.zfactor(`MC_zfactor_INNER))"
+        #if 'MC_L5L6_L3' in m.name:
+        #    m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b1),.PHI_BITS(`PHI_L3),.Z_BITS(`Z_L3),.R_BITS(`R_L3),.PHID_BITS(`PHID_L3),.ZD_BITS(`ZD_L3),.k1ABC(`MC_k1ABC_INNER),.k2ABC(`MC_k2ABC_INNER),.phicut(`MC_phi_L5L6_L3),.zcut(`MC_z_L5L6_L3),.phicut_alt(),.zcut_alt(),.zfactor(`MC_zfactor_INNER))"
+        #if 'MC_L5L6_L4' in m.name:
+        #    m.parameters = "#(.PHI_INDEX(3'b"+phiregion+"),.BARREL(1'b1),.INNER(1'b0),.PHI_BITS(`PHI_L4),.Z_BITS(`Z_L4),.R_BITS(`R_L4),.PHID_BITS(`PHID_L4),.ZD_BITS(`ZD_L4),.k1ABC(`MC_k1ABC_OUTER),.k2ABC(`MC_k2ABC_OUTER),.phicut(`MC_phi_L5L6_L4),.zcut(`MC_z_L5L6_L4),.phicut_alt(),.zcut_alt(),.zfactor(`MC_zfactor_OUTER))"
+        if 'MC_L5L6_L3' in m.name or 'MC_L5L6_L4' in m.name:
+            print 'WARNING!! ', m.name, ' DO exist!!'
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.reset = m.inputs[0].replace(m.name,'')+'reset'
         m.done = m.name+'_start'

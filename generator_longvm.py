@@ -1,5 +1,6 @@
 import os,sys
 import re
+import argparse
 
 def topOfList(l,string):
     l1 = [x for x in l if string not in x]
@@ -45,11 +46,13 @@ class Module:
 #os.system('python SubProject.py '+region)
 #os.system('python Wires.py wires.'+region)
 
-# generate only full project for now
-#region = 'new'
-region = 'test'
+parser = argparse.ArgumentParser(description='Scripts to generate top level tracklet processing module')
 
-f = open('processingmodules_'+region+'.dat')
+parser.add_argument('-r', '--region', type=str, default='test', help="detector region")
+
+args = parser.parse_args()
+
+f = open('processingmodules_'+args.region+'.dat')
 modules = []
 for line in f:
     signals = [] # Pair with nice name and specific instance name
@@ -58,7 +61,7 @@ for line in f:
     modules.append(signals) # Add to the list of pairs
 
 # Read the memory modules
-g = open('memorymodules_'+region+'.dat')
+g = open('memorymodules_'+args.region+'.dat')
 memories = []
 for line in g:
     signals = [] # Nice name, instance name, memory size
@@ -103,7 +106,7 @@ for p in prologue:
 print 'start memory loop'
 # Start looping over the memories first
 for x in memories:
-    h = open('wires_'+region+'.dat') # Open the wire connections file
+    h = open('wires_'+args.region+'.dat') # Open the wire connections file
     m = Module() # Create a module
     i = [] # List of inputs
     i_n = [] # List of input names
@@ -176,10 +179,12 @@ for x in memories:
         m.resetdone = ''
         if 'MC' in m.outputs[0]:
             m.parameters = "#(.ISMC(1'b1))"
+            m.size = '`NBITS_STUB'
+            m.depth = '4+`MEM_SIZE'
         else:
             m.parameters = "#(.ISMC(1'b0))"
-        m.size = '`NBITS_STUB'
-        m.depth = '4+`MEM_SIZE'
+            m.size = "`NBITS_STUB+`NBIT_ASINDEX"
+            m.depth = '1+`MEM_SIZE'
             
     if 'VMStubs' in m.module:  # VMStubsTE or VMStubsME
         inputs_new = []
@@ -340,7 +345,7 @@ seen_done10_0 = False
 print 'start processing module loop'
 # Start looping over the processing modules
 for x in modules:
-    h = open('wires_'+region+'.dat') # Open the wire connections file
+    h = open('wires_'+args.region+'.dat') # Open the wire connections file
     m = Module() # Create a module
     i = [] # List of inputs
     i_n = [] # List of input names
@@ -841,17 +846,17 @@ for x in modules:
         seen_done10_0 = True
     
     if m.module == 'PurgeDuplicate':
-	if region=='D3D6':
+	if args.region=='D3D6':
 	    m.parameters = '#(.SCOPE("D3D6"))'
-	if region=='D4D6':
+	if args.region=='D4D6':
 	    m.parameters = '#(.SCOPE("D4D6"))'
-	if region=='D3':
+	if args.region=='D3':
 	    m.parameters = '#(.SCOPE("D3"))'
-	if region=='D3D4':
+	if args.region=='D3D4':
 	    m.parameters = '#(.SCOPE("D3D4"))'
-	if region=='D5':
+	if args.region=='D5':
 	    m.parameters = '#(.SCOPE("D5"))'
-	if region=='D5D6':
+	if args.region=='D5D6':
 	    m.parameters = '#(.SCOPE("D5D6"))'
         for x in range(1,len(m.outputs)+1):
             m.out_names.append('valid_out_'+str(x))
@@ -957,37 +962,37 @@ for ep in epilogue:
 #    if len(x)>1 and 'IL' not in x:
 #        string_starts += '\n' +  'wire [1:0] '+ x +';'
 
-if region == 'D3':
+if args.region == 'D3':
     print 'Processing D3'
     print 'Memories implemented=',len(memories)
     print 'Processing modules implemented=',len(modules)
     string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD3')
-if region == 'D5':
+if args.region == 'D5':
     print 'Processing D5'
     print 'Memories implemented=',len(memories)
     print 'Processing modules implemented=',len(modules)
     string_prologue = string_prologue.replace('Tracklet_processing','Tracklet_processingD5')
-if region == 'D3D4':
+if args.region == 'D3D4':
     print 'Processing D3D4'
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD3D4')
-if region == 'D3D6':
+if args.region == 'D3D6':
     print 'Processing D3D6'
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD3D6')
-if region == 'D5D6':
+if args.region == 'D5D6':
     print 'Processing D5D6'
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD5D6')
-if region == 'D4D5':
+if args.region == 'D4D5':
     print 'Processing D4D5'
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD4D5')
-if region == 'D4D6':
+if args.region == 'D4D6':
     print 'Processing D4D6'
     print 'Memories implemented =',len(memories)
     print 'Processing modules implemented =',len(modules)

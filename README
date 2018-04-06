@@ -17,7 +17,7 @@
   
    Change file names in generator_longVM.py according to the .dat files above if needed
    
-   python generaror_longVM.py
+   python generator_longVM.py
 
 -----------------------------------------------------------------
 

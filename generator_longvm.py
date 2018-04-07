@@ -19,36 +19,92 @@ def endOfList(l,string):
 
 # Define the module class with all the properties
 class Module:
-    def __init__(self):
-        self.module = None # Module name
-        self.name = None # Instance name
-        self.coname = None # Instance name with copy number ('n1','n2','n3'...) in the end stripped
-        self.inputs = None # In and out from master wires file
-        self.outputs = None
-        self.in_names = None # In and out names should be consistent with Verilog modules
-        self.out_names = None
-        self.common = None
-        self.parameters = '' # Each module has unique parameters
-        self.size = 0 # Memory sizes for connecting wires
-        self.depth = 0 # For Memory depth ( number of bits for address - 1)
+    def __init__(self, module_name, instance_name):
+        self.module = module_name
+        self.name = instance_name
+        self.coname = re.sub('n[0-9]+','',instance_name) # strip 'n1','n2',... at the end  
+        self.done = instance_name+'_start'
+        self.resetdone = instance_name+'_reset'
+
         self.start = '' 
-        self.done = ''
         self.reset = ''
-        self.resetdone=''
+        self.inputs = [] # In and out from master wires file
+        self.outputs = []
+        self.in_names = [] # In and out names should be consistent with Verilog modules
+        self.out_names = []
+        
+        self.parameters = '' # Each module has unique parameters
+        self.size = 0 # Input data sizes for connecting wires
+        self.size_o = 0 # Output data sizes for connecting wires
+        self.depth = 0 # For Memory depth ( number of bits for address - 1)
+        self.common = None
+ 
 
-# Read the processing modules
-#if len(sys.argv) > 1:
-#    region = sys.argv[1]
-#else:
-#    print 'Region to process needed. Try "D3" and run again'
-#    sys.exit()
-# Run the other scripts from here
-#os.system('python SubProject.py '+region)
-#os.system('python Wires.py wires.'+region)
+class MemoryModule(Module):
+    def __init__(self, module_name, instance_name, wires_config):
+        Module.__init__(self, module_name, instance_name)
+        # Set inputs and outputs based on wires config file
+        wires_file = open(wires_config)
+        
+        for line in wires_file: # Loop over connections            
+            
+            if line.split(' ')[0] == instance_name:
+            #If instance corresponds to current memory
+                if len(line.split(' ')[2].split('.')) > 1: # Memory has inputs
+                    upstream_module = line.split(' ')[2].split('.')[0]
+                    self.inputs.append(upstream_module+'_'+instance_name) # Add input to module's list
+                    self.inputs.append(upstream_module+'_'+instance_name+'_wr_en') # Memory inputs usually have a write enable
+                    # Names defined in Verilog memory module
+                    self.in_names.append('data_in')
+                    self.in_names.append('enable')
 
+                    self.start = upstream_module+'_start'
+                    self.reset = upstream_module+'_reset'
+                    
+                if len(line.split(' ')[-1].split('.')) > 1: # Memory has outputs
+                    downstream_module = line.split(' ')[-1].split('.')[0]
+                    self.outputs.append(instance_name+'_'+downstream_module+'_number') # Number of items in memory that goes to processing module
+                    self.outputs.append(instance_name+'_'+downstream_module+'_read_add')
+                    self.outputs.append(instance_name+'_'+downstream_module)
+                    # Names defined in Verilog memory module
+                    self.out_names.append('number_out')
+                    self.out_names.append('read_add')
+                    self.out_names.append('data_out')
+                    
+        # common, parameters, size, size_o are assigned later
+
+        wires_file.close()
+        
+
+class ProcessingModule(Module):
+    def __init__(self, module_name, instance_name, wires_config):
+        Module.__init__(self, module_name, instance_name)
+
+        # Set inputs and outputs based on wires config file
+        wires_file = open(wires_config)
+        
+        for line in wires_file: # Loop over connections
+            if line.split(' ')[-1].strip().split('.')[0] == instance_name: # If instance is the downstream of a memory module
+                upstream_module = line.split(' ')[0]
+                self.inputs.append(upstream_module+'_'+instance_name) # Add input to module's list
+                self.in_names.append(line.split(' ')[-1].strip().split('.')[1])
+                
+            if line.split(' ')[2].strip().split('.')[0] == instance_name: # If instance is the upstream of a memory module
+                self.outputs.append(instance_name+'_'+line.split(' ')[0]) # Add output to module's list
+                self.out_names.append(line.split(' ')[2].strip().split('.')[1])
+
+        # common, parameters, size_i, size_o are assigned later
+
+        wires_file.close()
+
+
+        
 parser = argparse.ArgumentParser(description='Scripts to generate top level tracklet processing module')
 
-parser.add_argument('-r', '--region', type=str, default='test', help="detector region")
+parser.add_argument('-r', '--region', type=str, default='test',
+                    help="Detector region. processingmodules_<REGION>.dat, memorymodules_<REGION>.dat and wires_<REGION>.dat will be read.")
+parser.add_argument('-p', '--prologue', type=str, default='prologue_longvm.txt',
+                    help="Initial lines of Tracklet_processing")
 
 args = parser.parse_args()
 
@@ -71,14 +127,11 @@ for line in g:
         signals.append(int(line.split(':')[1].split(' ')[-1].replace('[','').replace(']','').strip()))
     memories.append(signals) # Add to the list of triplets
 
-# Common signals for every module # IPBus might go away
-#Common = '.clk(clk),\n.reset(reset),\n.en_proc(en_proc)'
 Common = '.clk(clk)'
 
 # Read initial lines of Tracklet_processing
 # Define inputs, outputs and start/done signals
-#p = open('prologue_longvm.txt')
-p = open('prologue_testbench.txt')
+p = open(args.prologue) #'prologue_testbench.txt')
 prologue = []
 for line in p:
     prologue.append(line)
@@ -105,61 +158,19 @@ for p in prologue:
     string_prologue += p.strip() + '\n'
 print 'start memory loop'
 # Start looping over the memories first
-for x in memories:
-    h = open('wires_'+args.region+'.dat') # Open the wire connections file
-    m = Module() # Create a module
-    i = [] # List of inputs
-    i_n = [] # List of input names
-    o = [] # List of outputs
-    o_n = [] # List of output names
-    m.module = x[0] # Module nice name from memory list
-    m.name = x[1]  # Module instance name from memory list
-    m.coname = re.sub('n[0-9]+','',x[1]) # strip 'n1','n2',... at the end
-    if len(x)>2: # If triplet, get the memory size
-        m.size = x[2]  # FIXME
-        
-    for line in h: # Loop over connections
-        if line.split(' ')[0] == m.name:  # If instance corresponds to current memory
-            if len(line.split(' ')[2].split('.')) > 1: # Memory has inputs
-                i.append(line.split(' ')[2].split('.')[0]+'_'+m.name) # Add input to module's list
-                i.append(line.split(' ')[2].split('.')[0]+'_'+m.name+'_wr_en') # Memory inputs usually have a write enable
-                i_n.append('data_in') # Names defined in Verilog memory module
-                i_n.append('enable')
-            if len(line.split(' ')[-1].split('.')) > 1: # Memory has outputs
-                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0]+'_number') # Number of items in memory that goes to processing module
-                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0]+'_read_add')
-                o.append(m.name+'_'+line.split(' ')[-1].split('.')[0])
-                o_n.append('number_out') # Names defined in Verilog memory module
-                o_n.append('read_add')
-                o_n.append('data_out')
-    # Define the properties of the module
-    m.inputs = i
-    m.outputs = o
-    m.in_names = i_n
-    m.out_names = o_n
+
+wires_config = 'wires_'+args.region+'.dat' # wire connections file
+
+for x in memories:   
+    
+    m = MemoryModule(x[0], x[1], wires_config) # Create a module
     m.common = Common
-    if len(m.inputs) > 0:
-        m.start = m.inputs[0].replace(m.name,'')+'start'
-        m.reset = m.inputs[0].replace(m.name,'')+'reset'
-    m.done = m.name+'_start'
-    m.resetdone = m.name+'_reset'
+    
     ####################################################
     # Specific properties of the memories
     # Any new memories added here
     ####################################################
-    #if m.module == 'InputLink':
-    #    il +=  1
-    #    m.outputs = [m.outputs[-1]] # This memory has been gutted and is now a passthrough
-    #    m.in_names.append('data_in1') # Two inputs from the links stiched together
-    #    m.in_names.append('data_in2')
-    #    m.inputs.append('input_link%d_reg1'%il)
-    #    m.inputs.append('input_link%d_reg2'%il)
-    #    m.inputs.append(m.outputs[-1]+'_read_en')
-    #    m.out_names = [m.out_names[-1]]
-    #    m.in_names.append('read_en')
-    #    m.out_names.append('empty')
-    #    m.outputs.append(m.outputs[-1]+'_empty')
-    #    #m.common = m.common.replace('//.reset(','.reset(')
+
     if m.module == 'InputLink':
         m.module = 'InputLinkStubs'
         m.in_names.append('data_in')
@@ -192,18 +203,24 @@ for x in memories:
             inputs_new.append(i.replace(m.name, m.coname))
         m.inputs = inputs_new
         if 'TE' in m.module: # VMStubsTE
-            if m.name.split('_')[1][0:2] in ['L1','L3','L5','D1','D3']:
-                m.parameters = "#(.ISODD(1'b1))"
-            else:
-                m.parameters = "#(.ISODD(1'b0))"
+            isinner = m.name.split('_')[1][0:2] in ['L1','L3','L5','D1','D3']
             # special cases
-            if m.name.split('_')[1][0:6] in ['L1PHIX','L1PHIY']:
-                m.parameters = "#(.IDODD(1'b0))"
-            m.size = '`NBITS_VMSTE'
-            m.depth = '`MEM_SIZE+`NLONGVMZBITS+2'
+            #if m.name.split('_')[1][0:6] in ['L1PHIX','L1PHIY']:
+            #    isinner = False
+            if m.name.split('_')[1][0:6] in ['L2PHIQ','L2PHIW']:
+                isinner = True
+            if m.name.split('_')[1][0:6] in ['D1PHIQ','D1PHIW','D1PHIX','D1PHIY']:
+                isinner = False
+                
+            m.parameters = "#(.ISINNER(1'b1))" if isinner else "#(.ISINNER(1'b0))"
+            m.size = '`NBITS_VMSTE_I' if isinner else '`NBITS_VMSTE_O+3'
+            m.size_o = '`NBITS_VMSTE_I' if isinner else '`NBITS_VMSTE_O'
+            m.depth = '`MEM_SIZE+2' if isinner else '`MEM_SIZE+5'
+            
         elif 'ME' in m.module: # VMStubsME
-            m.size = '`NBITS_VMSME'
-            m.depth = '`MEM_SIZE+`NLONGVMZBITS+4'#'`MEM_SIZE+4'
+            m.size = '`NBITS_VMSME+3'
+            m.size_o = '`NBITS_VMSME'
+            m.depth = '`MEM_SIZE+7'
             
     if m.module == 'StubPairs':
         m.size = '`NBITS_SP'
@@ -296,9 +313,9 @@ for x in memories:
             string_memories += '\n' + '//wire '+o+';'
         elif 'number' in o: # Number of objects in memory
             if m.module == 'VMStubsTE' and "ISODD(1'b0)" in m.parameters:
-                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'
+                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<3)-1:0] '+o+';'
             elif m.module == 'VMStubsME':
-                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<`NLONGVMZBITS)-1:0] '+o+';'
+                string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<3)-1:0] '+o+';'
             else:
                 string_memories += '\n' + 'wire [`MEM_SIZE:0] '+o+';'
         elif '_index' in o: # Matrix of stub indices for PD
@@ -311,7 +328,10 @@ for x in memories:
         elif "1'b1" in o:
             continue
         else:
-            string_memories += '\n' + 'wire ['+m.size+'-1:0] ' + o+';'+'\n'
+            if 'VMStubs' in m.module:
+                string_memories += '\n' + 'wire ['+m.size_o+'-1:0] ' + o+';'+'\n'
+            else:
+                string_memories += '\n' + 'wire ['+m.size+'-1:0] ' + o+';'+'\n'
 
     string_memories += '\n' +  m.module + ' ' + m.parameters +  ' ' + m.name + '(' # Parameters here
     for n,i in zip(m.in_names,m.inputs): # Loop over signals and names
@@ -345,28 +365,10 @@ seen_done10_0 = False
 print 'start processing module loop'
 # Start looping over the processing modules
 for x in modules:
-    h = open('wires_'+args.region+'.dat') # Open the wire connections file
-    m = Module() # Create a module
-    i = [] # List of inputs
-    i_n = [] # List of input names
-    o = [] # List of outputs
-    o_n = [] # List of output names
-    m.module = x[0] # Module nice name from processing list
-    m.name = x[1]  # Module instance name from processing list
-
-    for line in h: # Loop over connections
-        if line.split(' ')[-1].strip().split('.')[0] == x[1]: # If instance corresponds to current processing
-            i.append(line.split(' ')[0]+'_'+x[1]) # Add input to module's list
-            i_n.append(line.split(' ')[-1].strip().split('.')[1])
-        if line.split(' ')[2].strip().split('.')[0] == x[1]:
-            o.append(x[1]+'_'+line.split(' ')[0]) # Add output to module's list
-            o_n.append(line.split(' ')[2].strip().split('.')[1])
-    # Define the properties of the module
-    m.inputs = i
-    m.outputs = o
-    m.in_names = i_n
-    m.out_names = o_n
+    
+    m = ProcessingModule(x[0], x[1], wires_config)
     m.common = Common
+
     ####################################################
     # Specific properties of the processing modules
     # Any new processing added here
@@ -421,47 +423,52 @@ for x in modules:
             overlap = "1'b0"
             if m.name[-1] in ['Q','W','X','Y']:
                 overlap = "1'b1"          
-            inner = "1'b0"
+            innerlayer = "1'b0"
             if m.name.split('_')[1][0:2] in ['L1','L2','L3']:
-                inner = "1'b1"     
-            odd = "1'b0"
+                innerlayer = "1'b1"     
+            isinnervm = "1'b0"  # for TE purpose
             if m.name.split('_')[1][1] in ['1','3','5']:
-                odd = "1'b1"
+                isinnervm = "1'b1"
             # special cases
-            if m.name.split('_')[1][0:6] in ['L1PHIX','L1PHIY']:
-                odd = "1'b1"
+            if m.name.split('_')[1][0:6] in ['L2PHIW','L2PHIQ']:
+                isinnervm = "1'b1"
             # todo: disk
 
             # zbin LUTs
             table = '""'
-            if m.name.split('_')[1][0:2]=='L1':
-                table = '"TEBinTableLayer1ToLayer2.txt"'
-            elif m.name.split('_')[1][0:2]=='L3':
-                table = '"TEBinTableLayer3ToLayer4.txt"'
-                # TEBinTableLayer3ToLayer2.txt ?
-            elif m.name.split('_')[1][0:2]=='L5':
-                table = '"TEBinTableLayer5ToLayer6.txt"'
-            elif m.name.split('_')[1][0:2]=='D1':
-                if m.name[-1] in ['A','B','C','D']:
-                    table = '"TEBinTableDisk1ToDisk2.txt"'
-                elif m.name[-1] in ['X','Y']:
-                    table = '"TEBinTableDisk1ToLayer1.txt"'
-                elif m.name[-1] in ['Q','W']:
-                    table = '"TEBinTableDisk1ToLayer2.txt"'
-            elif m.name.split('_')[1][0:2]=='D3':
-                table = '"TEBinTableDisk3ToDisk4.txt"'
+            pos = m.name.split('_')[1][0:2]
+            if pos=='L1':
+                table = '"VMTableInnerL1L2.txt"'
+                if m.name[-1] in ['X','Y']:
+                    table = '"VMTableInnerL1D1.txt"'
+            elif pos=='L2':
+                table = '"VMTableOuterL2.txt"'
+                if m.name[-1] in ['Q','W']:
+                    table = '"VMTableInnerL2D1.txt"'
+            elif pos=='L3':
+                table = '"VMTableInnerL3L4.txt"'
+            elif pos=='L4':
+                table = '"VMTableOuterL4.txt"'
+            elif pos=='L5':
+                table = '"VMTableInnerL5L6.txt"'
+            elif pos=='L6':
+                table = '"VMTableOuterL6.txt"'
+            elif pos=='D1':
+                table = '"VMTableInnerD1D2.txt"'
+            elif pos=='D2':
+                table = '"VMTableOuterD2.txt"'
+            elif pos=='D3':
+                table = '"VMTableInnerD3D4.txt"'
+            elif pos=='D4':
+                table = '"VMTableOuterD4.txt"'
             
-            m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
+            m.parameters = "#(.ISINNER("+isinnervm+"),.ISIL("+innerlayer+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
         if 'VMRME' in m.name: # VMRouterME
             inner = "1'b0"
             if m.name.split('_')[1][0:2] in ['L1','L2','L3']:
                 inner = "1'b1"     
-            odd = "1'b0"
-            if m.name.split('_')[1][1] in ['1','3','5']:
-                odd = "1'b1"
-            # specical case?
 
-            m.parameters = "#(.ISODD("+odd+"),.ISINNER("+inner+"))"
+            m.parameters = "#(.ISINNER("+inner+"))"
 
         m.start = m.inputs[0].replace(m.name,'')+'start'
         m.reset = m.inputs[0].replace(m.name,'')+'reset'
@@ -487,11 +494,11 @@ for x in modules:
         m.done = m.name+'_start'
         m.resetdone = m.name+'_reset'
         seen_done3_0 = True
-        
-        #if 'TE_F' in m.name or 'TE_B' in m.name:
-        #    m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt",'"1'b0"')'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
-        #else:
-        #    m.parameters = '#("TETable_%s_phi.txt","TETable_%s_z.txt")'%(m.name,m.name) # TE Tables names have to be in this format. CHECK EMULATION
+
+        pttable = m.name+"_ptcut.txt"
+        innerpttable = m.name+"_stubptinnercut.txt"
+        outerpttable = m.name+"_stubptoutercut.txt"
+        m.parameters = '#("'+pttable+'","'+innerpttable+'","'+outerpttable+'")'
 
     if m.module == 'TrackletCalculator':
         for i,n in enumerate(m.in_names): # Count the inputs

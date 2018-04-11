@@ -212,7 +212,8 @@ for x in memories:
             if m.name.split('_')[1][0:6] in ['D1PHIQ','D1PHIW','D1PHIX','D1PHIY']:
                 isinner = False
                 
-            m.parameters = "#(.ISINNER(1'b1))" if isinner else "#(.ISINNER(1'b0))"
+            m.parameters = "#(.ISINNER(1'b1)" if isinner else "#(.ISINNER(1'b0)"
+            m.parameters += ',.BENDTABLE("'+m.name+'_vmbendcut.txt"))'
             m.size = '`NBITS_VMSTE_I' if isinner else '`NBITS_VMSTE_O+3'
             m.size_o = '`NBITS_VMSTE_I' if isinner else '`NBITS_VMSTE_O'
             m.depth = '`MEM_SIZE+2' if isinner else '`MEM_SIZE+5'
@@ -462,7 +463,7 @@ for x in modules:
             elif pos=='D4':
                 table = '"VMTableOuterD4.txt"'
             
-            m.parameters = "#(.ISINNER("+isinnervm+"),.ISIL("+innerlayer+"),.ISOVERLAP("+overlap+"),.TEBINTABLE("+table+"))"
+            m.parameters = "#(.ISINNER("+isinnervm+"),.ISIL("+innerlayer+"),.ISOVERLAP("+overlap+"),.VMTABLE("+table+"))"
         if 'VMRME' in m.name: # VMRouterME
             inner = "1'b0"
             if m.name.split('_')[1][0:2] in ['L1','L2','L3']:

@@ -1,0 +1,6 @@
+./SubProject_longVM.py -r=L -l
+./WiresLongVM.py wires.reduced
+mv wires.dat wires_test.dat
+mv memorymodules.dat memorymodules_test.dat
+mv processingmodules.dat processingmodules_test.dat
+./generator_longvm.py -s test -o Tracklet_processingTB.v

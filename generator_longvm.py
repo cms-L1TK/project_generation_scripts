@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os,sys
 import re
 import argparse
@@ -101,14 +103,18 @@ class ProcessingModule(Module):
         
 parser = argparse.ArgumentParser(description='Scripts to generate top level tracklet processing module')
 
-parser.add_argument('-r', '--region', type=str, default='test',
-                    help="Detector region. processingmodules_<REGION>.dat, memorymodules_<REGION>.dat and wires_<REGION>.dat will be read.")
+parser.add_argument('-o', '--output', type=str, default='Tracklet_processing.v',
+                    help="Output verilog file name")
+parser.add_argument('-s', '--suffix', type=str,
+                    help="If not None, processingmodules_<SUFFIX>.dat, memorymodules_<SUFFIX>.dat and wires_<SUFFIX>.dat will be read, instead of the default processingmodules.dat, memorymodules.dat and wires.dat")
 parser.add_argument('-p', '--prologue', type=str, default='prologue_longvm.txt',
                     help="Initial lines of Tracklet_processing")
+parser.add_argument('-r', '--region', type=str, help="UPDATE ME")
 
 args = parser.parse_args()
 
-f = open('processingmodules_'+args.region+'.dat')
+fprocmodule = 'processingmodules.dat' if args.suffix is None else 'processingmodules_'+args.suffix+'.dat'
+f = open(fprocmodule)
 modules = []
 for line in f:
     signals = [] # Pair with nice name and specific instance name
@@ -117,7 +123,8 @@ for line in f:
     modules.append(signals) # Add to the list of pairs
 
 # Read the memory modules
-g = open('memorymodules_'+args.region+'.dat')
+fmemmodule = 'memorymodules.dat' if args.suffix is None else 'memorymodules_'+args.suffix+'.dat'
+g = open(fmemmodule)
 memories = []
 for line in g:
     signals = [] # Nice name, instance name, memory size
@@ -159,7 +166,8 @@ for p in prologue:
 print 'start memory loop'
 # Start looping over the memories first
 
-wires_config = 'wires_'+args.region+'.dat' # wire connections file
+# wire connections file
+wires_config = 'wires.dat' if args.suffix is None else 'wires_'+args.suffix+'.dat' 
 
 for x in memories:   
     
@@ -1006,9 +1014,11 @@ if args.region == 'D4D6':
     print 'Processing modules implemented =',len(modules)
     string_prologue = string_prologue.replace('module Tracklet_processing','module Tracklet_processingD4D6')
     
-g = open('test.txt','w')
+g = open(args.output,'w')
 g.write(string_prologue)
 g.write(string_starts)
 g.write(string_memories)
 g.write(string_processing)
 g.write(string_epilogue)
+
+print "Output verilog file:", args.output

@@ -1,25 +1,33 @@
 
- Basic instructions to run the project generation.
+Basic instructions to run the project generation
 
-* Reduce the LongVM project if needed:
+The master configuration file for long VM project is wires.input.longVM_sector
 
-   ./SubProject_longVM.py -r <region> -s <seedings> -i <input> -o <output>
+* Generate reduced LongVM project configuration if needed:
+
+   ./SubProject_longVM.py -r <region> -s <seedings>
 
    ./SubProject_longVM.py -h  for help
+
+   It by default reads the master config file 'wires.input.longVM_sector' and generates a smaller scale project configuration 'wires.reduced', based on the user specified detector region (via option -r) and seeding pairs (via option -s).
+   Choices for argument <region> are: 'A' (entire tracker), 'L' (barrel only), 'D' (disk only), 'H' (hybrid region).
+   Choices for argument <seedings> are: 'L1L2', 'L3L4', 'L5L6', 'D1D2', 'D3D4', 'D1L1', 'D1L2', as well as any combinations of them. Note that in case the specified detector region is not entire detector, only seedings feasible in that region are allowed.
 
 * Create connections for LongVM project:
 
    ./WiresLongVM.py <wires>
 
-   This will produce wires.dat, memorymodules.dat and processingmodules.dat
+   Its input file <wires> could be either wires.input.longVM_sector for a full project or wires.reduced generated from previous step for a smaller scale project.
+   This script will produce three output files: wires.dat, memorymodules.dat and processingmodules.dat. They could be used either as configuration files in emulation or in the next step to generate top level processing verilog modules for firmware.
 
 * To generate verilog top level module:
-  
-   Change file names in generator_longVM.py according to the .dat files above if needed
    
-   ./generator_longVM.py -r <region> -o <output_name>
+   ./generator_longVM.py
 
    ./generator_longVM.py -h  for help
+
+   It reads in wires.dat, memorymodules.dat and processingmodules.dat by default, and generates a verilog module by default named Tracklet_processing.v
+   Copy Tracklet_processing.v to firmware/TrackletProject/SourceCode/ in order to implement it in firmware project.
 
 -----------------------------------------------------------------
 

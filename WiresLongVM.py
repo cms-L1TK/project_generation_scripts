@@ -229,14 +229,8 @@ for proc in processingmodules :
     if "TE_" in proc:
         if "VMRTE_" not in proc:
             fp.write("TrackletEngine: "+proc+"\n")
-    if "TC_L" in proc:
+    if "TC_" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
-    if "TC_F" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "TC_B" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "TC_D" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
@@ -246,8 +240,10 @@ for proc in processingmodules :
     if "ME_" in proc:
         if "VMRME_" not in proc:
             fp.write("MatchEngine: "+proc+"\n")
-    if "MC_" in proc:
+    if "MC_L" in proc:
         fp.write("MatchCalculator: "+proc+"\n")
+    if "MC_D" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
     if "MT_" in proc:
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:

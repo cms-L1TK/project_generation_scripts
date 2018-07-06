@@ -321,7 +321,7 @@ for x in memories:
         if 'empty' in o or 'CT_' in o: # No wires needed
             string_memories += '\n' + '//wire '+o+';'
         elif 'number' in o: # Number of objects in memory
-            if m.module == 'VMStubsTE' and "ISODD(1'b0)" in m.parameters:
+            if m.module == 'VMStubsTE' and "ISINNER(1'b0)" in m.parameters:
                 string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<3)-1:0] '+o+';'
             elif m.module == 'VMStubsME':
                 string_memories += '\n' + 'wire [(`MEM_SIZE+1)*(1<<3)-1:0] '+o+';'

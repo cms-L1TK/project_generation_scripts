@@ -3,7 +3,8 @@
 
 module Tracklet_processingTB#( // for test bench
 parameter INPUT_SIZE = 36,
-parameter INPUT_NUM = 84
+parameter INPUT_NUM = 84,
+parameter N_TRACKS_OUT = 7
 )(
     input clk,
     input reset,
@@ -11,8 +12,10 @@ parameter INPUT_NUM = 84
     input [2:0] BX,
     // inputs
     input [INPUT_SIZE-1:0] inputs [0:INPUT_NUM-1],
-    input                  valids [0:INPUT_NUM-1]
+    input                  valids [0:INPUT_NUM-1],
     // outputs
+	output [`NBITS_TF-1:0] tracks[0:N_TRACKS_OUT-1],
+	output                 tracks_valid [0:N_TRACKS_OUT-1]
 );
 
     reg [5:0] clk_cnt;
@@ -44,3 +47,18 @@ parameter INPUT_NUM = 84
             end
         end
 	endgenerate
+
+	assign tracks[0] = PD_CT_L1L2;
+	assign tracks[1] = PD_CT_L3L4;
+	assign tracks[2] = PD_CT_L5L6;
+	//assign tracks[3] = PD_CT_D1D2;
+	//assign tracks[4] = PD_CT_D3D4;
+	//assign tracks[5] = PD_CT_D1L1;
+	//assign tracks[6] = PD_CT_D1L2;
+	assign tracks_valid[0] = PD_CT_L1L2_wr_en;
+	assign tracks_valid[1] = PD_CT_L3L4_wr_en;
+	assign tracks_valid[2] = PD_CT_L5L6_wr_en;
+	//assign tracks_valid[3] = PD_CT_D1D2_wr_en;
+	//assign tracks_valid[4] = PD_CT_D3D4_wr_en;
+	//assign tracks_valid[5] = PD_CT_D1L1_wr_en;
+	//assign tracks_valid[6] = PD_CT_D1L2_wr_en;

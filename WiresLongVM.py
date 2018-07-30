@@ -21,6 +21,8 @@ def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem,nbits):
         n18bits=1;
     if (memwidth==36):
         n18bits=2;
+    if memwidth==42:
+        n18bits=3
     if (memwidth==54):
         n18bits=3;
     if (memwidth==122):
@@ -259,14 +261,8 @@ for proc in processingmodules :
     if "TE_" in proc:
         if "VMRTE_" not in proc:
             fp.write("TrackletEngine: "+proc+"\n")
-    if "TC_L" in proc:
+    if "TC_" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
-    if "TC_F" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "TC_B" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
-    if "TC_D" in proc:
-        fp.write("TrackletDiskCalculator: "+proc+"\n")
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
@@ -276,8 +272,10 @@ for proc in processingmodules :
     if "ME_" in proc:
         if "VMRME_" not in proc:
             fp.write("MatchEngine: "+proc+"\n")
-    if "MC_" in proc:
+    if "MC_L" in proc:
         fp.write("MatchCalculator: "+proc+"\n")
+    if "MC_D" in proc:
+        fp.write("DiskMatchCalculator: "+proc+"\n")
     if "MT_" in proc:
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:
@@ -295,7 +293,9 @@ longmem=0
 IL_mem=0
 SL_mem=0
 SD_mem=0
-AS_mem=0
+#AS_mem=0
+AStc_mem=0
+ASmc_mem=0
 VMSTE_mem=0
 VMSME_mem=0
 SP_mem=0
@@ -337,8 +337,12 @@ for mem in inputmemorymodules :
         SD_mem+=1
         found=True
     if "AS_" in mem:
-        fp.write("AllStubs: "+mem+n+" [36]\n")
-        AS_mem+=1
+        if "PHI1" in mem or "PHI2" in mem or "PHI3" in mem or "PHI4" in mem: # for MC
+            fp.write("AllStubs: "+mem+n+" [36]\n")
+            ASmc_mem+=1
+        else:  # for TC
+            fp.write("AllStubs: "+mem+n+" [42]\n")
+            AStc_mem+=1
         found=True
     if "VMSTE_" in mem:
         fp.write("VMStubsTE: "+mem+n+" [18]\n")
@@ -393,7 +397,9 @@ nbits=0
 
 (shortmem,longmem,nbits)=printsum("Input Link      ",IL_mem,36,48,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("All Stubs       ",AS_mem,36,64,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("All Stubs (TC)  ",AStc_mem,42,64,4,shortmem,longmem,nbits)
+
+(shortmem,longmem,nbits)=printsum("All Stubs (MC)  ",ASmc_mem,36,64,8,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("VM Stubs (TE)   ",VMSTE_mem,18,32,2,shortmem,longmem,nbits)
 

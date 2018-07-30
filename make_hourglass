@@ -1,0 +1,6 @@
+./HourGlassConfig.py 
+./WiresLongVM.py wires.input.hourglass
+cp wires.dat ../fpga_emulation_longVM/wires_hourglass.dat
+cp memorymodules.dat ../fpga_emulation_longVM/memorymodules_hourglass.dat
+cp processingmodules.dat ../fpga_emulation_longVM/processingmodules_hourglass.dat
+

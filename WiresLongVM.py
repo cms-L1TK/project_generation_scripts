@@ -27,15 +27,45 @@ def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem,nbits):
         n18bits=8;
     if (n18bits==0):
         print "n18bits is zero!!! Fix code"
-    print memname,"{:4.0f}".format(nmem),"{:10.0f}".format(memwidth),"{:7.0f}".format(memdepth),"{:5.0f}".format(nbx),"{:14.3f}".format(nmem*memwidth*memdepth*nbx*1e-3),"{:10.0f}".format(nmem*n18bits)
-    nbits+=nmem*memwidth*memdepth*nbx*1e-3
+    dram=1
+    bram=1
+    if "Input" in memname :
+        bram=0
+    if "All Stubs" in memname :
+        dram=0
+    if "TE" in memname :
+        dram=0
+    if "ME" in memname :
+        dram=0
+    if "Stub Pair" in memname :
+        bram=0
+    if "TPROJ" in memname :
+        bram=0
+    if "TPAR" in memname :
+        dram=0
+    if "All Proj" in memname :
+        dram=0
+    if "VM Proj" in memname :
+        bram=0
+    if "Cand. Match" in memname :
+        bram=0
+    if "Full Match" in memname :
+        bram=0
+    if "Track Fit" in memname :
+        bram=0
+    if "Clean Track" in memname :
+        bram=0
+
+        
+    print memname,"{:4.0f}".format(nmem),"{:10.0f}".format(memwidth),"{:7.0f}".format(memdepth),"{:5.0f}".format(nbx),"{:14.3f}".format(dram*nmem*memwidth*memdepth*nbx*1e-3),"{:10.0f}".format(bram*nmem*n18bits)
+    nbits+=dram*nmem*memwidth*memdepth*nbx*1e-3
     if (n18bits==2 or n18bits==4 or n18bits==6 or n18bits==8):
-        longmem+=nmem*n18bits/2
+        longmem+=bram*nmem*n18bits/2
     if (n18bits==1):
-        shortmem+=nmem;
+        shortmem+=bram*nmem;
     if (n18bits==3):
-        longmem+=nmem;
-        shortmem+=nmem;
+        longmem+=bram*nmem;
+        shortmem+=bram*nmem;
     return (shortmem,longmem,nbits)    
 
 
@@ -143,7 +173,7 @@ def matchin(proc,mem):
             return "3"
         if "F5" in mem[8:10]:
             return "4"
-    if "FT_D1L1" in proc:
+    if "FT_D1L1" in proc or "FT_L1D1" in proc :
         if "D2" in mem[8:10]:
             return "1"
         if "D3" in mem[8:10]:
@@ -152,7 +182,7 @@ def matchin(proc,mem):
             return "3"
         if "D5" in mem[8:10]:
             return "4"
-    if "FT_D1L2" in proc:
+    if "FT_D1L2" in proc or "FT_L2D1" in proc :
         if "L1" in mem[8:10]:
             return "1"
         if "D2" in mem[8:10]:
@@ -220,6 +250,8 @@ for mem in outputmemorymodules :
 
 for proc in processingmodules :
     proc=proc.strip()
+    if "VMR_" in proc:
+        fp.write("VMRouter: "+proc+"\n")
     if "VMRTE_" in proc:
         fp.write("VMRouterTE: "+proc+"\n")
     if "VMRME_" in proc:
@@ -355,11 +387,11 @@ for mem in inputmemorymodules :
     if not found :
         print "Did not print memorymodule : ",mem
 
-print "Memory type     #mems  bits wide   depth   #BX   bits (kbits)  #18k Bram"
+print "Memory type     #mems  bits wide   depth   #BX   DRAM (kbits)  #18k BRAM"
 
 nbits=0
 
-(shortmem,longmem,nbits)=printsum("Input Link      ",IL_mem,36,64,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Input Link      ",IL_mem,36,48,2,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("All Stubs       ",AS_mem,36,64,8,shortmem,longmem,nbits)
 
@@ -367,29 +399,29 @@ nbits=0
 
 (shortmem,longmem,nbits)=printsum("VM Stubs (ME)   ",VMSME_mem,18,32,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Stub Pair       ",SP_mem,18,32,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Stub Pair       ",SP_mem,12,16,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("TPROJ           ",TPROJ_mem,54,64,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("TPROJ           ",TPROJ_mem,54,16,2,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("TPAR            ",TPAR_mem,54,64,8,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("All Projection  ",AP_mem,54,64,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("VM Projection   ",VMPROJ_mem,13,32,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("VM Projection   ",VMPROJ_mem,13,16,2,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("Cand. Match     ",CM_mem,12,32,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Full Match      ",FM_mem,36,64,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Full Match      ",FM_mem,36,32,2,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("Track Fit       ",TF_mem,122,64,2,shortmem,longmem,nbits)
 
 (shortmem,longmem,nbits)=printsum("Clean Track     ",CT_mem,122,64,2,shortmem,longmem,nbits)
 
 
-print "Number of 18 bit memories : ",shortmem        
-print "Number of 36 bit memories : ",longmem        
-print "Megabits required using 18/36 bit memories:",shortmem*0.018+longmem*0.036
-print "Megabits of memories actually used :",nbits*1e-3
+print "Number of 18 bit memories : ",shortmem+2*longmem        
+#print "Number of 36 bit memories : ",longmem        
+print "BRAM Megabits required using 18/36 bit memories:",shortmem*0.018+longmem*0.036
+print "DRAM Megabits of memories actually used :",nbits*1e-3
 
 fp = open("wires.dat","w")
 
@@ -446,7 +478,10 @@ for m in inputmemcount :
                     if "_F5" in mem or "_B5" in mem:
                         fp.write(".stuboutD5")
                 if "VMSTE_" in mem:
-                    fp.write(".vmstubout"+mem[11:(len(mem))]+n+" ")
+                    if "hourglass" in sys.argv[1] :
+                        fp.write(".vmstubout"+mem[8:(len(mem))]+n+" ")
+                    else :
+                        fp.write(".vmstubout"+mem[11:(len(mem))]+n+" ")
                 if "VMSME_" in mem:
                     fp.write(".vmstubout"+mem[8:(len(mem))]+n+" ")
                 if "AS_" in mem:
@@ -465,7 +500,10 @@ for m in inputmemcount :
                             else :
                                 fp.write(".projout"+mem[12:])
                 if "VMPROJ_" in mem:
-                    fp.write(".vmprojout"+mem[14:]+n+" ")
+                    if "hourglass" in sys.argv[1]:
+                        fp.write(".vmprojout"+mem[9:]+n+" ")
+                    else :
+                        fp.write(".vmprojout"+mem[14:]+n+" ")
                 if "AP_" in mem:
                     fp.write(".allprojout"+n+" ")
                 if "CM_" in mem:
@@ -529,10 +567,16 @@ for m in inputmemcount :
                     if "SD3_" in mem :
                         fp.write(".stubinLink3")
                 if "VMSTE_" in mem:
-                    if ( ("_L1" in mem and not "TE_D1" in proc and not "TE_B1" in proc) or "_L3" in mem or "_L5" in mem or "_D1" in mem or "_D3" in mem or "_B1" in mem or "_B3" in mem ) :  
-                        fp.write(".innervmstubin")
+                    if "hourglass" in sys.argv[1]:                    
+                        if ( ("_D1" in mem and not ("TE_L1" in proc or "TE_L2" in proc)) or ("_L2" in mem and not "TE_L1" in proc) or "_L1" in mem or "_L3" in mem or "_L5" in mem or "_D3" in mem ) :
+                            fp.write(".innervmstubin")
+                        else :
+                            fp.write(".outervmstubin")
                     else :
-                        fp.write(".outervmstubin")
+                        if ( ("_L1" in mem and not "TE_D1" in proc and not "TE_B1" in proc) or "_L3" in mem or "_L5" in mem or "_D1" in mem or "_D3" in mem or "_B1" in mem or "_B3" in mem ) :
+                            fp.write(".innervmstubin")
+                        else :
+                            fp.write(".outervmstubin")                        
                 if "VMSME_" in mem:
                     fp.write(".vmstubin")
                 if "AS_" in mem:

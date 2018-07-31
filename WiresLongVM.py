@@ -276,6 +276,8 @@ for proc in processingmodules :
         fp.write("MatchCalculator: "+proc+"\n")
     if "MC_D" in proc:
         fp.write("DiskMatchCalculator: "+proc+"\n")
+    if "MP_" in proc:
+        fp.write("MatchProcessor: "+proc+"\n")
     if "MT_" in proc:
         fp.write("MatchTransceiver: "+proc+"\n")
     if "FT_" in proc:
@@ -586,7 +588,7 @@ for m in inputmemcount :
                 if "VMSME_" in mem:
                     fp.write(".vmstubin")
                 if "AS_" in mem:
-                    if ("MC_" in proc) :
+                    if ("MC_" in proc or "MP_" in proc) :
                         fp.write(".allstubin")
                     else :
                         if ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
@@ -604,7 +606,7 @@ for m in inputmemcount :
                         ii=1
                     fp.write(".stubpair"+str(ii)+"in")
                 if "TPROJ_" in mem:
-                    if "PT_" in proc :
+                    if ("PT_" in proc or "MP_" in proc) :
                         fp.write(".projin")
                     else:
                         ii=0

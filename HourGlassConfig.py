@@ -6,7 +6,10 @@ import sys
 NSector = 9
 rcrit = 55.0
 
-rinvmax=0.0057;
+rinvmax=0.0057
+
+#If true it will use a MatchProcessor to replace PRs, MEs, MC
+combined=False 
 
 two_pi=8*math.atan(1.0)
 
@@ -1090,181 +1093,275 @@ for ilayer in (1,2) :
         fp.write("\n\n")
 
 
-
-                
-                
-
-#
-# Do the PROJRouters for the layers
-#
-
-for ilayer in range(1,7) :
-    print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# PROJRouters for the MEs in layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    for iallprojmem in range(1,nallprojlayers[ilayer-1]+1) :
-        projmemname="L"+str(ilayer)+"PHI"+letter(iallprojmem)
-        for proj_name in TPROJ_list :
-            if projmemname in proj_name :
-                fp.write(proj_name+" ")
-        fp.write("> PR_L"+str(ilayer)+"PHI"+letter(iallprojmem)+" > AP_L"+str(ilayer)+"PHI"+letter(iallprojmem))
-        for ivm in range(1,nvmmelayers[ilayer-1]+1) :
-            fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(iallprojmem)+str((iallprojmem-1)*nvmmelayers[ilayer-1]+ivm))
-        fp.write("\n\n")
-
-
-#
-# Do the PROJRouters for the disks
-#
-
-for idisk in range(1,6) :
-    print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# PROJRouters for the MEs in disk "+str(idisk)+" \n")
-    fp.write("#\n")
-    for iallprojmem in range(1,nallprojdisks[idisk-1]+1) :
-        projmemname="D"+str(idisk)+"PHI"+letter(iallprojmem)
-        for proj_name in TPROJ_list :
-            if projmemname in proj_name :
-                fp.write(proj_name+" ")
-        fp.write("> PR_D"+str(idisk)+"PHI"+letter(iallprojmem)+" > AP_D"+str(idisk)+"PHI"+letter(iallprojmem))
-        for ivm in range(1,nvmmedisks[idisk-1]+1) :
-            fp.write(" VMPROJ_D"+str(idisk)+"PHI"+letter(iallprojmem)+str((iallprojmem-1)*nvmmedisks[idisk-1]+ivm))
-        fp.write("\n\n")
-
-
-#
-# Do the ME for the layers
-#
-
+FM_list=[]
 CM_list=[]
 
-for ilayer in range(1,7) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Match Engines for layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    print "layer = ",ilayer
-    for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) :
-        fp.write("VMSME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm))
-        fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" >")
-        fp.write(" ME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" > ")
-        CM_name="CM_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)
-        fp.write(CM_name)
-        CM_list.append(CM_name)
-        fp.write("\n\n")
+
+if combined :
+
+    for ilayer in range(1,7) :
+        print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# PROJRouters+MatchEngines+MatchCalculator in layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        for iallprojmem in range(1,nallprojlayers[ilayer-1]+1) :
+            projmemname="L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            for proj_name in TPROJ_list :
+                if projmemname in proj_name :
+                    fp.write(proj_name+" ")
+            fp.write("AS_L"+str(ilayer)+"PHI"+letter(iallprojmem))
+            for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) :
+                phiregion=1+(ivm-1)/nvmmelayers[ilayer-1]
+                if phiregion!=iallprojmem :
+                    continue
+                fp.write(" VMSME_L"+str(ilayer)+"PHI"+letter(phiregion)+str(ivm))
+
+            fp.write(" > MP_L"+str(ilayer)+"PHI"+letter(iallprojmem)+" > ")
+            fm_name="FM_L1L2_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer!=1 and ilayer!=2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L3L4_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer!=3 and ilayer!=4 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L5L6_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer!=5 and ilayer!=6 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D1D2_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer==1 or ilayer==2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D3D4_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer==1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L2D1_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer==1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fp.write("\n\n")
+
+    for idisk in range(1,6) :
+        print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# PROJRouters+MatchEngine+MatchCalculator in disk "+str(idisk)+" \n")
+        fp.write("#\n")
+        for iallprojmem in range(1,nallprojdisks[idisk-1]+1) :
+            projmemname="D"+str(idisk)+"PHI"+letter(iallprojmem)
+            for proj_name in TPROJ_list :
+                if projmemname in proj_name :
+                    fp.write(proj_name+" ")
+            fp.write("AS_D"+str(idisk)+"PHI"+letter(iallprojmem))
+            for ivm in range(1,nallprojdisks[idisk-1]*nvmmedisks[idisk-1]+1) :
+                phiregion=1+(ivm-1)/nvmmedisks[idisk-1]
+                if phiregion!=iallprojmem :
+                    continue
+                fp.write(" VMSME_D"+str(idisk)+"PHI"+letter(phiregion)+str(ivm))
+            fp.write(" > MP_D"+str(idisk)+"PHI"+letter(iallprojmem)+" > ")
+            fm_name="FM_D1D2_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=1 and idisk!=2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D3D4_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=3 and idisk!=4 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L1L2_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=5 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L3L4_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk==1 or idisk==2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L1D1_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L2D1_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=1 and idisk!=5 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+
+            fp.write("\n\n")
+
+            
+    
+else :
+                
+    #
+    # Do the PROJRouters for the layers
+    #
+
+    for ilayer in range(1,7) :
+        print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# PROJRouters for the MEs in layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        for iallprojmem in range(1,nallprojlayers[ilayer-1]+1) :
+            projmemname="L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            for proj_name in TPROJ_list :
+                if projmemname in proj_name :
+                    fp.write(proj_name+" ")
+            fp.write("> PR_L"+str(ilayer)+"PHI"+letter(iallprojmem)+" > AP_L"+str(ilayer)+"PHI"+letter(iallprojmem))
+            for ivm in range(1,nvmmelayers[ilayer-1]+1) :
+                fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(iallprojmem)+str((iallprojmem-1)*nvmmelayers[ilayer-1]+ivm))
+            fp.write("\n\n")
+
+
+    #
+    # Do the PROJRouters for the disks
+    #
+
+    for idisk in range(1,6) :
+        print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# PROJRouters for the MEs in disk "+str(idisk)+" \n")
+        fp.write("#\n")
+        for iallprojmem in range(1,nallprojdisks[idisk-1]+1) :
+            projmemname="D"+str(idisk)+"PHI"+letter(iallprojmem)
+            for proj_name in TPROJ_list :
+                if projmemname in proj_name :
+                    fp.write(proj_name+" ")
+            fp.write("> PR_D"+str(idisk)+"PHI"+letter(iallprojmem)+" > AP_D"+str(idisk)+"PHI"+letter(iallprojmem))
+            for ivm in range(1,nvmmedisks[idisk-1]+1) :
+                fp.write(" VMPROJ_D"+str(idisk)+"PHI"+letter(iallprojmem)+str((iallprojmem-1)*nvmmedisks[idisk-1]+ivm))
+            fp.write("\n\n")
+
+
+    #
+    # Do the ME for the layers
+    #
+
+    CM_list=[]
+
+    for ilayer in range(1,7) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Match Engines for layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        print "layer = ",ilayer
+        for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) :
+            fp.write("VMSME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm))
+            fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" >")
+            fp.write(" ME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" > ")
+            CM_name="CM_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)
+            fp.write(CM_name)
+            CM_list.append(CM_name)
+            fp.write("\n\n")
  
 
-#
-# Do the ME for the disks
-#
+    #
+    # Do the ME for the disks
+    #
 
-for idisk in range(1,6) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Match Engines for disk "+str(idisk)+" \n")
-    fp.write("#\n")
-    print "disk = ",idisk
-    for ivm in range(1,nallprojdisks[idisk-1]*nvmmedisks[idisk-1]+1) :
-        fp.write("VMSME_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm))
-        fp.write(" VMPROJ_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)+" >")
-        fp.write(" ME_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)+" > ")
-        CM_name="CM_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)
-        fp.write(CM_name)
-        CM_list.append(CM_name)
-        fp.write("\n\n")
+    for idisk in range(1,6) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Match Engines for disk "+str(idisk)+" \n")
+        fp.write("#\n")
+        print "disk = ",idisk
+        for ivm in range(1,nallprojdisks[idisk-1]*nvmmedisks[idisk-1]+1) :
+            fp.write("VMSME_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm))
+            fp.write(" VMPROJ_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)+" >")
+            fp.write(" ME_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)+" > ")
+            CM_name="CM_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)
+            fp.write(CM_name)
+            CM_list.append(CM_name)
+            fp.write("\n\n")
  
 
 
-#
-# Do the MC for the layers
-#
+    #
+    # Do the MC for the layers
+    #
 
-FM_list=[]
-
-for ilayer in range(1,7) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Match Calculator for layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    print "layer = ",ilayer
-    for iproj in range(1,nallprojlayers[ilayer-1]+1) :
-        for ivm in range(1,nvmmelayers[ilayer-1]+1) :
-            fp.write("CM_L"+str(ilayer)+"PHI"+letter(iproj)+str((iproj-1)*nvmmelayers[ilayer-1]+ivm)+" ")
-        fp.write("AP_L"+str(ilayer)+"PHI"+letter(iproj)+" ")
-        fp.write("AS_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
-        fp.write("MC_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
-        fm_name="FM_L1L2_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer!=1 and ilayer!=2 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L3L4_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer!=3 and ilayer!=4 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L5L6_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer!=5 and ilayer!=6 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_D1D2_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer==1 or ilayer==2 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_D3D4_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer==1 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L2D1_L"+str(ilayer)+"PHI"+letter(iproj)
-        if ilayer==1 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fp.write("\n\n")
+    for ilayer in range(1,7) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Match Calculator for layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        print "layer = ",ilayer
+        for iproj in range(1,nallprojlayers[ilayer-1]+1) :
+            for ivm in range(1,nvmmelayers[ilayer-1]+1) :
+                fp.write("CM_L"+str(ilayer)+"PHI"+letter(iproj)+str((iproj-1)*nvmmelayers[ilayer-1]+ivm)+" ")
+            fp.write("AP_L"+str(ilayer)+"PHI"+letter(iproj)+" ")
+            fp.write("AS_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
+            fp.write("MC_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
+            fm_name="FM_L1L2_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer!=1 and ilayer!=2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L3L4_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer!=3 and ilayer!=4 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L5L6_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer!=5 and ilayer!=6 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D1D2_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer==1 or ilayer==2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D3D4_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer==1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L2D1_L"+str(ilayer)+"PHI"+letter(iproj)
+            if ilayer==1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fp.write("\n\n")
         
-#
-# Do the MC for the disks
-#
+    #
+    # Do the MC for the disks
+    #
 
-for idisk in range(1,6) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Match Calculator for disk "+str(idisk)+" \n")
-    fp.write("#\n")
-    print "disk = ",idisk
-    for iproj in range(1,nallprojdisks[idisk-1]+1) :
-        for ivm in range(1,nvmmedisks[idisk-1]+1) :
-            fp.write("CM_D"+str(idisk)+"PHI"+letter(iproj)+str((iproj-1)*nvmmedisks[idisk-1]+ivm)+" ")
-        fp.write("AP_D"+str(idisk)+"PHI"+letter(iproj)+" ")
-        fp.write("AS_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
-        fp.write("MC_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
-        fm_name="FM_D1D2_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk!=1 and idisk!=2 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_D3D4_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk!=3 and idisk!=4 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L1L2_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk!=5 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L3L4_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk==1 or idisk==2 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L1D1_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk!=1 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
-        fm_name="FM_L2D1_D"+str(idisk)+"PHI"+letter(iproj)
-        if idisk!=1 and idisk!=5 :
-            fp.write(fm_name+" ")
-            FM_list.append(fm_name)
+    for idisk in range(1,6) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Match Calculator for disk "+str(idisk)+" \n")
+        fp.write("#\n")
+        print "disk = ",idisk
+        for iproj in range(1,nallprojdisks[idisk-1]+1) :
+            for ivm in range(1,nvmmedisks[idisk-1]+1) :
+                fp.write("CM_D"+str(idisk)+"PHI"+letter(iproj)+str((iproj-1)*nvmmedisks[idisk-1]+ivm)+" ")
+            fp.write("AP_D"+str(idisk)+"PHI"+letter(iproj)+" ")
+            fp.write("AS_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
+            fp.write("MC_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
+            fm_name="FM_D1D2_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk!=1 and idisk!=2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_D3D4_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk!=3 and idisk!=4 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L1L2_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk!=5 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L3L4_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk==1 or idisk==2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L1D1_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk!=1 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L2D1_D"+str(idisk)+"PHI"+letter(iproj)
+            if idisk!=1 and idisk!=5 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
 
-        fp.write("\n\n")
+            fp.write("\n\n")
         
         
 #

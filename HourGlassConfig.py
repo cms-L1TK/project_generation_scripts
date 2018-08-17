@@ -205,6 +205,31 @@ def validtepairoverlap(ilayer,ivminner,ivmouter) :
     
     return True
 
+def asmems(sp_list):
+    as_list1 = []
+    as_list2 = []
+    as_list3 = []
+    as_list  = []
+    for sp in sp_list:
+        i = sp.find("PHI");
+        j = 0
+        while (i >= 0):
+           as_name = "AS_"+sp[i-2:i]+"PHI"+sp[i+3]
+           if as_name not in as_list:
+               as_list.append(as_name)
+               if   j==0 :
+                   as_list1.append(as_name)
+               elif j==1:
+                   as_list2.append(as_name)
+               elif j==2 :
+                   as_list3.append(as_name)
+               else:
+                   print "too many PHI segments in a name!", sp
+           i = sp.find("PHI",i+1);
+           j = j+1
+
+    #return as_list       
+    return as_list1 + as_list2 + as_list3
 
 
 def phiproj(ilayer,phi,rinv,projlayer) :
@@ -847,7 +872,10 @@ for ilayer in (1,3,5) :
             fp.write(sp_name+" ")
         tc_count+=1
         #print sp_name, sp_name.split("PHI")
-        fp.write("AS_L"+str(ilayer)+"PHI"+sp_name[8]+" AS_L"+str(ilayer+1)+"PHI"+sp_name.split("PHI")[2][0])  #PHI regions are hacks!
+        #fp.write("AS_L"+str(ilayer)+"PHI"+sp_name[8]+" AS_L"+str(ilayer+1)+"PHI"+sp_name.split("PHI")[2][0])  #PHI regions are hacks!
+        as_names = asmems(sps)
+        for asn in as_names:
+            fp.write(asn+" ")    
         tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tc_count)
         fp.write(" > TC_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tc_count)+" > "+tpar_name)
         TPAR_list.append(tpar_name)

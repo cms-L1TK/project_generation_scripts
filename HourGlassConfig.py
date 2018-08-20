@@ -7,6 +7,7 @@ NSector = 9
 rcrit = 55.0
 
 rinvmax=0.0057
+d0max=6.0;
 
 #If true it will use a MatchProcessor to replace PRs, MEs, MC
 combined=False 
@@ -120,6 +121,43 @@ def letteroverlap(i) :
         return "T"
     return "letteroverlap can not handle input = "+str(i)
 
+def letter_as(s) :
+    if( s=="A") :
+        return s
+    if( s=="B") :
+        return s
+    if( s=="C") :
+        return s
+    if( s=="D") :
+        return s
+    if( s=="E") :
+        return s
+    if( s=="F") :
+        return s
+    if( s=="G") :
+        return s
+    if( s=="H") :
+        return s
+    #overlap VMs point to same AS memories as others
+    if( s=="X") :
+        return "A"
+    if( s=="Y") :
+        return "B"
+    if( s=="Z") :
+        return "C"
+    if( s=="W") :
+        return "D"
+    if( s=="Q") :
+        return "E"
+    if( s=="R") :
+        return "F"
+    if( s=="S") :
+        return "G"
+    if( s=="T") :
+        return "H"
+    print "letter_as can not handle input ", s
+    return ""
+    
 def rinv(ilayer,phiinner,phiouter) :
     return 2*math.sin(phiinner-phiouter)/(rlayers[ilayer-1]-rlayers[ilayer])
 
@@ -214,7 +252,8 @@ def asmems(sp_list):
         i = sp.find("PHI");
         j = 0
         while (i >= 0):
-           as_name = "AS_"+sp[i-2:i]+"PHI"+sp[i+3]
+           as_i  = letter_as(sp[i+3])
+           as_name = "AS_"+sp[i-2:i]+"PHI"+as_i
            if as_name not in as_list:
                as_list.append(as_name)
                if   j==0 :
@@ -941,7 +980,10 @@ for idisk in (1,3) :
             fp.write(sp_name+" ")
         tc_count+=1
         #print sp_name, sp_name.split("PHI")
-        fp.write("AS_D"+str(idisk)+"PHI"+sp_name[8]+" AS_D"+str(idisk+1)+"PHI"+sp_name.split("PHI")[2][0])  #PHI regions are hacks!
+        #fp.write("AS_D"+str(idisk)+"PHI"+sp_name[8]+" AS_D"+str(idisk+1)+"PHI"+sp_name.split("PHI")[2][0])  #PHI regions are hacks!
+        as_names = asmems(sps)
+        for asn in as_names:
+            fp.write(asn+" ")    
         tpar_name="TPAR_D"+str(idisk)+"D"+str(idisk+1)+letter(tc_count)
         fp.write(" > TC_D"+str(idisk)+"D"+str(idisk+1)+letter(tc_count)+" > "+tpar_name)
         TPAR_list.append(tpar_name)
@@ -1057,41 +1099,45 @@ for ilayer in (1,2) :
         for sp_name in sps :
             fp.write(sp_name+" ")
         tc_count+=1
-        reg1=sp_name[8]
-        if reg1=="X" :
-            reg1="A"
-        if reg1=="Y" :
-            reg1="B"
-        if reg1=="Z" :
-            reg1="C"
-        if reg1=="W" :
-            reg1="D"
-        if reg1=="Q" :
-            reg1="E"
-        if reg1=="R" :
-            reg1="F"
-        if reg1=="S" :
-            reg1="G"
-        if reg1=="T" :
-            reg1="H"
-        reg2=sp_name.split("PHI")[2][0]
-        if reg2=="X" :
-            reg2="A"
-        if reg2=="Y" :
-            reg2="B"
-        if reg2=="Z" :
-            reg2="C"
-        if reg2=="W" :
-            reg2="D"
-        if reg2=="Q" :
-            reg2="E"
-        if reg2=="R" :
-            reg2="F"
-        if reg2=="S" :
-            reg2="G"
-        if reg2=="T" :
-            reg2="H"
-        fp.write("AS_L"+str(ilayer)+"PHI"+reg1+" AS_D1PHI"+reg2)  #PHI regions are hacks!
+#        reg1=sp_name[8]
+#        if reg1=="X" :
+#            reg1="A"
+#        if reg1=="Y" :
+#            reg1="B"
+#        if reg1=="Z" :
+#            reg1="C"
+#        if reg1=="W" :
+#            reg1="D"
+#        if reg1=="Q" :
+#            reg1="E"
+#        if reg1=="R" :
+#            reg1="F"
+#        if reg1=="S" :
+#            reg1="G"
+#        if reg1=="T" :
+#            reg1="H"
+#        reg2=sp_name.split("PHI")[2][0]
+#        if reg2=="X" :
+#            reg2="A"
+#        if reg2=="Y" :
+#            reg2="B"
+#        if reg2=="Z" :
+#            reg2="C"
+#        if reg2=="W" :
+#            reg2="D"
+#        if reg2=="Q" :
+#            reg2="E"
+#        if reg2=="R" :
+#            reg2="F"
+#        if reg2=="S" :
+#            reg2="G"
+#        if reg2=="T" :
+#            reg2="H"
+#        fp.write("AS_L"+str(ilayer)+"PHI"+reg1+" AS_D1PHI"+reg2)  #PHI regions are hacks!
+        as_names = asmems(sps)
+        for asn in as_names:
+            fp.write(asn+" ")    
+
         tpar_name="TPAR_L"+str(ilayer)+"D1"+letter(tc_count)
         fp.write(" > TC_L"+str(ilayer)+"D1"+letter(tc_count)+" > "+tpar_name)
         TPAR_list.append(tpar_name)

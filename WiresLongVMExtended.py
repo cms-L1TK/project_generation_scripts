@@ -654,7 +654,7 @@ for m in inputmemcount :
                             else :
                                 fp.write(".outervmstubin")
                         elif "TED_" in proc:
-                            if ("_L3" in mem) or ("_L5" in mem) or ("_L2" in mem) or ("_D1" in mem):
+                            if ("_L3" in mem and not "TED_L2" in proc) or ("_L5" in mem) or ("_L2" in mem) or ("_D1" in mem):
                                 fp.write(".middlevmstubin")
                             else:
                                 fp.write(".outervmstubin")

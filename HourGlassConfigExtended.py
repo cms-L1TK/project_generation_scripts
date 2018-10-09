@@ -49,9 +49,18 @@ nallstubsoverlapdisks = [4]
 nvmteoverlapdisks = [4]
 
 #displaced configs
+
+# layers
+#currently use the same VM divisions as prompt layers
 dispLLL = [[3,4,2],[5,6,4]] 
-dispLLD = [[2,3,1]]
+
+# disks to layer overlap
+# use prompt VM divisions for disk and overlap divisions for layer 
 dispDDL = [[1,2,2]]
+
+# layers to disk overlap
+# use prompt VM divisions for layers and overlap divisions for disk 
+dispLLD = [[2,3,1]]
 
 
 def phiRange():
@@ -109,6 +118,39 @@ def letter(i) :
         return "O"
     return "letter can not handle input = "+str(i)
 
+def letter_triplet(i) :
+    if i==1 :
+        return "a"
+    if i==2 :
+        return "b"
+    if i==3 :
+        return "c"
+    if i==4 :
+        return "d"
+    if i==5 :
+        return "e"
+    if i==6 :
+        return "f"
+    if i==7 :
+        return "g"
+    if i==8 :
+        return "h"
+    if i==9 :
+        return "i"
+    if i==10 :
+        return "j"
+    if i==11 :
+        return "k"
+    if i==12 :
+        return "l"
+    if i==13 :
+        return "m"
+    if i==14 :
+        return "n"
+    if i==15 :
+        return "o"
+    return "letter can not handle input = "+str(i)
+
 
 def letteroverlap(i) :
     if i==1 :
@@ -127,6 +169,25 @@ def letteroverlap(i) :
         return "S"
     if i==8 :
         return "T"
+    return "letteroverlap can not handle input = "+str(i)
+
+def letteroverlap_triplet(i) :
+    if i==1 :
+        return "x"
+    if i==2 :
+        return "y"
+    if i==3 :
+        return "z"
+    if i==4 :
+        return "w"
+    if i==5 :
+        return "q"
+    if i==6 :
+        return "r"
+    if i==7 :
+        return "s"
+    if i==8 :
+        return "t"
     return "letteroverlap can not handle input = "+str(i)
 
 def letter_as(s) :
@@ -162,6 +223,40 @@ def letter_as(s) :
     if( s=="S") :
         return "G"
     if( s=="T") :
+        return "H"
+    #same for triplets
+    if( s=="a") :
+        return "A"
+    if( s=="b") :
+        return "B"
+    if( s=="c") :
+        return "C"
+    if( s=="d") :
+        return "D"
+    if( s=="e") :
+        return "E"
+    if( s=="f") :
+        return "F"
+    if( s=="g") :
+        return "G"
+    if( s=="h") :
+        return "H"
+    #overlap VMs point to same AS memories as others
+    if( s=="x") :
+        return "A"
+    if( s=="y") :
+        return "B"
+    if( s=="z") :
+        return "C"
+    if( s=="w") :
+        return "D"
+    if( s=="q") :
+        return "E"
+    if( s=="r") :
+        return "F"
+    if( s=="s") :
+        return "G"
+    if( s=="t") :
         return "H"
     print "letter_as can not handle input ", s
     return ""
@@ -249,11 +344,11 @@ def phiproj5projrange(stlist, rproj) :
         r2 = rlayers[l2-1] if stname[6]  == "L" else zdisks[l2-1]/t
         r3 = rlayers[l3-1] if stname[10] == "L" else zdisks[l3-1]/t
 
-        vm1 = ord(stname[5])-ord("A")
-        vm2 = ord(stname[8])-ord("A")
+        vm1 = ord(letter_as(stname[5]))-ord("A")
+        vm2 = ord(letter_as(stname[8]))-ord("A")
         vm3s = stname[12:].split("_")[0]
         for vm3c in vm3s :
-            vm3 = ord(vm3c)-ord("A")
+            vm3 = ord(letter_as(vm3c))-ord("A")
             phi1  = phirange * vm1 / n1
             dphi1 = phirange       / n1
             phi2  = phirange * vm2 / n2
@@ -634,6 +729,24 @@ def asmems(sp_list):
 
     #return as_list       
     return as_list1 + as_list2 + as_list3
+
+def asmems3(st_list):
+    as_list  = []
+    for st in st_list:
+        as_name = "AS_"+st[3:5]+"PHI"+letter_as(st[5])
+        if as_name not in as_list:
+            as_list.append(as_name)
+        as_name = "AS_"+st[6:8]+"PHI"+letter_as(st[8])
+        if as_name not in as_list:
+            as_list.append(as_name)
+        i = st.find("_",12)
+        ls = st[12:i]
+        for l in ls:
+            as_name = "AS_"+st[10:12]+"PHI"+letter_as(l)
+            if as_name not in as_list:
+                as_list.append(as_name)
+
+    return as_list       
 
 
 def phiproj(ilayer,phi,rinv,projlayer) :
@@ -1028,6 +1141,13 @@ fp = open("wires.input.hourglassExtended","w")
 # Do the VM routers for the TE in the layers
 #
 
+#
+# triplets VMs:
+# FIRST  (same as inner): L3,L5,D1 ->same memories as pairs;   L2abcdefg for L2L3D1
+# SECOND (same as outer): L4,L6,D2 -> same memeories as pairs; L3abcdefg for L2L3D1
+# THIRD  (same as outer): L2,L4    -> same memories as pairs;  L2xyz, D1xyz for D1D2L2 and L2L3D1
+
+
 for ilayer in range(1,7) :
     print "layer =",ilayer,"allstub memories",nallstubslayers[ilayer-1]
     fp.write("\n")
@@ -1048,7 +1168,16 @@ for ilayer in range(1,7) :
         if ilayer in range(1,3) :
             for ivm in range(1,nvmteoverlaplayers[ilayer-1]+1) :
                 fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letteroverlap(iallstubmem)+str((iallstubmem-1)*nvmteoverlaplayers[ilayer-1]+ivm))
-        
+        if ilayer == 2:
+            for ivm in range(1,nvmtelayers[ilayer-1]+1) :
+                fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letter_triplet(iallstubmem)+str((iallstubmem-1)*nvmtelayers[ilayer-1]+ivm))
+            for ivm in range(1,nvmteoverlaplayers[ilayer-1]+1) :
+                fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letteroverlap_triplet(iallstubmem)+str((iallstubmem-1)*nvmteoverlaplayers[ilayer-1]+ivm))
+        if ilayer == 3:
+            for ivm in range(1,nvmtelayers[ilayer-1]+1) :
+                fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letter_triplet(iallstubmem)+str((iallstubmem-1)*nvmtelayers[ilayer-1]+ivm))
+
+                
         fp.write("\n\n")
 
 #
@@ -1099,6 +1228,8 @@ for idisk in range(1,6) :
         if idisk in range(1,2) :
             for ivm in range(1,nvmteoverlapdisks[idisk-1]+1) :
                 fp.write(" VMSTE_D"+str(idisk)+"PHI"+letteroverlap(iallstubmem)+str((iallstubmem-1)*nvmteoverlapdisks[idisk-1]+ivm))
+            for ivm in range(1,nvmteoverlapdisks[idisk-1]+1) :
+                fp.write(" VMSTE_D"+str(idisk)+"PHI"+letteroverlap_triplet(iallstubmem)+str((iallstubmem-1)*nvmteoverlapdisks[idisk-1]+ivm))
         fp.write("\n\n")
 
 
@@ -1215,21 +1346,21 @@ for lll in dispLLD :
     for ivminner in range(1,nallstubslayers[lll[0]-1]*nvmtelayers[lll[0]-1]+1) :
         for ivmouter in range(1,nallstubslayers[lll[1]-1]*nvmtelayers[lll[1]-1]+1) :
             if validtedpair(lll[0],ivminner,ivmouter) :
-                amn = "L"+str(lll[0])+letter((ivminner-1)/nvmtelayers[lll[0]-1]+1)+"L"+str(lll[1])+letter((ivmouter-1)/nvmtelayers[lll[1]-1]+1)
+                amn = "L"+str(lll[0])+letter_triplet((ivminner-1)/nvmtelayers[lll[0]-1]+1)+"L"+str(lll[1])+letter_triplet((ivmouter-1)/nvmtelayers[lll[1]-1]+1)
                 if amn not in PairAMs :
                     PairAMs.append(amn)
-                fp.write("VMSTE_L"+str(lll[0])+"PHI"+letter((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner))
-                fp.write(" VMSTE_L"+str(lll[1])+"PHI"+letter((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter))
-                fp.write(" > TED_L"+str(lll[0])+"PHI"+letter((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner))
-                fp.write("_L"+str(lll[1])+"PHI"+letter((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter))
+                fp.write("VMSTE_L"+str(lll[0])+"PHI"+letter_triplet((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner))
+                fp.write(" VMSTE_L"+str(lll[1])+"PHI"+letter_triplet((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter))
+                fp.write(" > TED_L"+str(lll[0])+"PHI"+letter_triplet((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner))
+                fp.write("_L"+str(lll[1])+"PHI"+letter_triplet((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter))
                 fp.write(" > ")
                 prange = phiproj5stlayer_to_disk(lll[0],lll[2], ivminner, ivmouter)
                 #fp.write(str(prange[0])+" "+str(prange[1])+"\n")                         
-                for ivmproj in range(1, nallstubsdisks[lll[2]-1]*nvmtedisks[lll[2]-1]+1) :
-                    phiprojmin=phirange/nallstubsdisks[lll[2]-1]/nvmtedisks[lll[2]-1]*(ivmproj-1)
-                    phiprojmax=phirange/nallstubsdisks[lll[2]-1]/nvmtedisks[lll[2]-1]*ivmproj
+                for ivmproj in range(1, nallstubsdisks[lll[2]-1]*nvmteoverlapdisks[lll[2]-1]+1) :
+                    phiprojmin=phirange/nallstubsdisks[lll[2]-1]/nvmteoverlapdisks[lll[2]-1]*(ivmproj-1)
+                    phiprojmax=phirange/nallstubsdisks[lll[2]-1]/nvmteoverlapdisks[lll[2]-1]*ivmproj
                     if prange[0]<phiprojmax and prange[1]>phiprojmin :
-                        spd_name="SPD_L"+str(lll[0])+"PHI"+letter((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner)+"_L"+str(lll[1])+"PHI"+letter((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter)+"_D"+str(lll[2])+"PHI"+letter((ivmproj-1)/nvmtedisks[lll[2]-1]+1)+str(ivmproj)
+                        spd_name="SPD_L"+str(lll[0])+"PHI"+letter_triplet((ivminner-1)/nvmtelayers[lll[0]-1]+1)+str(ivminner)+"_L"+str(lll[1])+"PHI"+letter_triplet((ivmouter-1)/nvmtelayers[lll[1]-1]+1)+str(ivmouter)+"_D"+str(lll[2])+"PHI"+letteroverlap_triplet((ivmproj-1)/nvmteoverlapdisks[lll[2]-1]+1)+str(ivmproj)
                         fp.write(spd_name+" ")
                         SPD_list.append(spd_name)
                 fp.write("\n\n")
@@ -1257,11 +1388,11 @@ for lll in dispDDL :
                 fp.write(" > ")
                 prange = phiproj5stdisk_to_layer(lll[0],lll[2], ivminner, ivmouter)
                 #fp.write(str(prange[0])+" "+str(prange[1])+"\n")                         
-                for ivmproj in range(1, nallstubslayers[lll[2]-1]*nvmtelayers[lll[2]-1]+1) :
-                    phiprojmin=phirange/nallstubslayers[lll[2]-1]/nvmtelayers[lll[2]-1]*(ivmproj-1)
-                    phiprojmax=phirange/nallstubslayers[lll[2]-1]/nvmtelayers[lll[2]-1]*ivmproj
+                for ivmproj in range(1, nallstubslayers[lll[2]-1]*nvmteoverlaplayers[lll[2]-1]+1) :
+                    phiprojmin=phirange/nallstubslayers[lll[2]-1]/nvmteoverlaplayers[lll[2]-1]*(ivmproj-1)
+                    phiprojmax=phirange/nallstubslayers[lll[2]-1]/nvmteoverlaplayers[lll[2]-1]*ivmproj
                     if prange[0]<phiprojmax and prange[1]>phiprojmin :
-                        spd_name="SPD_D"+str(lll[0])+"PHI"+letter((ivminner-1)/nvmtedisks[lll[0]-1]+1)+str(ivminner)+"_D"+str(lll[1])+"PHI"+letter((ivmouter-1)/nvmtedisks[lll[1]-1]+1)+str(ivmouter)+"_L"+str(lll[2])+"PHI"+letter((ivmproj-1)/nvmtelayers[lll[2]-1]+1)+str(ivmproj)
+                        spd_name="SPD_D"+str(lll[0])+"PHI"+letter((ivminner-1)/nvmtedisks[lll[0]-1]+1)+str(ivminner)+"_D"+str(lll[1])+"PHI"+letter((ivmouter-1)/nvmtedisks[lll[1]-1]+1)+str(ivmouter)+"_L"+str(lll[2])+"PHI"+letteroverlap_triplet((ivmproj-1)/nvmteoverlaplayers[lll[2]-1]+1)+str(ivmproj)
                         fp.write(spd_name+" ")
                         SPD_list.append(spd_name)
                 fp.write("\n\n")
@@ -1551,6 +1682,7 @@ print "+++++++++++++"
 
 
 for pn in PairAMs :
+    #print "*** debug Triplet Engines for ",pn
     fp.write("#\n# Triplet Engines for "+pn+"\n#\n")
     ppn = {}
     spn1 = []
@@ -1565,6 +1697,9 @@ for pn in PairAMs :
             else :
                 ppn[spnparts[3]] = 1
 
+    #print "**** debug ppn ***"    
+    #print ppn
+
     # combine the VM's to equalize the load on TRE
     ppnk = []
     ppnv = []
@@ -1572,7 +1707,10 @@ for pn in PairAMs :
         ppnk.append(key)
         ppnv.append(value)
 
+    #print "**** debug ppnv ***"    
     #print ppnv
+    #print "**** debug ppnk ***"    
+    #print ppnk
     
     i1 = 0;
     i2 = len(ppnk)-1
@@ -1647,23 +1785,14 @@ for lll in dispLLL :
     tc_count = 0
     for sts in st_per_tc :
         print len(sts), sts
-        asmems = []
+
         for st_name in sts:
-            #need to make the list and also make a list of AllStub memories the calulator would need
             fp.write(st_name+" ")
-            as_name = "AS_"+st_name[3:5]+"PHI"+st_name[5]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            as_name = "AS_"+st_name[6:8]+"PHI"+st_name[8]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            asm = st_name[12:].split("_")[0]
-            for c in asm:
-                as_name = "AS_"+st_name[10:12]+"PHI"+c
-                if as_name not in asmems:
-                    asmems.append(as_name)
-        for as_name in asmems:
-            fp.write(as_name+" ")
+
+        asmem = asmems3(sts)
+        for asn in asmem:
+            fp.write(asn+" ")    
+        
         tc_count+=1
         fp.write("> TCD_"+tcn+letter(tc_count)+" > TPAR_"+tcn+letter(tc_count)+" ")
         TPAR_list.append("TPAR_"+tcn+letter(tc_count))
@@ -1716,23 +1845,14 @@ for lll in dispLLD :
     tc_count = 0
     for sts in st_per_tc :
         print len(sts), sts
-        asmems = []
+
         for st_name in sts:
-            #need to make the list and also make a list of AllStub memories the calulator would need
             fp.write(st_name+" ")
-            as_name = "AS_"+st_name[3:5]+"PHI"+st_name[5]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            as_name = "AS_"+st_name[6:8]+"PHI"+st_name[8]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            asm = st_name[12:].split("_")[0]
-            for c in asm:
-                as_name = "AS_"+st_name[10:12]+"PHI"+c
-                if as_name not in asmems:
-                    asmems.append(as_name)
-        for as_name in asmems:
-            fp.write(as_name+" ")
+
+        asmem = asmems3(sts)
+        for asn in asmem:
+            fp.write(asn+" ")    
+        
         tc_count+=1
         fp.write("> TCD_"+tcn+letter(tc_count)+" > TPAR_"+tcn+letter(tc_count)+" ")
         TPAR_list.append("TPAR_"+tcn+letter(tc_count))
@@ -1783,23 +1903,14 @@ for lll in dispDDL :
     tc_count = 0
     for sts in st_per_tc :
         print len(sts), sts
-        asmems = []
+
         for st_name in sts:
-            #need to make the list and also make a list of AllStub memories the calulator would need
             fp.write(st_name+" ")
-            as_name = "AS_"+st_name[3:5]+"PHI"+st_name[5]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            as_name = "AS_"+st_name[6:8]+"PHI"+st_name[8]
-            if as_name not in asmems:
-                asmems.append(as_name)
-            asm = st_name[12:].split("_")[0]
-            for c in asm:
-                as_name = "AS_"+st_name[10:12]+"PHI"+c
-                if as_name not in asmems:
-                    asmems.append(as_name)
-        for as_name in asmems:
-            fp.write(as_name+" ")
+
+        asmem = asmems3(sts)
+        for asn in asmem:
+            fp.write(asn+" ")    
+        
         tc_count+=1
         fp.write("> TCD_"+tcn+letter(tc_count)+" > TPAR_"+tcn+letter(tc_count)+" ")
         TPAR_list.append("TPAR_"+tcn+letter(tc_count))

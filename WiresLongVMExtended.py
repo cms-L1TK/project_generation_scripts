@@ -655,11 +655,11 @@ for m in inputmemcount :
                                 fp.write(".outervmstubin")
                         elif "TED_" in proc:
                             if ("_L3" in mem and not "TED_L2" in proc) or ("_L5" in mem) or ("_L2" in mem) or ("_D1" in mem):
-                                fp.write(".middlevmstubin")
+                                fp.write(".firstvmstubin")
                             else:
-                                fp.write(".outervmstubin")
+                                fp.write(".secondvmstubin")
                         elif "TRE_" in proc:
-                            fp.write(".innervmstubin")
+                            fp.write(".thirdvmstubin")
                         else:
                             print "UNKNOWN CONSUMER OF VMSTE! ", line
                     else :
@@ -680,32 +680,32 @@ for m in inputmemcount :
                                 fp.write(".outerallstubin")
                         elif "TCD_L3" in proc:
                             if "_L3" in mem:
-                                fp.write(".middleallstubin")
+                                fp.write(".firstallstubin")
                             elif "_L4" in mem:
-                                fp.write(".outerallstubin")
+                                fp.write(".secondallstubin")
                             else:
-                                fp.write(".innerallstubin")
+                                fp.write(".thirdallstubin")
                         elif "TCD_L5" in proc:
                             if "_L4" in mem:
-                                fp.write(".innerallstubin")
+                                fp.write(".thirdallstubin")
                             elif "_L5" in mem:
-                                fp.write(".middleallstubin")
+                                fp.write(".firstallstubin")
                             else:
-                                fp.write(".outerallstubin")
+                                fp.write(".secondallstubin")
                         elif "TCD_L2" in proc:
                             if "_D1" in mem:
-                                fp.write(".innerallstubin")
+                                fp.write(".thirdallstubin")
                             elif "_L2" in mem:
-                                fp.write(".middleallstubin")
+                                fp.write(".firstallstubin")
                             else:
-                                fp.write(".outerallstubin")
+                                fp.write(".secondallstubin")
                         elif "TCD_D1" in proc:
                             if "_L2" in mem:
-                                fp.write(".innerallstubin")
+                                fp.write(".thirdallstubin")
                             elif "_D1" in mem:
-                                fp.write(".middleallstubin")
+                                fp.write(".firstallstubin")
                             else:
-                                fp.write(".outerallstubin")
+                                fp.write(".secondallstubin")
                         else:
                             print "UNKNOWN CONSUMER OF AS_ ",line                            
                 if "SP_" in mem:

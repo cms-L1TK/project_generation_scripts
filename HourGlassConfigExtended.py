@@ -832,12 +832,12 @@ def phiprojrange(ilayer, projlayer, splist) :
         phiminproj1=phiproj(ilayer,phiinner1,minrinv,projlayer)
         phiminproj2=phiproj(ilayer+1,phiouter1,minrinv,projlayer)
 
-        phimin=min(phiminproj1,phiminproj2)-0.02
+        phimin=min(phiminproj1,phiminproj2)-0.05
         
         phimaxproj1=phiproj(ilayer,phiinner2,maxrinv,projlayer)
         phimaxproj2=phiproj(ilayer+1,phiouter2,maxrinv,projlayer)
 
-        phimax=max(phimaxproj1,phimaxproj2)+0.02
+        phimax=max(phimaxproj1,phimaxproj2)+0.05
 
         if len(projrange)==0 :
             projrange=[phimin,phimax]
@@ -899,12 +899,12 @@ def phiprojrangedisk(idisk, projdisk, splist) :
         phiminproj1=phiprojdisk(idisk,phiinner1,minrinv,projdisk)
         phiminproj2=phiprojdisk(idisk+1,phiouter1,minrinv,projdisk)
 
-        phimin=min(phiminproj1,phiminproj2)
+        phimin=min(phiminproj1,phiminproj2)-0.10
         
         phimaxproj1=phiprojdisk(idisk,phiinner2,maxrinv,projdisk)
         phimaxproj2=phiprojdisk(idisk+1,phiouter2,maxrinv,projdisk)
 
-        phimax=max(phimaxproj1,phimaxproj2)
+        phimax=max(phimaxproj1,phimaxproj2)+0.10
 
         if len(projrange)==0 :
             projrange=[phimin,phimax]
@@ -965,12 +965,12 @@ def phiprojrangedisktolayer(idisk,projlayer,splist) :
         phiminproj1=phiprojdisktolayer(idisk,phiinner1,minrinv,projlayer)
         phiminproj2=phiprojdisktolayer(idisk+1,phiouter1,minrinv,projlayer)
 
-        phimin=min(phiminproj1,phiminproj2)
+        phimin=min(phiminproj1,phiminproj2)-0.15
         
         phimaxproj1=phiprojdisktolayer(idisk,phiinner2,maxrinv,projlayer)
         phimaxproj2=phiprojdisktolayer(idisk+1,phiouter2,maxrinv,projlayer)
 
-        phimax=max(phimaxproj1,phimaxproj2)
+        phimax=max(phimaxproj1,phimaxproj2)+0.15
 
         if len(projrange)==0 :
             projrange=[phimin,phimax]
@@ -1040,12 +1040,12 @@ def phiprojrangelayertodisk(ilayer,projdisk,splist) :
         phiminproj1=phiprojlayertodisk(ilayer,phiinner1,minrinv,projdisk)
         phiminproj2=phiprojlayertodisk(ilayer+1,phiouter1,minrinv,projdisk)
 
-        phimin=min(phiminproj1,phiminproj2)
+        phimin=min(phiminproj1,phiminproj2)-0.05
         
         phimaxproj1=phiprojlayertodisk(ilayer,phiinner2,maxrinv,projdisk)
         phimaxproj2=phiprojlayertodisk(ilayer+1,phiouter2,maxrinv,projdisk)
 
-        phimax=max(phimaxproj1,phimaxproj2)
+        phimax=max(phimaxproj1,phimaxproj2)+0.05
 
         if len(projrange)==0 :
             projrange=[phimin,phimax]
@@ -1055,6 +1055,81 @@ def phiprojrangelayertodisk(ilayer,projdisk,splist) :
 
 
     return projrange
+
+def phiprojrangeoverlaplayertodisk(ilayer,projdisk,splist) :
+
+    projrange=[]
+    
+    for spname in splist :
+        ivminner=int(spname.split("PHI")[1].split("_")[0][1:])
+        ivmouter=int(spname.split("PHI")[2][1:])
+        #print projlayer, spname, spname.split("PHI"),ivminner,ivmouter
+
+        dphiinner=phirange/nallstubslayers[ilayer-1]/nvmtelayers[ilayer-1]
+        dphiouter=phirange/nallstubsdisks[0]/nvmtedisks[0]
+
+        phiinner1=dphiinner*ivminner
+        phiinner2=phiinner1+dphiinner
+    
+        phiouter1=dphiouter*ivmouter
+        phiouter2=phiouter1+dphiouter
+
+        rinv11=rinv(ilayer,phiinner1,phiouter1)
+        rinv12=rinv(ilayer,phiinner1,phiouter2)
+        rinv21=rinv(ilayer,phiinner2,phiouter1)
+        rinv22=rinv(ilayer,phiinner2,phiouter2)
+
+        minrinv=rinv11
+        maxrinv=rinv11
+
+        if rinv12<minrinv :
+            minrinv=rinv12
+        if rinv12>maxrinv :
+            maxrinv=rinv12
+            
+        if rinv21<minrinv :
+            minrinv=rinv21
+        if rinv21>maxrinv :
+            maxrinv=rinv21
+
+        if rinv22<minrinv :
+            minrinv=rinv22
+        if rinv22>maxrinv :
+            maxrinv=rinv22
+
+        if minrinv<-rinvmax :
+            minrinv=-rinvmax
+
+        if maxrinv>rinvmax :
+            maxrinv=rinvmax
+
+        if minrinv>maxrinv :
+            minrinv=maxrinv
+
+        if maxrinv<minrinv :
+            maxrinv=minrinv
+
+        #print minrinv, maxrinv
+            
+        phiminproj1=phiprojlayertodisk(ilayer,phiinner1,minrinv,projdisk)
+        phiminproj2=phiprojlayertodisk(ilayer+1,phiouter1,minrinv,projdisk)
+
+        phimin=min(phiminproj1,phiminproj2)-0.15
+        
+        phimaxproj1=phiprojlayertodisk(ilayer,phiinner2,maxrinv,projdisk)
+        phimaxproj2=phiprojlayertodisk(ilayer+1,phiouter2,maxrinv,projdisk)
+
+        phimax=max(phimaxproj1,phimaxproj2)+0.15
+
+        if len(projrange)==0 :
+            projrange=[phimin,phimax]
+        else :
+            projrange[0]=min(projrange[0],phimin)
+            projrange[1]=max(projrange[1],phimax)
+
+
+    return projrange
+
 
 def readUnusedProj() :
     fi = open("unusedproj.txt","r")
@@ -1078,10 +1153,10 @@ def findInputLinks(dtcphirange) :
         phimin=float(line.split()[2])
         phimax=float(line.split()[3])
         #print "Line: ",dtcname,layerdisk,phimin,phimax
-        phimin1=phimin-two_pi/18.0
-        phimax1=phimax-two_pi/18.0
-        phimin2=phimin+two_pi/18.0
-        phimax2=phimax+two_pi/18.0
+        phimin1=phimin-two_pi/9.0+0.5*phirange
+        phimax1=phimax-two_pi/9.0+0.5*phirange
+        phimin2=phimin+0.5*phirange
+        phimax2=phimax+0.5*phirange
 
         #print "phimin1, phimax1 : ",phimin1,phimax1
         
@@ -1091,15 +1166,14 @@ def findInputLinks(dtcphirange) :
             nallstubs=nallstubslayers[layer-1]
             dphi=phirange/nallstubs
             for iallstub in range(0,nallstubs) :
-                phiminallstub=0.5*(two_pi/9.0-phirange)+iallstub*dphi
+                phiminallstub=iallstub*dphi
                 phimaxallstub=phiminallstub+dphi
                 #print "Allstub phimin,max :",phiminallstub,phimaxallstub
-                if phiminallstub<phimax1 and phimaxallstub>phimin1 :
+                if (phiminallstub<phimax1 and phimaxallstub>phimin1) or (phiminallstub<phimax2 and phimaxallstub>phimin2) :
                     if iallstub<nallstubs/2 :
                         il="IL_L"+str(layer)+"PHI"+letter(iallstub+1)+"_"+dtcname+"_A"
                         ilinks.append(il)
                         #print "Inputlink : ",il
-                if phiminallstub<phimax2 and phimaxallstub>phimin2 :
                     if iallstub>=nallstubs/2 :
                         il="IL_L"+str(layer)+"PHI"+letter(iallstub+1)+"_"+dtcname+"_B"
                         ilinks.append(il)
@@ -1110,15 +1184,14 @@ def findInputLinks(dtcphirange) :
             nallstubs=nallstubsdisks[disk-1]
             dphi=phirange/nallstubs
             for iallstub in range(0,nallstubs) :
-                phiminallstub=0.5*(two_pi/9.0-phirange)+iallstub*dphi
+                phiminallstub=iallstub*dphi
                 phimaxallstub=phiminallstub+dphi
                 #print "Allstub phimin,max :",phiminallstub,phimaxallstub
-                if phiminallstub<phimax1 and phimaxallstub>phimin1 :
+                if (phiminallstub<phimax1 and phimaxallstub>phimin1) or (phiminallstub<phimax2 and phimaxallstub>phimin2) :
                     if iallstub<nallstubs/2 :
                         il="IL_D"+str(disk)+"PHI"+letter(iallstub+1)+"_"+dtcname+"_A"
                         ilinks.append(il)
                         #print "Inputlink : ",il
-                if phiminallstub<phimax2 and phimaxallstub>phimin2 :
                     if iallstub>=nallstubs/2 :
                         il="IL_D"+str(disk)+"PHI"+letter(iallstub+1)+"_"+dtcname+"_B"
                         ilinks.append(il)
@@ -1601,7 +1674,7 @@ for idisk in (1,3) :
             for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
                 phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
                 phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
-                if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                if projrange[0]<=phiprojmax and projrange[1]>=phiprojmin :
                     proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+"XX"+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
                     if proj_name not in unusedproj :
                         fp.write(" "+proj_name)
@@ -1658,7 +1731,7 @@ for ilayer in (1,2) :
                             TPROJ_list.append(proj_name)
         projdisks=[2,3,4,5]
         for projdisk in projdisks :
-            projrange=phiprojrangelayertodisk(ilayer,projdisk,sps)
+            projrange=phiprojrangeoverlaplayertodisk(ilayer,projdisk,sps)
             for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
                 phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
                 phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
@@ -1716,8 +1789,8 @@ for pn in PairAMs :
     i2 = len(ppnk)-1
     vmax = ppnv[i2]
 
-    if vmax < 14 :
-        vmax = 14
+    if vmax < 9 :
+        vmax = 9
     
     tre_list = []
     tre_list_count = []

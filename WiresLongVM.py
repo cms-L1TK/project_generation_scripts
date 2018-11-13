@@ -92,13 +92,17 @@ def matchin(proc,mem):
     if "FT_L2L3" in proc:
         if "L1" in mem[8:10]:
             return "1"
+        if "D4" in mem[8:10] or "F4" in mem[8:10] or "B4" in mem[8:10]:
+            return "1"
         if "L4" in mem[8:10]:
+            return "2"
+        if "D3" in mem[8:10] or "F3" in mem[8:10] or "B3" in mem[8:10]:
             return "2"
         if "L5" in mem[8:10]:
             return "3"
-        if "F1" in mem[8:10] or "B1" in mem[8:10] or "D1" in mem[8:10]:
-            return "3"
         if "F2" in mem[8:10] or "B2" in mem[8:10] or "D2" in mem[8:10]:
+            return "3"
+        if "F1" in mem[8:10] or "B1" in mem[8:10] or "D1" in mem[8:10]:
             return "4"
     if "FT_L3L4" in proc:
         if "L1" in mem[8:10]:

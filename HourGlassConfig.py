@@ -1094,6 +1094,9 @@ for ilayer in (1,2,3,5) :
         if ilayer<5 :
             projdisks.append(1)
             projdisks.append(2)
+        if ilayer==2 :
+            projdisks.append(3)
+            projdisks.append(4)
         if ilayer==1 :
             projdisks.append(3)
             projdisks.append(4)
@@ -1589,7 +1592,7 @@ else :
                 FM_list.append(fm_name)
             if extraseeding :
                 fm_name="FM_L2L3_D"+str(idisk)+"PHI"+letter(iproj)
-                if idisk==1 or idisk==2 :
+                if idisk==1 or idisk==2 or idisk==3 or idisk==4 :
                     fp.write(fm_name+" ")
                     FM_list.append(fm_name)
             fm_name="FM_L3L4_D"+str(idisk)+"PHI"+letter(iproj)

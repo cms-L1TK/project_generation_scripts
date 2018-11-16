@@ -1130,6 +1130,17 @@ def phiprojrangeoverlaplayertodisk(ilayer,projdisk,splist) :
 
     return projrange
 
+def readSPoccupancy() :
+    fi = open("SPmap.txt","r")
+
+    sp_occupancy = {}
+    for line in fi:
+        spname = line.split()[0]
+        occ = float(line.split()[1])/9./100.
+        sp_occupancy[spname] = occ
+
+    print sp_occupancy
+    return sp_occupancy
 
 def readUnusedProj() :
     fi = open("unusedproj.txt","r")
@@ -1753,85 +1764,101 @@ print "+++++++++++++"
 print PairAMs
 print "+++++++++++++"
 
+spd_occ = readSPoccupancy()
+spd_occ_max = 5
 
 for pn in PairAMs :
     #print "*** debug Triplet Engines for ",pn
     fp.write("#\n# Triplet Engines for "+pn+"\n#\n")
-    ppn = {}
-    spn1 = []
-    # count third VMs
+    if   pn[0:2] == "L5":
+        spd_occ_max = 1.0
+    elif pn[0:2] == "L3":
+        spd_occ_max = 1.5
+    elif pn[0:2] == "L2":
+        spd_occ_max = 0.2
+    elif pn[0:2] == "D1":
+        spd_occ_max = 0.2
+
+    spall = []
+    spn3 = []
     for spn in SPD_list :
-        spnparts = spn.split("_")
-        if pn[0:2]==spnparts[1][0:2] and pn[2]==spnparts[1][5] and pn[3:5]==spnparts[2][0:2] and pn[5]==spnparts[2][5] :
-            #print "triplets ", pn, "    ", spn
-            spn1.append(spn)
-            if spnparts[3] in ppn :
-                ppn[spnparts[3]] = ppn[spnparts[3]]+1
-            else :
-                ppn[spnparts[3]] = 1
+        if spn not in spd_occ:
+            print "****** did not find ",spn," in the occupancy list!! Skipping..."
+        else:
+            #  third VMs
+            spnparts = spn.split("_")
+            if pn[0:2]==spnparts[1][0:2] and pn[2]==spnparts[1][5] and pn[3:5]==spnparts[2][0:2] and pn[5]==spnparts[2][5] :
+                spall.append(spn)
+                if spnparts[3] not in spn3:
+                    spn3.append(spnparts[3])
 
-    #print "**** debug ppn ***"    
-    #print ppn
+    #spall are all sp from pn
+    #spn3 now is a list of all third VMs
+    print "&&&&&&&&&&&&&&&&&&&&&\n"
+    print pn
+    print len(spall)
+    print spall
+    print spn3
+    print "&&&&&&&&&&&&&&&&&&&&&&\n"
 
-    # combine the VM's to equalize the load on TRE
-    ppnk = []
-    ppnv = []
-    for key, value in sorted(ppn.iteritems(), key=lambda (k,v): (v,k)):
-        ppnk.append(key)
-        ppnv.append(value)
-
-    #print "**** debug ppnv ***"    
-    #print ppnv
-    #print "**** debug ppnk ***"    
-    #print ppnk
-    
-    i1 = 0;
-    i2 = len(ppnk)-1
-    vmax = ppnv[i2]
-
-    if vmax < 9 :
-        vmax = 9
-    
-    tre_list = []
-    tre_list_count = []
-    while i2 >= i1 :
-        tre = [ppnk[i2]]
-        if ppnv[i2] == vmax :
-            tre_list.append(tre)
-            tre_list_count.append(vmax)
-            i2 = i2 - 1
-        else : 
-            i3  = ppnv[i2]
-            while i3 + ppnv[i1] <= vmax and i2 > i1:
-                tre.append(ppnk[i1])
-                i3 = i3 + ppnv[i1]
-                i1 = i1 + 1
-            tre_list.append(tre)
-            tre_list_count.append(i3)
-            i2 = i2 - 1
-    itre = 0
-    #print vmax
-    #print tre_list
-    #print tre_list_count
-    for tre in tre_list:
-        itre = itre + 1
-        STl = tre[0][0:2]
-        STas = []
-        for tre1 in tre:
-            if tre1.split("PHI")[1][0] not in STas:
-                STas.append(tre1.split("PHI")[1][0])
-            fp.write("VMSTE_"+tre1+" ")
-            for spn2 in spn1:
-                if spn2.split("_")[3] == tre1 :
-                    fp.write(spn2+" ")
-        STn = "ST_"+pn+"_"+STl
-        for a in sorted(STas):
-            STn = STn + a
-        STn = STn + "_"+str(itre)
+    toprint_vmte = []
+    toprint_aste = []
+    toprint_sps  = []
+    tre_counter = 0
+    occ = 0
+    first_counter = 1
+    for vm3 in spn3:
+        print "^^^^",vm3
+        for spn in spall :
+            if vm3 in spn :
+                #now looping over SPDs that are from pn and pointing to vm3
+                occ = occ + spd_occ[spn]
+                print "^^^^",spn,occ
+                if occ > spd_occ_max and first_counter == 0:
+                    #reach the limit, print
+                    print "^^^^^",len(toprint_vmte),len(toprint_sps)
+                    tre_counter = tre_counter + 1
+                    first_counter = 1
+                    for i in toprint_vmte :
+                        fp.write("VMSTE_"+i+" ")
+                    for i in toprint_sps :
+                        fp.write(i+" ")
+                    STn = "ST_"+pn+"_"+vm3[0:2]
+                    for i in toprint_aste :
+                        STn = STn + i                    
+                    STn = STn+"_"+str(tre_counter)
+                    ST_list.append(STn)
+                    fp.write("> TRE_"+pn+"_"+str(tre_counter)+" > "+STn+"\n")
+                    toprint_vmte = []
+                    toprint_aste = []
+                    toprint_sps = []
+                    occ = spd_occ[spn]
+                if vm3 not in toprint_vmte:
+                    toprint_vmte.append(vm3)
+                    if vm3[5] not in toprint_aste:
+                        toprint_aste.append(vm3[5])
+                toprint_sps.append(spn)
+                first_counter = 0
+    if len(toprint_sps)>0 :
+        #print the remainder
+        print "^^^^^",len(toprint_vmte),len(toprint_sps)
+        tre_counter = tre_counter + 1
+        for i in toprint_vmte :
+            fp.write("VMSTE_"+i+" ")
+        for i in toprint_sps :
+            fp.write(i+" ")
+        STn = "ST_"+pn+"_"+vm3[0:2]
+        for i in toprint_vmte :
+            STn = STn + i[5]                    
+        STn = STn+"_"+str(tre_counter)
         ST_list.append(STn)
-        fp.write("> TRE_"+pn+"_"+str(itre)+" > "+STn+"\n\n")
-        #ST_list.append("ST_"+pn+"_"+str(itre))
-    #print "TRE_"+pn+"_"+str(itre)
+        fp.write("> TRE_"+pn+"_"+str(tre_counter)+" > "+STn+"\n")
+        toprint_vmte = []
+        toprint_aste = []
+        toprint_sps = []
+        occ = 0
+        
+
 
 print "*********************************"    
 print ST_list

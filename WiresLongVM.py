@@ -41,6 +41,8 @@ def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem,nbits):
         dram=0
     if "Stub Pair" in memname :
         bram=0
+    if "Stub Triplet" in memname :
+        bram=0
     if "TPROJ" in memname :
         bram=0
     if "TPAR" in memname :
@@ -72,153 +74,197 @@ def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem,nbits):
 
 
 def matchin(proc,mem):
-    if "FT_L1L2" in proc:
-        if "L3" in mem[8:10]:
+    if "FT_L1L2XX" in proc:
+        if "L3" in mem[10:12]:
             return "1"
-        if "L4" in mem[8:10]:
+        if "L4" in mem[10:12]:
             return "2"
-        if "L5" in mem[8:10]:
+        if "L5" in mem[10:12]:
             return "3"
-        if "L6" in mem[8:10]:
+        if "L6" in mem[10:12]:
             return "4"
-        if "D1" in mem[8:10] or "F1" in mem[8:10] or "B1" in mem[8:10]:
+        if "D1" in mem[10:12] or "F1" in mem[10:12] or "B1" in mem[10:12]:
             return "4"
-        if "D2" in mem[8:10] or "F2" in mem[8:10] or "B2" in mem[8:10]:
+        if "D2" in mem[10:12] or "F2" in mem[10:12] or "B2" in mem[10:12]:
             return "3"
-        if "D3" in mem[8:10] or "F3" in mem[8:10] or "B3" in mem[8:10]:
+        if "D3" in mem[10:12] or "F3" in mem[10:12] or "B3" in mem[10:12]:
             return "2"
-        if "D4" in mem[8:10] or "F4" in mem[8:10] or "B4" in mem[8:10]:
+        if "D4" in mem[10:12] or "F4" in mem[10:12] or "B4" in mem[10:12]:
             return "1"
+    if "FT_L2L3D1" in proc:
+        if "L1" in mem[10:12]:
+            return "1"
+        if "L4" in mem[10:12]:
+            return "2"
+        if "F2" in mem[10:12] or "B2" in mem[10:12] or "D2" in mem[10:12]:
+            return "4"
+        if "F3" in mem[10:12] or "B3" in mem[10:12] or "D3" in mem[10:12]:
+            return "3"
+        if "F4" in mem[10:12] or "B4" in mem[10:12] or "D4" in mem[10:12]:
+            return "2"
     if "FT_L2L3" in proc:
-        if "L1" in mem[8:10]:
+        if "L1" in mem[10:12]:
             return "1"
-        if "D4" in mem[8:10] or "F4" in mem[8:10] or "B4" in mem[8:10]:
+        if "D4" in mem[10:12] or "F4" in mem[10:12] or "B4" in mem[10:12]:
             return "1"
-        if "L4" in mem[8:10]:
+        if "L4" in mem[10:12]:
             return "2"
-        if "D3" in mem[8:10] or "F3" in mem[8:10] or "B3" in mem[8:10]:
+        if "D3" in mem[10:12] or "F3" in mem[10:12] or "B3" in mem[10:12]:
             return "2"
-        if "L5" in mem[8:10]:
+        if "L5" in mem[10:12]:
             return "3"
-        if "F2" in mem[8:10] or "B2" in mem[8:10] or "D2" in mem[8:10]:
+        if "F2" in mem[10:12] or "B2" in mem[10:12] or "D2" in mem[10:12]:
             return "3"
-        if "F1" in mem[8:10] or "B1" in mem[8:10] or "D1" in mem[8:10]:
+        if "F1" in mem[10:12] or "B1" in mem[10:12] or "D1" in mem[10:12]:
             return "4"
-    if "FT_L3L4" in proc:
-        if "L1" in mem[8:10]:
+    if "FT_L3L4L2" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "L2" in mem[8:10]:
+        if "L5" in mem[10:12]:
             return "2"
-        if "L5" in mem[8:10]:
+        if "L6" in mem[10:12]:
             return "3"
-        if "L6" in mem[8:10]:
+        if "F1" in mem[10:12] or "B1" in mem[10:12] or "D1" in mem[10:12]:
             return "4"
-        if "F1" in mem[8:10] or "B1" in mem[8:10] or "D1" in mem[8:10]:
-            return "4"
-        if "F2" in mem[8:10] or "B2" in mem[8:10] or "D2" in mem[8:10]:
+        if "F2" in mem[10:12] or "B2" in mem[10:12] or "D2" in mem[10:12]:
             return "3"
-    if "FT_L5L6" in proc:
-        if "L1" in mem[8:10]:
+        if "F3" in mem[10:12] or "B3" in mem[10:12] or "D3" in mem[10:12]:
+            return "2"
+    if "FT_L3L4XX" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "L2" in mem[8:10]:
+        if "L2" in mem[10:12]:
             return "2"
-        if "L3" in mem[8:10]:
+        if "L5" in mem[10:12]:
             return "3"
-        if "L4" in mem[8:10]:
+        if "L6" in mem[10:12]:
             return "4"
-    if "FT_D1D2" in proc:
-        if "L1" in mem[8:10]:
+        if "F1" in mem[10:12] or "B1" in mem[10:12] or "D1" in mem[10:12]:
+            return "4"
+        if "F2" in mem[10:12] or "B2" in mem[10:12] or "D2" in mem[10:12]:
+            return "3"
+    if "FT_L5L6XX" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "D3" in mem[8:10]:
+        if "L2" in mem[10:12]:
             return "2"
-        if "D4" in mem[8:10]:
+        if "L3" in mem[10:12]:
             return "3"
-        if "D5" in mem[8:10]:
+        if "L4" in mem[10:12]:
             return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_B1B2" in proc:
-        if "L1" in mem[8:10]:
+    if "FT_L5L6L4" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "B3" in mem[8:10]:
+        if "L2" in mem[10:12]:
             return "2"
-        if "B4" in mem[8:10]:
+        if "L3" in mem[10:12]:
             return "3"
-        if "B5" in mem[8:10]:
+        if "L4" in mem[10:12]:
             return "4"
-        if "L2" in mem[8:10]:
-            return "4"
-    if "FT_D3D4" in proc:
-        if "L1" in mem[8:10]:
+    if "FT_D1D2L2" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "D1" in mem[8:10]:
+        if "D3" in mem[10:12]:
             return "2"
-        if "D2" in mem[8:10]:
+        if "D4" in mem[10:12]:
             return "3"
-        if "D5" in mem[8:10]:
+        if "D5" in mem[10:12]:
             return "4"
-        if "L2" in mem[8:10]:
+        if "L3" in mem[10:12]:
             return "4"
-    if "FT_F3F4" in proc:
-        if "L1" in mem[8:10]:
+    if "FT_D1D2XX" in proc:
+        if "L1" in mem[10:12]:
             return "1"
-        if "F1" in mem[8:10]:
+        if "D3" in mem[10:12]:
             return "2"
-        if "F2" in mem[8:10]:
+        if "D4" in mem[10:12]:
             return "3"
-        if "F5" in mem[8:10]:
+        if "D5" in mem[10:12]:
             return "4"
-        if "L2" in mem[8:10]:
+        if "L2" in mem[10:12]:
+            return "4"
+    if "FT_B1B2XX" in proc:
+        if "L1" in mem[10:12]:
+            return "1"
+        if "B3" in mem[10:12]:
+            return "2"
+        if "B4" in mem[10:12]:
+            return "3"
+        if "B5" in mem[10:12]:
+            return "4"
+        if "L2" in mem[10:12]:
+            return "4"
+    if "FT_D3D4XX" in proc:
+        if "L1" in mem[10:12]:
+            return "1"
+        if "D1" in mem[10:12]:
+            return "2"
+        if "D2" in mem[10:12]:
+            return "3"
+        if "D5" in mem[10:12]:
+            return "4"
+        if "L2" in mem[10:12]:
+            return "4"
+    if "FT_F3F4XX" in proc:
+        if "L1" in mem[10:12]:
+            return "1"
+        if "F1" in mem[10:12]:
+            return "2"
+        if "F2" in mem[10:12]:
+            return "3"
+        if "F5" in mem[10:12]:
+            return "4"
+        if "L2" in mem[10:12]:
             return "4"
     if "FT_B3B4" in proc:
-        if "L1" in mem[8:10]:
+        if "L1" in mem[10:12]:
             return "1"
-        if "B1" in mem[8:10]:
+        if "B1" in mem[10:12]:
             return "2"
-        if "B2" in mem[8:10]:
+        if "B2" in mem[10:12]:
             return "3"
-        if "B5" in mem[8:10]:
+        if "B5" in mem[10:12]:
             return "4"
-        if "L2" in mem[8:10]:
+        if "L2" in mem[10:12]:
             return "4"
     if "FT_F1L" in proc:
-        if "F2" in mem[8:10]:
+        if "F2" in mem[10:12]:
             return "1"
-        if "F3" in mem[8:10]:
+        if "F3" in mem[10:12]:
             return "2"
-        if "F4" in mem[8:10]:
+        if "F4" in mem[10:12]:
             return "3"
-        if "F5" in mem[8:10]:
+        if "F5" in mem[10:12]:
             return "4"
-    if "FT_D1L1" in proc or "FT_L1D1" in proc :
-        if "D2" in mem[8:10]:
+    if "FT_D1L1XX" in proc or "FT_L1D1XX" in proc :
+        if "D2" in mem[10:12]:
             return "1"
-        if "D3" in mem[8:10]:
+        if "D3" in mem[10:12]:
             return "2"
-        if "D4" in mem[8:10]:
+        if "D4" in mem[10:12]:
             return "3"
-        if "D5" in mem[8:10]:
+        if "D5" in mem[10:12]:
             return "4"
-    if "FT_D1L2" in proc or "FT_L2D1" in proc :
-        if "L1" in mem[8:10]:
+    if "FT_D1L2XX" in proc or "FT_L2D1XX" in proc :
+        if "L1" in mem[10:12]:
             return "1"
-        if "D2" in mem[8:10]:
+        if "D2" in mem[10:12]:
             return "2"
-        if "D3" in mem[8:10]:
+        if "D3" in mem[10:12]:
             return "3"
-        if "D4" in mem[8:10] or "D1" in mem[8:10]:
+        if "D4" in mem[10:12] or "D1" in mem[10:12]:
             return "4"
     if "FT_B1L" in proc:
-        if "B2" in mem[8:10]:
+        if "B2" in mem[10:12]:
             return "1"
-        if "B3" in mem[8:10]:
+        if "B3" in mem[10:12]:
             return "2"
-        if "B4" in mem[8:10]:
+        if "B4" in mem[10:12]:
             return "3"
-        if "B5" in mem[8:10]:
+        if "B5" in mem[10:12]:
             return "4"
             
-    print "Unknown in matchin : ",proc,mem,mem[8:10]
+    print "Unknown in matchin : ",proc,mem,mem[10:12]
     return "0"
 
 
@@ -276,8 +322,14 @@ for proc in processingmodules :
     if "TE_" in proc:
         if "VMRTE_" not in proc:
             fp.write("TrackletEngine: "+proc+"\n")
+    if "TED_" in proc:
+        fp.write("TrackletEngineDisplaced: "+proc+"\n")
+    if "TRE_" in proc:
+        fp.write("TripletEngine: "+proc+"\n")
     if "TC_" in proc:
         fp.write("TrackletCalculator: "+proc+"\n")
+    if "TCD_" in proc:
+        fp.write("TrackletCalculatorDisplaced: "+proc+"\n")
     if "PR_" in proc:
         fp.write("ProjectionRouter: "+proc+"\n")
     if "PRD_" in proc:
@@ -316,6 +368,8 @@ ASmc_mem=0
 VMSTE_mem=0
 VMSME_mem=0
 SP_mem=0
+SPD_mem=0
+ST_mem=0
 TPROJ_mem=0
 TPAR_mem=0
 AP_mem=0
@@ -373,6 +427,14 @@ for mem in inputmemorymodules :
         fp.write("StubPairs: "+mem+n+" [12]\n")
         SP_mem+=1
         found=True
+    if "SPD_" in mem:
+        fp.write("StubPairsDisplaced: "+mem+n+" [12]\n")
+        SPD_mem+=1
+        found=True
+    if "ST_" in mem:
+        fp.write("StubTriplets: "+mem+n+" [18]\n")
+        ST_mem+=1
+        found=True
     if "TPROJ_" in mem:
         fp.write("TrackletProjections: "+mem+n+" [54]\n")
         TPROJ_mem+=1
@@ -412,33 +474,37 @@ print "Memory type     #mems  bits wide   depth   #BX   DRAM (kbits)  #18k BRAM"
 
 nbits=0
 
-(shortmem,longmem,nbits)=printsum("Input Link      ",IL_mem,36,48,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Input Link          ",IL_mem,36,48,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("All Stubs (TC)  ",AStc_mem,42,64,4,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("All Stubs (TC)      ",AStc_mem,42,64,4,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("All Stubs (MC)  ",ASmc_mem,36,64,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("All Stubs (MC)      ",ASmc_mem,36,64,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("VM Stubs (TE)   ",VMSTE_mem,18,32,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("VM Stubs (TE)       ",VMSTE_mem,18,32,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("VM Stubs (ME)   ",VMSME_mem,18,32,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("VM Stubs (ME)       ",VMSME_mem,18,32,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Stub Pair       ",SP_mem,12,16,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Stub Pair           ",SP_mem,12,16,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("TPROJ           ",TPROJ_mem,54,16,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Stub Pair Displaced ",SPD_mem,12,16,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("TPAR            ",TPAR_mem,54,64,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Stub Triplet        ",ST_mem,18,32,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("All Projection  ",AP_mem,54,64,8,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("TPROJ               ",TPROJ_mem,54,16,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("VM Projection   ",VMPROJ_mem,13,16,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("TPAR                ",TPAR_mem,54,64,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Cand. Match     ",CM_mem,12,32,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("All Projection      ",AP_mem,54,64,8,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Full Match      ",FM_mem,36,32,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("VM Projection       ",VMPROJ_mem,13,16,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Track Fit       ",TF_mem,122,64,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Cand. Match         ",CM_mem,12,32,2,shortmem,longmem,nbits)
 
-(shortmem,longmem,nbits)=printsum("Clean Track     ",CT_mem,122,64,2,shortmem,longmem,nbits)
+(shortmem,longmem,nbits)=printsum("Full Match          ",FM_mem,36,32,2,shortmem,longmem,nbits)
+
+(shortmem,longmem,nbits)=printsum("Track Fit           ",TF_mem,122,64,2,shortmem,longmem,nbits)
+
+(shortmem,longmem,nbits)=printsum("Clean Track         ",CT_mem,122,64,2,shortmem,longmem,nbits)
 
 
 print "Number of 18 bit memories : ",shortmem+2*longmem        
@@ -449,6 +515,8 @@ print "DRAM Megabits of memories actually used :",nbits*1e-3
 fp = open("wires.dat","w")
 
 tcin=[]
+trein=[]
+tcdin=[]
 prin=[]
 cmin=[]
 fmin=[]
@@ -511,6 +579,10 @@ for m in inputmemcount :
                     fp.write(".allstubout"+n+" ")
                 if "SP_" in mem:
                     fp.write(".stubpairout")
+                if "SPD_" in mem:
+                    fp.write(".stubpairout")
+                if "ST_" in mem:
+                    fp.write(".stubtripout")
                 if "TPROJ_" in mem:
                     if ("PT_" in proc) :
                         fp.write(".projout"+mem[13:17])
@@ -521,7 +593,7 @@ for m in inputmemcount :
                             if ("TPROJ_ToP" in mem) : 
                                 fp.write(".projoutToPlus_"+mem[22:]) 
                             else :
-                                fp.write(".projout"+mem[12:])
+                                fp.write(".projout"+mem[14:])
                 if "VMPROJ_" in mem:
                     if "hourglass" in sys.argv[1]:
                         fp.write(".vmprojout"+mem[9:]+n+" ")
@@ -562,7 +634,7 @@ for m in inputmemcount :
                 if "TPAR_" in mem:
                     fp.write(".trackpar")
         fp.write(" output=> ")
-        # now we need to search for an proc module that fills this memory
+        # now we need to search for an proc module that uses this memory
         c=0
         for line in lines:
             substr = line.split(">")
@@ -573,7 +645,7 @@ for m in inputmemcount :
                     if c!=i :
                         continue
                 fp.write(proc)
-                if "IL" in mem and not "PHIL" in mem:
+                if "IL" in mem  and not "PHIL" in mem:
                     fp.write(".stubin")
                 if "SL" in mem:
                     if "SL1_" in mem :
@@ -590,11 +662,21 @@ for m in inputmemcount :
                     if "SD3_" in mem :
                         fp.write(".stubinLink3")
                 if "VMSTE_" in mem:
-                    if "hourglass" in sys.argv[1]:                    
-                        if ( ("_D1" in mem and not ("TE_L1" in proc or "TE_L2" in proc)) or ("_L2" in mem and not "TE_L1" in proc) or "_L1" in mem or ("_L3" in mem  and not "TE_L2" in proc)or "_L5" in mem or "_D3" in mem ) :
-                            fp.write(".innervmstubin")
-                        else :
-                            fp.write(".outervmstubin")
+                    if "hourglass" in sys.argv[1]:
+                        if "TE_" in proc:
+                            if ( ("_D1" in mem and not ("TE_L1" in proc or "TE_L2" in proc)) or ("_L2" in mem and not "TE_L1" in proc) or "_L1" in mem or ("_L3" in mem and not "TE_L2" in proc) or "_L5" in mem or "_D3" in mem ) :
+                                fp.write(".innervmstubin")
+                            else :
+                                fp.write(".outervmstubin")
+                        elif "TED_" in proc:
+                            if ("_L3" in mem and not "TED_L2" in proc) or ("_L5" in mem) or ("_L2" in mem) or ("_D1" in mem):
+                                fp.write(".firstvmstubin")
+                            else:
+                                fp.write(".secondvmstubin")
+                        elif "TRE_" in proc:
+                            fp.write(".thirdvmstubin")
+                        else:
+                            print "UNKNOWN CONSUMER OF VMSTE! ", line
                     else :
                         if ( ("_L1" in mem and not "TE_D1" in proc and not "TE_B1" in proc) or "_L3" in mem or "_L5" in mem or "_D1" in mem or "_D3" in mem or "_B1" in mem or "_B3" in mem ) :
                             fp.write(".innervmstubin")
@@ -606,10 +688,41 @@ for m in inputmemcount :
                     if ("MC_" in proc or "MP_" in proc) :
                         fp.write(".allstubin")
                     else :
-                        if ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
-                            fp.write(".innerallstubin")
-                        else :
-                            fp.write(".outerallstubin")
+                        if "TC_" in proc:
+                            if ( "_L1" in mem or "_L3" in mem or "_L5" in mem or "_F1" in mem or "_F3" in mem ) :  
+                                fp.write(".innerallstubin")
+                            else :
+                                fp.write(".outerallstubin")
+                        elif "TCD_L3" in proc:
+                            if "_L3" in mem:
+                                fp.write(".firstallstubin")
+                            elif "_L4" in mem:
+                                fp.write(".secondallstubin")
+                            else:
+                                fp.write(".thirdallstubin")
+                        elif "TCD_L5" in proc:
+                            if "_L4" in mem:
+                                fp.write(".thirdallstubin")
+                            elif "_L5" in mem:
+                                fp.write(".firstallstubin")
+                            else:
+                                fp.write(".secondallstubin")
+                        elif "TCD_L2" in proc:
+                            if "_D1" in mem:
+                                fp.write(".thirdallstubin")
+                            elif "_L2" in mem:
+                                fp.write(".firstallstubin")
+                            else:
+                                fp.write(".secondallstubin")
+                        elif "TCD_D1" in proc:
+                            if "_L2" in mem:
+                                fp.write(".thirdallstubin")
+                            elif "_D1" in mem:
+                                fp.write(".firstallstubin")
+                            else:
+                                fp.write(".secondallstubin")
+                        else:
+                            print "UNKNOWN CONSUMER OF AS_ ",line                            
                 if "SP_" in mem:
                     ii=0
                     for f in tcin :
@@ -620,6 +733,26 @@ for m in inputmemcount :
                         tcin.append([proc,1])
                         ii=1
                     fp.write(".stubpair"+str(ii)+"in")
+                if "SPD_" in mem:
+                    ii=0
+                    for f in trein :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii=f[1]
+                    if ii==0:
+                        trein.append([proc,1])
+                        ii=1
+                    fp.write(".stubpair"+str(ii)+"in")
+                if "ST_" in mem:
+                    ii1=0
+                    for f in tcdin :
+                        if f[0]==proc :
+                            f[1]+=1
+                            ii1=f[1]
+                    if ii1==0:
+                        tcdin.append([proc,1])
+                        ii1=1
+                    fp.write(".stubtriplet"+str(ii1)+"in")
                 if "TPROJ_" in mem:
                     if ("PT_" in proc or "MP_" in proc) :
                         fp.write(".projin")

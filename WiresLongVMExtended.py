@@ -102,6 +102,21 @@ def matchin(proc,mem):
             return "3"
         if "F4" in mem[10:12] or "B4" in mem[10:12] or "D4" in mem[10:12]:
             return "2"
+    if "FT_L2L3" in proc:
+        if "L1" in mem[10:12]:
+            return "1"
+        if "D4" in mem[10:12] or "F4" in mem[10:12] or "B4" in mem[10:12]:
+            return "1"
+        if "L4" in mem[10:12]:
+            return "2"
+        if "D3" in mem[10:12] or "F3" in mem[10:12] or "B3" in mem[10:12]:
+            return "2"
+        if "L5" in mem[10:12]:
+            return "3"
+        if "F2" in mem[10:12] or "B2" in mem[10:12] or "D2" in mem[10:12]:
+            return "3"
+        if "F1" in mem[10:12] or "B1" in mem[10:12] or "D1" in mem[10:12]:
+            return "4"
     if "FT_L3L4L2" in proc:
         if "L1" in mem[10:12]:
             return "1"
@@ -630,7 +645,7 @@ for m in inputmemcount :
                     if c!=i :
                         continue
                 fp.write(proc)
-                if "IL" in mem:
+                if "IL" in mem  and not "PHIL" in mem:
                     fp.write(".stubin")
                 if "SL" in mem:
                     if "SL1_" in mem :
@@ -649,7 +664,7 @@ for m in inputmemcount :
                 if "VMSTE_" in mem:
                     if "hourglass" in sys.argv[1]:
                         if "TE_" in proc:
-                            if ( ("_D1" in mem and not ("TE_L1" in proc or "TE_L2" in proc)) or ("_L2" in mem and not "TE_L1" in proc) or "_L1" in mem or "_L3" in mem or "_L5" in mem or "_D3" in mem ) :
+                            if ( ("_D1" in mem and not ("TE_L1" in proc or "TE_L2" in proc)) or ("_L2" in mem and not "TE_L1" in proc) or "_L1" in mem or ("_L3" in mem and not "TE_L2" in proc) or "_L5" in mem or "_D3" in mem ) :
                                 fp.write(".innervmstubin")
                             else :
                                 fp.write(".outervmstubin")

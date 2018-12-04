@@ -22,6 +22,18 @@ HLSNames_dict = {
     # processing module names are the same
 }
 
+ProcOrder_dict = {
+    'VMRouter':1,
+    'TrackletEngine':2,
+    'TrackletCalculator':3,
+    'ProjectionRouter':4,
+    'MatchEngine':5,
+    'MatchCalculator':6,
+    'DiskMatchCalculator':6,
+    'FitTrack':7,
+    'PurgeDuplicate':8
+}
+
 ########################################
 # Define processing and memory module classes
 ########################################
@@ -41,6 +53,7 @@ class ProcModule(Node):
     def __init__(self, module_type, instance_name):
         Node.__init__(self, module_type, instance_name)
         self.parameters = {} # dictionary of parameters
+        self.order = ProcOrder_dict[module_type]
         
 ########################################
 # Functions to read the configuration file
@@ -95,7 +108,7 @@ def getProcDictFromConfig(fname_pconfig):
 
     # Close file
     file_proc.close()
-
+    
     return proc_dict
 
 #########
@@ -192,12 +205,17 @@ def writeProcModules(proc_dict, indentation):
     # (3) how to propagate BXs?
     
     string_proc = ""
-    
-    for pkey, aProcMod in proc_dict.iteritems():
+
+    # Sort the dictionary keys based on their values
+    pkeys_sorted = sorted(proc_dict, key=lambda x: proc_dict[x].order)
+
+    for pkey in pkeys_sorted:
+        # Get the processing module
+        aProcMod = proc_dict[pkey]
+        
         string_proc += indentation + aProcMod.mtype+"("
 
         memtype_pre = ""
-        
         # inputs
         string_proc += indentation+indentation
         for iMem in aProcMod.upstreams:

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from TrackletGraph import MemModule, ProcModule, TrackletGraph
+
 ########################################
 # A map between module names in the configuration file and HLS class name
 ### UPDATE ME ###
@@ -22,142 +24,12 @@ HLSNames_dict = {
     # processing module names are the same
 }
 
-ProcOrder_dict = {
-    'VMRouter':1,
-    'TrackletEngine':2,
-    'TrackletCalculator':3,
-    'ProjectionRouter':4,
-    'MatchEngine':5,
-    'MatchCalculator':6,
-    'DiskMatchCalculator':6,
-    'FitTrack':7,
-    'PurgeDuplicate':8
-}
-
-########################################
-# Define processing and memory module classes
-########################################
-class Node:
-    def __init__(self, module_type, instance_name):
-        self.mtype = module_type
-        self.inst = instance_name
-        self.upstreams = [] # list of pointers to upstream Nodes
-        self.downstreams = [] # list of pointers to downstream Nodes
-
-class MemModule(Node):
-    def __init__(self, module_type, instance_name):
-        Node.__init__(self, module_type, instance_name)
-        self.size = None
-
-class ProcModule(Node):
-    def __init__(self, module_type, instance_name):
-        Node.__init__(self, module_type, instance_name)
-        self.parameters = {} # dictionary of parameters
-        self.order = ProcOrder_dict[module_type]
-        
-########################################
-# Functions to read the configuration file
-########################################
-#########
-# Memory
-def getMemDictFromConfig(fname_mconfig):
-    # Output dictionary for memory modules:
-    # Key: instance name; Value: memory MemModule object
-    mem_dict = {}
-    
-    # Open and read memory configuration file
-    file_mem = open(fname_mconfig, 'r')
-
-    for line_mem in file_mem:
-        # Memory type
-        mem_type = line_mem.split(':')[0].strip()
-        mem_class_hls = HLSNames_dict[mem_type]
-        # Instance name
-        mem_inst = line_mem.split(':')[1].strip().split(' ')[0]
-        # Construct MemModule object
-        aMemMod = MemModule(mem_class_hls, mem_inst)
-        # Add to dictionary
-        mem_dict[mem_inst] = aMemMod
-
-    # Close file
-    file_mem.close()
-
-    return mem_dict
-
-#########
-# Processing module
-def getProcDictFromConfig(fname_pconfig):
-    # Output dictionary for processing modules:
-    # Key: instance name; Value: ProcModule object
-    proc_dict = {}
-
-    # Open and read processing module configuration file
-    file_proc = open(fname_pconfig, 'r')
-
-    for line_proc in file_proc:
-        # Processing module type
-        proc_type = line_proc.split(':')[0].strip()
-        # Instance name
-        proc_inst = line_proc.split(':')[1].strip()
-        # Construct ProcModule object
-        aProcMod = ProcModule(proc_type, proc_inst)
-        # TODO: determine parameters here?
-        
-        # Add to dictionary
-        proc_dict[proc_inst] = aProcMod
-
-    # Close file
-    file_proc.close()
-    
-    return proc_dict
-
-#########
-# Wiring
-def wireModulesFromConfig(fname_wconfig, p_dict, m_dict):
-
-    # Read wiring config and add input and output memories to objects in p_dict  
-    # p_dict: processing module dictionary generated earlier
-    # m_dict: memory module dictionary generated earlier
-    assert(len(p_dict)>0 and len(m_dict)>0)
-    
-    # Open and read the wiring configuration file
-    file_wires = open(fname_wconfig, 'r')
-
-    for line_wire in file_wires:
-        ######
-        # memory instance in wiring config
-        wmem_inst = line_wire.split('input=>')[0].strip()
-        iMem = m_dict[wmem_inst]
-
-        ######
-        # processing module that writes to this memory
-        upstr = line_wire.split('input=>')[1].split('output=>')[0].strip()
-        iproc_write = upstr.split('.')[0].strip()
-
-        if iproc_write != '': # if it has an upstream module
-            # Get the processing module and make the connections
-            iMem.upstreams.append(p_dict[iproc_write])
-            p_dict[iproc_write].downstreams.append(iMem)
-
-        ######
-        # processing module that reads from this memory
-        downstr = line_wire.split('input=>')[1].split('output=>')[1].strip()
-        iproc_read = downstr.split('.')[0].strip()
-
-        if iproc_read != '': # if it has a downstream module
-            # Get the downstream processing module and make the connections
-            iMem.downstreams.append(p_dict[iproc_read])
-            p_dict[iproc_read].upstreams.append(iMem)
-
-    # Close file
-    file_wires.close()
-
 ########################################
 # Functions to write strings
 ########################################
 #########
 # Memories
-def writeMemories(mem_dict, streaminput=False, indentation="  "):
+def writeMemories(mem_list, streaminput=False, indentation="  "):
     # mem_dict: the memory dictionary
     
     string_mem = "" 
@@ -166,9 +38,8 @@ def writeMemories(mem_dict, streaminput=False, indentation="  "):
 
     memclass_pre = ""
     # Loop over all memories
-    for imem in mem_dict:
-        aMemMod = mem_dict[imem]
-        memclass = aMemMod.mtype
+    for aMemMod in mem_list:
+        memclass = HLSNames_dict[aMemMod.mtype]
         if memclass != memclass_pre:
             # We have a new type of memories. Insert an empty line.
             string_mem += "\n"
@@ -177,19 +48,19 @@ def writeMemories(mem_dict, streaminput=False, indentation="  "):
 
         if not streaminput:
             # Top function arguments are pointers to memory objects
-            if len(aMemMod.upstreams)==0: # Memory in the first step
-                string_tin += indentation+"const "+memclass+"* const "+imem+",\n"
-            elif len(aMemMod.downstreams)==0: # Memory in the last step
-                string_tout += indentation+memclass+"* const "+imem+",\n"
+            if aMemMod.is_initial: # Memory in the initial step
+                string_tin += indentation+"const "+memclass+"* const "+aMemMod.inst+",\n"
+            elif aMemMod.is_final: # Memory in the last step
+                string_tout += indentation+memclass+"* const "+aMemMod.inst+",\n"
             else:
-                string_mem += indentation+"static "+memclass+" "+imem+";\n"
+                string_mem += indentation+"static "+memclass+" "+aMemMod.inst+";\n"
         else:
             # Top function uses hls::stream as input/output arguments
             print "Stream mode currently is not supported. Coming soon."
             # Need the configuration file to map the input link to memories
             assert(0)
             # All memories are instantiated in the top function
-            #string_mem += indentation+"static "+memclass+" "+imem+"\n"
+            #string_mem += indentation+"static "+memclass+" "+aMemMod.inst+"\n"
             # Input and output arguments of the top function are hls::stream
             #string_tin +=
             #string_tout +=
@@ -198,7 +69,7 @@ def writeMemories(mem_dict, streaminput=False, indentation="  "):
 
 #########
 # Processing modules
-def writeProcModules(proc_dict, indentation):
+def writeProcModules(proc_list, indentation):
     # FIXME:
     # (1) add template paramters
     # (2) how to label functions with instance name?
@@ -206,12 +77,10 @@ def writeProcModules(proc_dict, indentation):
     
     string_proc = ""
 
-    # Sort the dictionary keys based on their values
-    pkeys_sorted = sorted(proc_dict, key=lambda x: proc_dict[x].order)
+    # Sort the processing module list
+    proc_list.sort(key=lambda x: x.order)
 
-    for pkey in pkeys_sorted:
-        # Get the processing module
-        aProcMod = proc_dict[pkey]
+    for aProcMod in proc_list:
         
         string_proc += indentation + aProcMod.mtype+"("
 
@@ -316,9 +185,9 @@ if __name__ == "__main__":
                         help="Name of the configuration file for wiring")
 
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('-u', '--unstream', type=int, default=1,
+    parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
-    parser.add_argument('-d', '--downstream', type=int, default=1,
+    parser.add_argument('-d', '--ndownstream', type=int, default=0,
                         help="Number of downstream processing steps to include")
     
     parser.add_argument('--indent', type=str, default="  ",
@@ -329,49 +198,37 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     ########################################
-    # Read configuration files
-    # Setup module dictionaries and connections
+    # Read configuration files and setup TrackletGraph
     ########################################
-    # Memory modules
-    #
-    # Get a dictionary for memories from the configuration file
-    # Key: instance name; Value: MemModule object
-    memory_dict = getMemDictFromConfig(args.memconfig)
-    
-    #  Processing modules
-    #
-    # Get a dictionary for processing modules from the configuration file
-    # Key: instance name; Value: ProcModule object
-    process_dict = getProcDictFromConfig(args.procconfig)
-    
-    #  Wiring
-    #
-    # Connect the modules
-    wireModulesFromConfig(args.wireconfig, process_dict, memory_dict)
-    
+
+    tracklet = TrackletGraph.from_configs(args.procconfig, args.memconfig,
+                                          args.wireconfig)
+
     ########################################
-    # Skimming 
+    # Get processing and memory module lists
     ########################################
-    #if args.uut is not None:
-    #    process_dict_skim = {}
-    #    memory_dict_skim = {}
-    #
-    #    if args.uut in process_dict:
-    #        aproc = process_dict[args.uut]    
-    #        process_dict_skim[args.uut] = aproc
-    #        
-    #        # get all its input memories
-    #        for imemtype in aproc.inputs
-    
+    process_list = []
+    memory_list = []
+
+    if args.uut is None:
+        # Get all modules in the configurations
+        process_list = tracklet.get_all_proc_modules()
+        memory_list = tracklet.get_all_memory_modules()
+    else:
+        # if only want a slice of the project around the module args.uut
+        uutProcModule = tracklet.get_proc_module(args.uut)
+        process_list, memory_list = TrackletGraph.get_slice_around_proc(
+            uutProcModule, args.nupstream, args.ndownstream) 
+
     ########################################
     #  Write HLS top function
     ########################################
     # Memories
     string_memories, string_topin, string_topout = writeMemories(
-        memory_dict, args.stream, args.indent)
+        memory_list, args.stream, args.indent)
     
     # Processing modules
-    string_processing = writeProcModules(process_dict, args.indent)
+    string_processing = writeProcModules(process_list, args.indent)
     
     # Top function interface
     string_topfunction = writeTopFunction(args.topfunc, string_topin,

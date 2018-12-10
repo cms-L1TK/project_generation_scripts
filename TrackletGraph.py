@@ -14,6 +14,32 @@ ProcOrder_dict = {
 # TODO: Should be able to generate this from the wiring
 
 #######################################
+# Drawing parameters
+ModuleDrawWidth_dict = {'InputLink':3.0,
+                        'VMStubsTE':3.0,
+                        'VMStubsME':3.0,
+                        'AllStubs':2.5,
+                        'StubPairs':4.0,
+                        'TrackletParameters':3.0,
+                        'TrackletProjections':4.0,
+                        'VMProjections':3.0,
+                        'AllProj':2.5,
+                        'CandidateMatch':3.0,
+                        'FullMatch':3.0,
+                        'TrackFit':2.5,
+                        'CleanTrack':2.5,
+                        'VMRouter':2.0,
+                        'TrackletEngine':4.0,
+                        'TrackletCalculator':2.5,
+                        'ProjectionRouter':2.5,
+                        'MatchEngine':3.0,
+                        'MatchCalculator':2.5,
+                        'DiskMatchCalculator':2.5,
+                        'FitTrack':2.0,
+                        'PurgeDuplicate':2.0,
+                        'XGap':2.0}
+
+#######################################
 # Processing and memory module classes
 class Node(object):
     def __init__(self, module_type, instance_name):
@@ -21,6 +47,10 @@ class Node(object):
         self.inst = instance_name
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
+        # drawing parameters
+        self.width = 1.  # Width of the box
+        self.xstart = 0  # Starting x coordinate
+        self.ycenter = 0  # y coordinate
         
 class MemModule(Node):
     def __init__(self, module_type, instance_name):
@@ -80,6 +110,9 @@ class TrackletGraph(object):
         for line_proc in file_proc:
             # Processing module type
             proc_type = line_proc.split(':')[0].strip()
+            # temperary hack: DiskMatchCalculator-->MatchCalculator
+            if proc_type == "DiskMatchCalculator":
+                proc_type = "MatchCalculator"
             # Instance name
             proc_inst = line_proc.split(':')[1].strip()
             # Construct ProcModule object
@@ -336,6 +369,23 @@ class TrackletGraph(object):
 
         return ProcList, MemList
 
+    #@staticmethod
+    #def collect_proc_steps_downstream(aProcModule, ProcList=[]):
+    #    """
+    #    """
+    #    for omem in aProcModule.downstreams:
+    #        assert(len(omem.downstreams)==1)
+    #        if not omem.is_final:
+    #            nextProcModule = mem.downstreams[0]
+    
+    #@staticmethod
+    #def count_proc_steps_upstream(aProcModule):
+        
+        
+    #@staticmethod
+    #def count_proc_steps_downstream(aProcModule, ProcList=[]):
+
+    
     @staticmethod
     def get_slice_around_proc(aProcModule, nStepsUp=0, nStepsDown=0):
         """ Get a slice of the tracklet project that centers around the 
@@ -403,3 +453,110 @@ class TrackletGraph(object):
 
     #@stateicmethod
     #def get_best_slice_between(startProcStep, endProcStep):
+
+    ########################################
+    # Draw
+    @staticmethod
+    def draw_graph(ProcList):
+        """
+        """
+        # First check how many types of modules to draw
+        ProcTypes = set()
+        for proc in ProcList:
+            ProcTypes.add(proc.mtype)
+
+        # total number of processing module types
+        num_proc_types = len(ProcTypes)
+        # total number of columns to draw
+        num_columns = 2 * num_proc_types + 1
+
+        # A container for modules in each column to draw
+        columns_module = [[] for c in range(num_columns)]
+        
+        # Sort the ProcList based on the module types
+        ProcList_sorted = sorted(ProcList, key=lambda x: ProcOrder_dict[x.mtype])
+        
+        i_proc_type = 0
+        current_mtype = ""       
+        for proc in ProcList_sorted:
+            
+            if proc.mtype != current_mtype:
+                i_proc_type += 1
+                current_mtype = proc.mtype
+            
+            assert(i_proc_type <= num_proc_types and i_proc_type >= 1)
+                
+            inmem_list = []
+            for inmem in proc.upstreams:
+                if inmem.is_initial:
+                    inmem_list.append(inmem)
+
+            outmem_list = proc.downstreams
+            
+            # Add to column_modules
+            columns_module[2*i_proc_type-2] += inmem_list
+            columns_module[2*i_proc_type-1].append(proc)
+            columns_module[2*i_proc_type] += outmem_list
+            
+        # Do some floor planning and determine the module coordinates
+        columns_width = [0.] * num_columns
+        for icol, column in enumerate(columns_module):
+            for module in column:
+                mwidth = ModuleDrawWidth_dict[module.mtype]
+                if mwidth > columns_width[icol]:
+                    columns_width[icol] = mwidth
+
+        # Starting x coordinate 
+        columns_xstart = []
+        xtotal = 0.
+        for icol, width in enumerate(columns_width):
+            xgap = ModuleDrawWidth_dict['XGap']
+            xtotal += xgap if icol>=1 else xgap/2.
+            columns_xstart.append(xtotal)
+            xtotal += width
+        xtotal += xgap/2.
+            
+        # Normalize
+        columns_width = [float(x)/xtotal for x in columns_width]
+        columns_xstart = [float(x)/xtotal for x in columns_xstart]
+            
+        # Number of modules per column
+        columns_num = [len(modules) for modules in columns_module]
+        maxnum = max(columns_num)
+
+        # Set coordinates
+        for icol, column in enumerate(columns_module):
+            nmodules = columns_num[icol]
+            ytotal = 0.
+            for imod, module in enumerate(column):
+                module.width = ModuleDrawWidth_dict[module.mtype]/xtotal
+                module.xstart = columns_xstart[icol]
+                module.ycenter = (0.5+imod)/nmodules
+        
+        # Write to the output file
+        fo = open("diagram.dat","w")
+
+        for proc in ProcList:
+            # Process Module
+            fo.write("Process "+proc.inst+" ")
+            fo.write(str(proc.xstart)+" "+str(proc.ycenter)+" ")
+            fo.write(str(proc.xstart+proc.width)+" "+str(proc.ycenter)+"\n")
+
+            # Memory Module
+            for imem in proc.upstreams:
+                fo.write("Memory "+imem.inst+" ")
+                fo.write(str(imem.xstart)+" "+str(imem.ycenter)+" ")
+                fo.write(str(imem.xstart+imem.width)+" "+str(imem.ycenter)+"\n")
+                # Draw lines
+                fo.write("Line "+str(imem.xstart+imem.width)+" "+str(imem.ycenter))
+                fo.write(" "+str(proc.xstart)+" "+str(proc.ycenter)+"\n")
+                
+            for omem in proc.downstreams:
+                fo.write("Memory "+omem.inst+" ")
+                fo.write(str(omem.xstart)+" "+str(omem.ycenter)+" ")
+                fo.write(str(omem.xstart+omem.width)+" "+str(omem.ycenter)+"\n")
+                # Draw lines
+                fo.write("Line "+str(proc.xstart+proc.width)+" "+str(proc.ycenter))
+                fo.write(" "+str(omem.xstart)+" "+str(omem.ycenter)+"\n")
+                
+        fo.close()

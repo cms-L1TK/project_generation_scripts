@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
+import os
 
 ########################################
 # A map between module names in the configuration file and HLS class name
@@ -164,7 +165,7 @@ def writeSourceFile(topfunc, string_finterface, string_mem, string_proc):
     string_src += "}\n"
 
     return string_src
-    
+
 ###############################
 
 if __name__ == "__main__":
@@ -220,6 +221,12 @@ if __name__ == "__main__":
         process_list, memory_list = TrackletGraph.get_slice_around_proc(
             uutProcModule, args.nupstream, args.ndownstream) 
 
+    ########################################
+    #  Plot graph
+    ########################################
+    tracklet.draw_graph(process_list)
+    os.system('root -b <<EOF DrawTrackletProject.C+')
+        
     ########################################
     #  Write HLS top function
     ########################################

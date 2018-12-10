@@ -28,6 +28,7 @@ ModuleDrawWidth_dict = {'InputLink':3.0,
                         'FullMatch':3.0,
                         'TrackFit':2.5,
                         'CleanTrack':2.5,
+                        ###################
                         'VMRouter':2.0,
                         'TrackletEngine':4.0,
                         'TrackletCalculator':2.5,
@@ -319,6 +320,11 @@ class TrackletGraph(object):
         if aMemModule is None:
             return ProcList, MemList
 
+        # A few special cases: stop further expanding them upstream
+        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
+            aMemModule.is_initial = True
+            return ProcList, MemList
+
         assert(len(aMemModule.upstreams)==1)
         prevProcModule = aMemModule.upstreams[0]
 
@@ -341,6 +347,11 @@ class TrackletGraph(object):
             ProcModule object into the MemList
         """
         if aMemModule is None:
+            return ProcList, MemList
+        
+        # A few special cases: stop further expanding them downstream
+        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
+            aMemModule.is_final = True
             return ProcList, MemList
 
         assert(len(aMemModule.downstreams)==1)
@@ -511,10 +522,10 @@ class TrackletGraph(object):
         xtotal = 0.
         for icol, width in enumerate(columns_width):
             xgap = ModuleDrawWidth_dict['XGap']
-            xtotal += xgap if icol>=1 else xgap/2.
+            xtotal += xgap if icol>=1 else xgap/4.
             columns_xstart.append(xtotal)
             xtotal += width
-        xtotal += xgap/2.
+        xtotal += xgap/4.
             
         # Normalize
         columns_width = [float(x)/xtotal for x in columns_width]

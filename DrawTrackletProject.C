@@ -215,19 +215,24 @@ using namespace std;
 void SetPlotStyle();
 
 // Main script
-void DrawTrackletProject() {
+void DrawTrackletProject(int width=10000, int height=5000,
+                         float dyBox=0.005, float TextSize=0.006,
+                         TString foutname="TrackletProject.pdf",
+                         TString fdiagram="diagram.dat") {
 
-  ifstream diagram("diagram.dat");
+  ifstream diagram(fdiagram);
 
-  TCanvas* c1=new TCanvas("c1","c1",20,20,10000,5000);
+  TCanvas* c1=new TCanvas("c1","c1",20,20,width,height);
   //c1->Divide(2,2);
 
+  textsize=TextSize;
+  dy=dyBox;
 
   TString tmp;
 
   diagram >> tmp;
 
-  cout << tmp <<endl;
+  //cout << tmp <<endl;
 
   while (diagram.good()) {
 
@@ -271,11 +276,11 @@ void DrawTrackletProject() {
 
     diagram >> tmp;
 
-    cout << tmp <<endl;
+    //cout << tmp <<endl;
 
   }
 
-  c1->Print("TrackletProject.pdf");
+  c1->Print(foutname);
 
 
 }

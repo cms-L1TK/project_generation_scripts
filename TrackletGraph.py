@@ -528,7 +528,6 @@ class TrackletGraph(object):
         xtotal += xgap/4.
             
         # Normalize
-        columns_width = [float(x)/xtotal for x in columns_width]
         columns_xstart = [float(x)/xtotal for x in columns_xstart]
             
         # Number of modules per column
@@ -571,3 +570,21 @@ class TrackletGraph(object):
                 fo.write(" "+str(omem.xstart)+" "+str(omem.ycenter)+"\n")
                 
         fo.close()
+
+        # FIXME
+        # Return canvas size in pixels along X and Y
+        height = (maxnum+1)*40
+        #width = sum(columns_width)*85
+        width =  height * 2
+        dy = 0.5/(maxnum+1)
+        textsize = 0.5/(maxnum+1)
+        
+        print  width, height, dy, textsize
+        
+        # Work In Progress
+        width = 10000
+        height = 5000
+        dy = 0.005
+        textsize = 0.006
+        
+        return int(width), int(height), dy, textsize

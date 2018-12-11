@@ -256,6 +256,34 @@ class TrackletGraph(object):
             imem.is_initial = imem.upstreams[0] is None
             imem.is_final = imem.downstreams[0] is None
 
+    @staticmethod
+    def get_input_mem_dict(MemList):
+        """ Return a dictionary for input memories.
+            Key: memory type; Value: list of instance
+        """
+        inmem_dict = {}
+        for mem in MemList:
+            if mem.is_initial:
+                if mem.mtype not in inmem_dict:
+                    inmem_dict[mem.mtype] = list()
+                inmem_dict[mem.mtype].append(mem)
+
+        return inmem_dict
+
+    @staticmethod
+    def get_output_mem_dict(MemList):
+        """ Return a dictionary for output memories.
+            Key: memory type; Value: list of instance
+        """
+        outmem_dict = {}
+        for mem in MemList:
+            if mem.is_final:
+                if mem.mtype not in outmem_dict:
+                    outmem_dict[mem.mtype] = list()
+                outmem_dict[mem.mtype].append(mem)
+
+        return outmem_dict
+    
     ########################################
     # Graph methods
     @staticmethod

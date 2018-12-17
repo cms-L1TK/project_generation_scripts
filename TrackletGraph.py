@@ -1,16 +1,16 @@
 #######################################
 # Ordering of the processing steps
-ProcOrder_dict = {
-    'VMRouter':1,
-    'TrackletEngine':2,
-    'TrackletCalculator':3,
-    'ProjectionRouter':4,
-    'MatchEngine':5,
-    'MatchCalculator':6,
-    'DiskMatchCalculator':6,
-    'FitTrack':7,
-    'PurgeDuplicate':8
-}
+#ProcOrder_dict = {
+#    'VMRouter':1,
+#    'TrackletEngine':2,
+#    'TrackletCalculator':3,
+#    'ProjectionRouter':4,
+#    'MatchEngine':5,
+#    'MatchCalculator':6,
+#    'DiskMatchCalculator':6,
+#    'FitTrack':7,
+#    'PurgeDuplicate':8
+#}
 # TODO: Should be able to generate this from the wiring
 
 #######################################
@@ -43,19 +43,20 @@ ModuleDrawWidth_dict = {'InputLink':3.0,
 #######################################
 # Processing and memory module classes
 class Node(object):
-    def __init__(self, module_type, instance_name):
+    def __init__(self, module_type, instance_name, i):
         self.mtype = module_type
         self.inst = instance_name
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
+        self.index = i  # instance index from the configuration file
         # drawing parameters
         self.width = 1.  # Width of the box
         self.xstart = 0  # Starting x coordinate
         self.ycenter = 0  # y coordinate
         
 class MemModule(Node):
-    def __init__(self, module_type, instance_name):
-        Node.__init__(self, module_type, instance_name)
+    def __init__(self, module_type, instance_name, index):
+        Node.__init__(self, module_type, instance_name, index)
         self.upstreams = [None]
         self.downstreams = [None]
         self.size = None
@@ -64,10 +65,12 @@ class MemModule(Node):
         self.is_final = False # True if it is the final step
 
 class ProcModule(Node):
-    def __init__(self, module_type, instance_name):
-        Node.__init__(self, module_type, instance_name)
+    def __init__(self, module_type, instance_name, index):
+        Node.__init__(self, module_type, instance_name, index)
         self.parameters = {} # dictionary of parameters
-        self.order = ProcOrder_dict[module_type]
+        #self.order = ProcOrder_dict[module_type]
+        self.input_port_names = []
+        self.output_port_names = []
 
 #######################################
 # Tracklet Graph
@@ -108,7 +111,7 @@ class TrackletGraph(object):
         # Open and read processing module configuration file
         file_proc = open(fname_pconfig, 'r')
         
-        for line_proc in file_proc:
+        for i,line_proc in enumerate(file_proc):
             # Processing module type
             proc_type = line_proc.split(':')[0].strip()
             # temperary hack: DiskMatchCalculator-->MatchCalculator
@@ -117,7 +120,7 @@ class TrackletGraph(object):
             # Instance name
             proc_inst = line_proc.split(':')[1].strip()
             # Construct ProcModule object
-            aProcMod = ProcModule(proc_type, proc_inst) 
+            aProcMod = ProcModule(proc_type, proc_inst, i) 
             # Add to dictionary
             proc_dict[proc_inst] = aProcMod
 
@@ -137,13 +140,13 @@ class TrackletGraph(object):
         # Open and read memory configuration file
         file_mem = open(fname_mconfig, 'r')
 
-        for line_mem in file_mem:
+        for i,line_mem in enumerate(file_mem):
             # Memory type
             mem_type = line_mem.split(':')[0].strip()
             # Instance name
             mem_inst = line_mem.split(':')[1].strip().split(' ')[0]
             # Construct MemModule object
-            aMemMod = MemModule(mem_type, mem_inst)
+            aMemMod = MemModule(mem_type, mem_inst, i)
             # Add to dictionary
             mem_dict[mem_inst] = aMemMod
             
@@ -178,6 +181,8 @@ class TrackletGraph(object):
                 # Get the processing module and make the connections
                 iMem.upstreams[0] = p_dict[iproc_write]
                 p_dict[iproc_write].downstreams.append(iMem)
+                iproc_write_port = upstr.split('.')[1].strip()
+                p_dict[iproc_write].output_port_names.append(iproc_write_port)
             else:
                 iMem.is_initial = True
 
@@ -185,11 +190,13 @@ class TrackletGraph(object):
             # processing module that reads from this memory
             downstr = line_wire.split('input=>')[1].split('output=>')[1].strip()
             iproc_read = downstr.split('.')[0].strip()
-                
+            
             if iproc_read != '': # if it has a downstream module
                 # Get the downstream processing module and make the connections
                 iMem.downstreams[0] = p_dict[iproc_read]
                 p_dict[iproc_read].upstreams.append(iMem)
+                iproc_read_port = downstr.split('.')[1].strip()
+                p_dict[iproc_read].input_port_names.append(iproc_read_port)
             else:
                 iMem.is_final = True
 
@@ -513,7 +520,7 @@ class TrackletGraph(object):
         columns_module = [[] for c in range(num_columns)]
         
         # Sort the ProcList based on the module types
-        ProcList_sorted = sorted(ProcList, key=lambda x: ProcOrder_dict[x.mtype])
+        ProcList_sorted = sorted(ProcList, key=lambda x: x.index)
         
         i_proc_type = 0
         current_mtype = ""       

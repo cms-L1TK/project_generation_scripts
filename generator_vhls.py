@@ -80,11 +80,11 @@ def getHLSClassName(module):  # UPDATE ME
         vmsme = ''
         pos = instance_name.split('_')[1][:2] # layer/disk
         if pos in ['L1','L2','L3']: # barrel PS
-            vmsme = 'VMStubMemory'
+            vmsme = 'VMStubMEMemory'
         elif pos in ['L4','L5','L6']: # barrel 2S
             vmsme = 'VMStubMemory'
         elif pos in ['D1','D2','D3','D4','D5']: # disk
-            vmsme = 'VMStubMemory'
+            vmsme = 'VMStubMEMemory'
         return vmsme
     
     elif module_type == 'StubPairs':
@@ -193,9 +193,7 @@ def parseProcFunctionDef(proc_header_file_name, proc_name):
     
     return arguments
 
-def getProcFunctionArgs(proc_name,
-                        # FIXME
-                        hls_source_dir = "../firmware-hls/TrackletAlgorithm/"):
+def getProcFunctionArgs(proc_name, hls_source_dir):
     header_name = proc_name + '.hh'
 
     # Hack for now. Should make all header file names consistent
@@ -216,10 +214,10 @@ ProcTemplateMemTypes_dict = {
     # ADD MORE HERE if the HLS function is templatized
 }
 
-def writeProcArguments(aProcModule, indentation, mem_classes=[]):
+def writeProcArguments(aProcModule, hls_src_dir, indentation, mem_classes=[]):
     string_args = ''
     
-    args_list = getProcFunctionArgs(aProcModule.mtype)
+    args_list = getProcFunctionArgs(aProcModule.mtype, hls_src_dir)
 
     pre_type = ''
     mem_q = deque([])
@@ -268,7 +266,9 @@ def writeProcArguments(aProcModule, indentation, mem_classes=[]):
 
         if len(mem_q)>0:
             mem = mem_q.popleft()
-            string_args += "&"+mem.inst+", "
+            if not (mem.is_initial or mem.is_final):
+                string_args += "&"
+            string_args += mem.inst+", "
         else:
             # write null pointer
             string_args += "0, "
@@ -305,9 +305,8 @@ def writeTemplateParameters(aProcModule, mem_classes=[]):
 
     return string_par
 
-def writeProcModules(proc_list, indentation):
+def writeProcModules(proc_list, hls_src_dir, indentation):
     # FIXME:
-    # (1) add template paramters
     # (2) how to label functions with instance name?
     # (3) how to propagate BXs?
     
@@ -323,7 +322,7 @@ def writeProcModules(proc_list, indentation):
         mem_class_list = []
         
         # function arguments
-        string_arguments = writeProcArguments(aProcMod, indentation,
+        string_arguments = writeProcArguments(aProcMod, hls_src_dir, indentation,
                                               mem_class_list)
         #print string_arguments
         
@@ -345,13 +344,13 @@ def writeTopFunction(topfunc, string_inputs, string_outputs,
     string_topfunc = "void "+topfunc+"(\n"
     
     # BX
-    string_topfunc += indentation+"BXType bx\n"
+    string_topfunc += indentation+"BXType bx,\n"
     
     # Input ports
     string_topfunc += string_inputs
     
     # BX output
-    string_topfunc += indentation+"BXType& bx_o\n"
+    string_topfunc += indentation+"BXType& bx_o,\n"
     
     # Output ports
     # get rid of the last ','
@@ -369,8 +368,10 @@ def writeHeaderFile(topfunc, string_finterface):
     header += "#define "+topfunc.upper()+"_H\n"
     header += "\n"
 
-    # TODO: include
-    header += "TODO: add inlcude here \n"
+    # TODO: include all available/working processing functions
+    header += "#include \"Constants.hh\"\n"
+    header += "#include \"ProjectionRouter.hh\"\n"
+    header += "#include \"MatchEngine.h\"\n"
     header += "\n"
 
     header += string_finterface.rstrip("\n")
@@ -395,63 +396,69 @@ def writeSourceFile(topfunc, string_finterface, string_mem, string_proc):
 
 #########
 # Test bench
-def writeTBMemories(mem_list, isInput, emData_dir, sector="04"):
+def writeTBMemories(mem_list, isInput, trackletgraph, emData_dir, sector="04"):
     inout = "input" if isInput else "output"
     
     string_mem = "///////////////////////////\n// "+inout+" memories\n"
     string_file = "///////////////////////////\n// open "+inout+" files\n"
     string_loop = ""
-    string_interface = ""
-    
-    mem_dict = TrackletGraph.get_input_mem_dict(mem_list) if isInput else TrackletGraph.get_output_mem_dict(mem_list)
 
-    for memtype in mem_dict:
-        memories = mem_dict[memtype]
-        for mem in memories:
-            string_mem += "static "+getHLSClassName(mem)+" "+mem.inst+";\n"
+    for (meminst, memclass) in mem_list:
+        string_mem += "static "+memclass+" "+meminst+";\n"
+        validflag = "valid_"+meminst
+        flabel = "f"+inout+"_"+meminst
+        memtype = trackletgraph.get_mem_module(meminst).mtype
+        # special cases for VMStubsTE, VMStubsME and CandidateMatch
+        memtype = memtype.rstrip("TE")
+        memtype = memtype.rstrip("ME")
+        memtype = memtype.replace("CandidateMatch","CandidateMatches")
+        if emData_dir:
+            emData_dir = emData_dir.rstrip('/')+'/'
+        fname = emData_dir+memtype+"_"+meminst+"_"+sector+".dat"
+        string_file += "ifstream "+flabel+";\n"
+        string_file += "bool "+validflag+" = openDataFile("+flabel+", \""+fname+"\");\n"
+        string_file += "if (not "+validflag+") return -1;\n\n"
+
+        if isInput:
+            string_loop += "writeMemFromFile<"+memclass+">("
+            string_loop += meminst+", "+flabel+", ievt);\n"
+        else:
+            string_loop += "err += compareMemWithFile<"+memclass+">("
+            string_loop += meminst+", "+flabel+", ievt, \""+meminst+"\", "
+            string_loop += "truncation);\n"
+
+    string_mem += "\n"
             
-            validflag = "valid_"+mem.inst
-            flabel = "f"+inout+"_"+mem.inst
-            fname = emData_dir+mem.mtype+"_"+mem.inst+"_"+sector+".dat"        
-            string_file += "ifstream "+flabel+";\n"
-            string_file += "bool "+validflag+" = openDataFile("+flabel+", \""+fname+"\");\n"
-            string_file += "if (not "+validflag+") return -1;\n\n"
+    return string_mem, string_file, string_loop
 
-            if isInput:
-                string_loop += "writeMemFromFile<"+getHLSClassName(mem)+">("
-                string_loop += mem.inst+", "+flabel+", ievt);\n"
-            else:
-                string_loop += "err += compareMemWithFile<"+getHLSClassName(mem)+">("
-                string_loop += mem.inst+", "+flabel+", ievt, \""+mem.inst+"\", "
-                string_loop += "truncation);\n"
+def writeTestBench(topfunc, string_inmem, string_outmem, trackletgraph,
+                   emData_dir, sector="04"):
 
-            string_interface += "&"+mem.inst+", "
-                
-        string_mem += "\n"
-        string_interface += "\n"
-
-    return string_mem, string_file, string_loop, string_interface
-
-def writeTestBench(topfunc, mem_list, emData_dir, sector="04"):
     string_tb = "// Test bench generated by generator_vhls.py\n"
     # headers
     string_tb += "#include <algorithm>\n"+"#include <iterator>\n\n"
     string_tb += "#include \"FileReadUtility.hh\"\n"
     string_tb += "#include \"Constants.hh\"\n"
-    string_tb += "#include "+topfunc+".h\n\n"
+    string_tb += "#include \""+topfunc+".h\"\n\n"
 
     string_tb += "const int nevents = 100;  // number of events to run\n\n"
     string_tb += "using namespace std;\n\n"
     #
     string_tb += "int main() {\n\n"
     string_tb += "// error counts\n int err = 0;\n\n"
+
+    # Lists of input memories (mem_inst, mem_class)
+    inmem_list = [(x.strip().split(' ')[-1], x.strip().split('const')[-2].strip().rstrip('*')) for x in string_inmem.split(",\n") if x]
     
+    # Lists of output memories (mem_inst, mem_class)
+    outmem_list = [(x.strip().split(' ')[-1], x.strip().split('const')[-2].strip().rstrip('*')) for x in string_outmem.split(",\n") if x]
+
     # Input memories
-    string_inmem,string_infile,string_writemem,string_topin = writeTBMemories(
-        mem_list, True, emData_dir, sector)
+    string_inmem, string_infile, string_writemem = writeTBMemories(
+        inmem_list, True, trackletgraph, emData_dir, sector)
     # Output memories
-    string_outmem,string_outfile,string_compmem,string_topout = writeTBMemories(
-        mem_list, False, emData_dir, sector)
+    string_outmem, string_outfile, string_compmem = writeTBMemories(
+        outmem_list, False, trackletgraph, emData_dir, sector)
     string_tb += string_inmem
     string_tb += string_outmem
     string_tb += string_infile
@@ -460,7 +467,7 @@ def writeTestBench(topfunc, mem_list, emData_dir, sector="04"):
     
     # loop over events
     string_tb += "// loop over events\n"
-    string_tb += "cout << \"Start event loop ...\" << endl;"
+    string_tb += "cout << \"Start event loop ...\" << endl;\n\n"
     string_tb += "for (unsigned int ievt = 0; ievt < nevents; ++ievt) {\n"
     string_tb += "cout << \"Event: \" << dec << ievt << endl;\n\n"
     string_tb += "// read event and write to memories\n"
@@ -470,9 +477,12 @@ def writeTestBench(topfunc, mem_list, emData_dir, sector="04"):
     # call top function
     string_tb += "// Unit Under Test\n"
     string_tb += topfunc+"(bx,\n"
-    string_tb += string_topin
+    for imem in inmem_list:
+        string_tb += "&"+imem[0]+",\n"
     string_tb += "bx_out,\n"
-    string_tb += string_topout.rstrip(", \n")+");\n\n"
+    for omem in outmem_list:
+        string_tb += "&"+omem[0]+",\n"
+    string_tb = string_tb.rstrip(",\n")+");\n\n"
     
     # compare outputs
     string_tb += "// compare the computed outputs with the expected ones\n"
@@ -481,8 +491,28 @@ def writeTestBench(topfunc, mem_list, emData_dir, sector="04"):
     string_tb += "\n"+"} // end of the event loop\n\n"
     string_tb += "return err;\n\n"
     string_tb += "}"
-
+    
     return string_tb
+
+def writeTcl(projname, topfunc, emData_dir):
+    string_tcl = "open_project -reset "+projname+"\n"
+    string_tcl += "set_top "+topfunc+"\n"
+    string_tcl += "add_files ../TrackletAlgorithm/"+topfunc+".cpp -cflags \"-std=c++11\"\n"
+    # for now
+    string_tcl += "add_files ../TrackletAlgorithm/MatchEngine.cpp -cflags \"-std=c++11\"\n"
+    string_tcl += "add_files -tb ../TestBenches/"+topfunc+"_test.cpp -cflags \"-I../TrackletAlgorithm -std=c++11\"\n"
+    string_tcl += "add_files -tb ../emData/"+emData_dir+"\n"
+    string_tcl += "open_solution -reset \"solution1\"\n"
+    string_tcl += "set_part {xcku115-flvb2104-2-e} -tool vivado\n"
+    string_tcl += "create_clock -period 4 -name default\n"
+    string_tcl += "#csim_design\n"
+    string_tcl += "#csynth_design\n"
+    string_tcl += "#cosim_design\n"
+    string_tcl += "#export_design -rtl verilog -format ip_catalog\n"
+    string_tcl += "\n"
+    string_tcl += "#exit"
+
+    return string_tcl
     
 ###############################
 
@@ -493,6 +523,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to generate HLS top function for Tracklet project")
     parser.add_argument('-f', '--topfunc', type=str, default="SectorProcessor",
                         help="HLS top function name")
+    parser.add_argument('-n', '--projname', type=str, default="sectproc",
+                        help="Project name")
     
     parser.add_argument('-s','--stream', action='store_true', help="True if want hls::stream objects on the interface, otherwise top function arguments are memory pointers")
     
@@ -511,6 +543,9 @@ if __name__ == "__main__":
 
     parser.add_argument('--emData_dir', type=str, default="",
                         help="Directory where emulation printouts are stored")
+    parser.add_argument('--hls_src_dir', type=str,
+                        default="../firmware-hls/TrackletAlgorithm/",
+                        help="HLS source code directory")
     parser.add_argument('--indent', type=str, default="  ",
                         help="Indentation")
     #parser.add_argument('-d','--debug', action='store_true',
@@ -555,10 +590,8 @@ if __name__ == "__main__":
         memory_list, args.stream, args.indent)
     
     # Processing modules
-    string_processing = writeProcModules(process_list, args.indent)
-
-    #print getProcFunctionArgs("ProjectionRouter")
-    #print getProcFunctionArgs("MatchEngine")
+    string_processing = writeProcModules(process_list, args.hls_src_dir,
+                                         args.indent)
     
     # Top function interface
     string_topfunction = writeTopFunction(args.topfunc, string_topin,
@@ -572,12 +605,17 @@ if __name__ == "__main__":
                                   string_memories, string_processing)
 
     # Test bench
-    string_testbench = writeTestBench(args.topfunc, memory_list, args.emData_dir)
+    string_testbench = writeTestBench(args.topfunc, string_topin, string_topout,
+                                      tracklet, args.emData_dir)
+
+    # tcl
+    string_tcl = writeTcl(args.projname, args.topfunc, args.emData_dir)
     
     # Write to disk
     fname_src = args.topfunc+".cpp"
     fname_header = args.topfunc+".h"
     fname_tb = args.topfunc+"_test.cpp"
+    fname_tcl = "script_"+args.projname+".tcl"
     
     fout_source = open(fname_src,"w")
     fout_source.write(string_main)
@@ -588,6 +626,11 @@ if __name__ == "__main__":
     fout_testbench = open(fname_tb, "w")
     fout_testbench.write(string_testbench)
 
+    fout_tcl = open(fname_tcl, "w")
+    fout_tcl.write(string_tcl)
+
     print "Output source file:", fname_src
     print "Output header file:", fname_header
     print "Output test bench file:", fname_tb
+    print "Output tcl script:", fname_tcl
+    

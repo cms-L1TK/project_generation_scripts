@@ -1,30 +1,31 @@
 #!/usr/bin/env python
 
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
+from collections import deque
 import os
 
 ########################################
 # A map between module names in the configuration file and HLS class name
 ### UPDATE ME ###
-HLSNames_dict = {
-    # memories
-    'InputLink':'InputStubMemory',
-    'VMStubsTE':'VMStubMemory',
-    'VMStubsME':'VMStubMemory',
-    'StubPairs':'StubPairMemory',
-    'AllStubs':'AllStubMemory',
-    'StubPairs':'StubPairMemory',
-    'TrackletProjections':'TrackletProjectionMemory',
-    'VMProjections':'VMProjectionMemory',
-    'CandidateMatch':'CandidateMatchMemory',
-    'AllProj':'AllProjectionMemory',
-    'FullMatch':'FullMatchMemory',
-    'TrackletParameters':'TrackletParameterMemory',
-    'TrackFit':'TrackFitMemory',
-    'CleanTrack':'CleanTrackMemory',
-    # processing module names are the same
-}
-
+#HLSNames_dict = {
+#    # memories
+#    'InputLink':'InputStubMemory',
+#    'VMStubsTE':'VMStubMemory',
+#    'VMStubsME':'VMStubMemory',
+#    'StubPairs':'StubPairMemory',
+#    'AllStubs':'AllStubMemory',
+#    'StubPairs':'StubPairMemory',
+#    'TrackletProjections':'TrackletProjectionMemory',
+#    'VMProjections':'VMProjectionMemory',
+#    'CandidateMatch':'CandidateMatchMemory',
+#    'AllProj':'AllProjectionMemory',
+#    'FullMatch':'FullMatchMemory',
+#    'TrackletParameters':'TrackletParameterMemory',
+#    'TrackFit':'TrackFitMemory',
+#    'CleanTrack':'CleanTrackMemory',
+#    # processing module names are the same
+#}
+    
 #########
 
 
@@ -33,6 +34,93 @@ HLSNames_dict = {
 ########################################
 #########
 # Memories
+def getHLSClassName(module):  # UPDATE ME
+    module_type = module.mtype
+    instance_name = module.inst
+    
+    if module.mtype == 'InputLink':
+        return 'InputStubMemory'
+    
+    elif module_type == 'VMStubsTE':
+        vmste = ''
+        # class based on layer/disk position and phi region
+        pos = instance_name.split('_')[1][:2] # layer/disk
+        phi = instance_name.split('_')[1][5:6] # PHI
+        if pos in ['L4','L6']: # L4L5, L5L6
+            vmste = 'VMStubMemory' # barrel outer 2S
+        elif pos in ['L5']: # L5L6
+            vmste = 'VMStubMemory' # barrel inner 2S
+        elif pos in ['D2','D4']: # D1D2, D3D4
+            vmste = 'VMStubMemory' # disk outer
+        elif pos in ['D3']: # D3D4
+            vmste = 'VMStubMemory' # disk inner
+        elif pos == 'D1':
+            if phi in ['X','Y','Z','W','Q','R']: # L1D1 or L2D1
+                vmste = 'VMStubMemory' # disk outer
+            else: # D1D2
+                vmste = 'VMStubMemory' # disk inner
+        elif pos == 'L1':
+            if phi in ['X','Y','Z','W','Q','R']: # L1D1
+                vmste = 'VMStubMemory' # barrel inner L1D1
+            else: # L1L2
+                vmste = 'VMStubMemory' # barrel inner PS
+        elif pos == 'L2':
+            if phi in ['X','Y','Z','W','I','J','K','L']: # L2D1 or L2L3
+                vmste = 'VMStubMemory' # barrel inner L2
+            else: # L1L2
+                vmste = 'VMStubMemory' # barrel outer PS
+        elif pos == 'L3':
+            if phi in ['I','J','K','L']: # L2L3
+                vmste = 'VMStubMemory' # barrel outer PS
+            else: # L3L4
+                vmste = 'VMStubMemory' # barrel inner PS
+        return vmste
+    
+    elif module_type == 'VMStubsME':
+        vmsme = ''
+        pos = instance_name.split('_')[1][:2] # layer/disk
+        if pos in ['L1','L2','L3']: # barrel PS
+            vmsme = 'VMStubMemory'
+        elif pos in ['L4','L5','L6']: # barrel 2S
+            vmsme = 'VMStubMemory'
+        elif pos in ['D1','D2','D3','D4','D5']: # disk
+            vmsme = 'VMStubMemory'
+        return vmsme
+    
+    elif module_type == 'StubPairs':
+        return 'StubPairMemory'
+    elif module_type == 'AllStubs':
+        return 'AllStubMemory'
+    
+    elif module_type == 'TrackletProjections':
+        tproj = ''
+        pos = instance_name.split('_')[2][:2] # layer/disk
+        if pos in ['L1','L2','L3']: # barrel PS
+            tproj = 'TrackletProjectionMemory'
+        elif pos in ['L4','L5','L6']: # barrel 2S
+            tproj = 'TrackletProjectionMemory'
+        elif pos in ['D1','D2','D3','D4','D5']: # disk
+            tproj = 'TrackletProjectionMemory'
+        return tproj
+    
+    elif module_type == 'VMProjections':
+        return 'VMProjectionMemory'
+    elif module_type == 'CandidateMatch':
+        return 'CandidateMatchMemory'
+    elif module_type == 'AllProj':
+        return 'AllProjectionMemory'
+    elif module_type == 'FullMatch':
+        return 'FullMatchMemory'
+    elif module_type == 'TrackletParameters':
+        return 'TrackletParameterMemory'
+    elif module_type == 'TrackFit':
+        return 'TrackFitMemory'
+    elif module_type == 'CleanTrack':
+        return 'CleanTrackMemory'
+    else:
+        return module_type
+    
+#########
 def writeMemories(mem_list, streaminput=False, indentation="  "):
     # mem_dict: the memory dictionary
     
@@ -42,8 +130,8 @@ def writeMemories(mem_list, streaminput=False, indentation="  "):
 
     memclass_pre = ""
     # Loop over all memories
-    for aMemMod in mem_list:
-        memclass = HLSNames_dict[aMemMod.mtype]
+    for aMemMod in sorted(mem_list,key=lambda x: x.index):
+        memclass = getHLSClassName(aMemMod)
         if memclass != memclass_pre:
             # We have a new type of memories. Insert an empty line.
             string_mem += "\n"
@@ -73,6 +161,150 @@ def writeMemories(mem_list, streaminput=False, indentation="  "):
 
 #########
 # Processing modules
+def parseProcFunctionDef(proc_header_file_name, proc_name):
+    
+    proc_str = ""
+    
+    file_proc_h = open(proc_header_file_name)
+    
+    for line in file_proc_h:
+        # Search for "void proc_name("
+        if "void "+proc_name+"(" in line:
+            #print line[:line.index("//")].strip()
+            proc_str += line.split("//",1)[0] # get rid of comments
+
+            nextline = next(file_proc_h)
+            while nextline:
+                proc_str += nextline.split("//",1)[0] # get rid of comments
+                if ")" in nextline:
+                    nextline = ""
+                else:
+                    nextline = next(file_proc_h)
+
+    file_proc_h.close()
+
+    args_str = proc_str.split("(")[1].split(")")[0]
+    arguments = []
+    for arg in args_str.split(","):
+        arg = arg.strip()
+        # get rid of const and only get the types
+        arg = arg.replace("const ","").split(' ')[0]
+        arguments.append(arg)
+    
+    return arguments
+
+def getProcFunctionArgs(proc_name,
+                        # FIXME
+                        hls_source_dir = "../firmware-hls/TrackletAlgorithm/"):
+    header_name = proc_name + '.hh'
+
+    # Hack for now. Should make all header file names consistent
+    if proc_name in ['MatchEngine', 'TrackletEngine']:
+        header_name = proc_name + '.h'
+
+    full_name = hls_source_dir.rstrip('/')+'/'+header_name
+        
+    return parseProcFunctionDef(full_name, proc_name)
+
+
+# 2D dictionary for processing function template memory type lookup
+ProcTemplateMemTypes_dict = {
+    # FIXME
+    'ProjectionRouter': {'MemTypeTProj': 'TrackletProjections',
+                         'MemTypeAProj': 'AllProj',
+                         'MemTypeVMProj': 'VMProjections'},
+    # ADD MORE HERE if the HLS function is templatized
+}
+
+def writeProcArguments(aProcModule, indentation, mem_classes=[]):
+    string_args = ''
+    
+    args_list = getProcFunctionArgs(aProcModule.mtype)
+
+    pre_type = ''
+    mem_q = deque([])
+    for argtype in args_list:
+        # bunch crossing # FIXME
+        if argtype=="BXType": 
+            string_args += "\n"+"bx, "
+            continue
+        elif argtype=="BXType&":
+            string_args += "\n"+"bx_o, "  # output bx
+            continue
+
+        # memories
+        argtype = argtype.rstrip("*")
+        #print argtype
+
+        # check if function template is used
+        # if so, need to map the mem types to the actual ones
+        usetemplate = aProcModule.mtype in ProcTemplateMemTypes_dict
+
+        if argtype != pre_type: # start to deal with a new memory type
+            string_args += "\n"
+            # make a new queue of memory modules of this type 
+            mem_q.clear()
+            memlist_tmp = []
+
+            for amem in aProcModule.upstreams+aProcModule.downstreams:
+                if usetemplate:
+                    if amem.mtype == ProcTemplateMemTypes_dict[aProcModule.mtype][argtype]:
+                        memlist_tmp.append(amem)
+                        # Add HLS memory class to the list
+                        hlsclass = getHLSClassName(amem)
+                        if hlsclass not in mem_classes:
+                            mem_classes.append(hlsclass)
+                else:
+                    # mem type is taken literally
+                    if getHLSClassName(amem) == argtype:
+                        memlist_tmp.append(amem)
+                        # Add HLS memory class to the list
+                        if argtype not in mem_classes:
+                            mem_classes.append(argtype)
+                            
+            # sort
+            memlist_tmp.sort(key=lambda x: x.index)
+            mem_q = deque(memlist_tmp)
+
+        if len(mem_q)>0:
+            mem = mem_q.popleft()
+            string_args += "&"+mem.inst+", "
+        else:
+            # write null pointer
+            string_args += "0, "
+        
+        pre_type = argtype
+
+    return string_args.rstrip(", ")
+
+def writeTemplateParameters(aProcModule, mem_classes=[]):
+
+    string_par = ""
+    
+    if aProcModule.mtype == "ProjectionRouter":
+        # Memory classes
+        assert(len(mem_classes)==3)
+        for mclass in mem_classes:
+            string_par += mclass+","
+
+        # Data types
+        string_par += string_par.replace("Memory","")
+        
+        # Number of inputs
+        string_par += str(len(aProcModule.upstreams))+","
+        
+        # Layer/Disk
+        procname = aProcModule.inst
+        pos = procname.split('_')[1][:2]
+        if pos[0] == 'L':  # layer
+            string_par += pos[1]+",0"
+        else: # pos[0] = 'D' disk
+            string_par += "0,"+pos[1]
+            
+        string_par = "<"+string_par+">"
+
+    return string_par
+
 def writeProcModules(proc_list, indentation):
     # FIXME:
     # (1) add template paramters
@@ -82,35 +314,27 @@ def writeProcModules(proc_list, indentation):
     string_proc = ""
 
     # Sort the processing module list
-    proc_list.sort(key=lambda x: x.order)
+    proc_list.sort(key=lambda x: x.index)
 
     for aProcMod in proc_list:
         
-        string_proc += indentation + aProcMod.mtype+"("
+        string_proc += indentation + aProcMod.mtype
 
-        memtype_pre = ""
-        # inputs
-        string_proc += indentation+indentation
-        for iMem in aProcMod.upstreams:
-            if iMem.mtype!=memtype_pre:
-                string_proc += "\n"       
-            string_proc += "&"+iMem.inst+", "
-            memtype_pre = iMem.mtype
+        mem_class_list = []
+        
+        # function arguments
+        string_arguments = writeProcArguments(aProcMod, indentation,
+                                              mem_class_list)
+        #print string_arguments
+        
+        # template arguments
+        string_proc += writeTemplateParameters(aProcMod,mem_class_list)
 
-        # FIXME: fill zeros for unconnected ports
-            
-        # outputs
-        string_proc += indentation+indentation
-        for oMem in aProcMod.downstreams:
-            if oMem.mtype!=memtype_pre:
-                string_proc += "\n"
-            string_proc += "&"+oMem.inst+", "
-            memtype_pre = oMem.mtype
+        
 
-        # FIXME: fill zeros for unconnected ports
-
-        # Get rid of the last ',' and close parentheses
-        string_proc = string_proc.rstrip(", ")+");\n\n"
+        string_proc += "("
+        string_proc += string_arguments
+        string_proc += ");\n\n"
         
     return string_proc
 
@@ -184,7 +408,7 @@ def writeTBMemories(mem_list, isInput, emData_dir, sector="04"):
     for memtype in mem_dict:
         memories = mem_dict[memtype]
         for mem in memories:
-            string_mem += "static "+HLSNames_dict[mem.mtype]+" "+mem.inst+";\n"
+            string_mem += "static "+getHLSClassName(mem)+" "+mem.inst+";\n"
             
             validflag = "valid_"+mem.inst
             flabel = "f"+inout+"_"+mem.inst
@@ -194,10 +418,10 @@ def writeTBMemories(mem_list, isInput, emData_dir, sector="04"):
             string_file += "if (not "+validflag+") return -1;\n\n"
 
             if isInput:
-                string_loop += "writeMemFromFile<"+HLSNames_dict[mem.mtype]+">("
+                string_loop += "writeMemFromFile<"+getHLSClassName(mem)+">("
                 string_loop += mem.inst+", "+flabel+", ievt);\n"
             else:
-                string_loop += "err += compareMemWithFile<"+HLSNames_dict[mem.mtype]+">("
+                string_loop += "err += compareMemWithFile<"+getHLSClassName(mem)+">("
                 string_loop += mem.inst+", "+flabel+", ievt, \""+mem.inst+"\", "
                 string_loop += "truncation);\n"
 
@@ -332,6 +556,9 @@ if __name__ == "__main__":
     
     # Processing modules
     string_processing = writeProcModules(process_list, args.indent)
+
+    #print getProcFunctionArgs("ProjectionRouter")
+    #print getProcFunctionArgs("MatchEngine")
     
     # Top function interface
     string_topfunction = writeTopFunction(args.topfunc, string_topin,

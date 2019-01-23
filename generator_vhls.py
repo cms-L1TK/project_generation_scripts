@@ -5,120 +5,233 @@ from collections import deque
 import os
 
 ########################################
-# A map between module names in the configuration file and HLS class name
-### UPDATE ME ###
-#HLSNames_dict = {
-#    # memories
-#    'InputLink':'InputStubMemory',
-#    'VMStubsTE':'VMStubMemory',
-#    'VMStubsME':'VMStubMemory',
-#    'StubPairs':'StubPairMemory',
-#    'AllStubs':'AllStubMemory',
-#    'StubPairs':'StubPairMemory',
-#    'TrackletProjections':'TrackletProjectionMemory',
-#    'VMProjections':'VMProjectionMemory',
-#    'CandidateMatch':'CandidateMatchMemory',
-#    'AllProj':'AllProjectionMemory',
-#    'FullMatch':'FullMatchMemory',
-#    'TrackletParameters':'TrackletParameterMemory',
-#    'TrackFit':'TrackFitMemory',
-#    'CleanTrack':'CleanTrackMemory',
-#    # processing module names are the same
-#}
-    
-#########
-
-
-########################################
 # Functions to write strings
 ########################################
 #########
 # Memories
-def getHLSClassName(module):  # UPDATE ME
-    module_type = module.mtype
-    instance_name = module.inst
-    
-    if module.mtype == 'InputLink':
-        return 'InputStubMemory'
-    
-    elif module_type == 'VMStubsTE':
-        vmste = ''
-        # class based on layer/disk position and phi region
-        pos = instance_name.split('_')[1][:2] # layer/disk
-        phi = instance_name.split('_')[1][5:6] # PHI
-        if pos in ['L4','L6']: # L4L5, L5L6
-            vmste = 'VMStubMemory' # barrel outer 2S
-        elif pos in ['L5']: # L5L6
-            vmste = 'VMStubMemory' # barrel inner 2S
-        elif pos in ['D2','D4']: # D1D2, D3D4
-            vmste = 'VMStubMemory' # disk outer
-        elif pos in ['D3']: # D3D4
-            vmste = 'VMStubMemory' # disk inner
-        elif pos == 'D1':
-            if phi in ['X','Y','Z','W','Q','R']: # L1D1 or L2D1
-                vmste = 'VMStubMemory' # disk outer
-            else: # D1D2
-                vmste = 'VMStubMemory' # disk inner
-        elif pos == 'L1':
-            if phi in ['X','Y','Z','W','Q','R']: # L1D1
-                vmste = 'VMStubMemory' # barrel inner L1D1
-            else: # L1L2
-                vmste = 'VMStubMemory' # barrel inner PS
-        elif pos == 'L2':
-            if phi in ['X','Y','Z','W','I','J','K','L']: # L2D1 or L2L3
-                vmste = 'VMStubMemory' # barrel inner L2
-            else: # L1L2
-                vmste = 'VMStubMemory' # barrel outer PS
-        elif pos == 'L3':
-            if phi in ['I','J','K','L']: # L2L3
-                vmste = 'VMStubMemory' # barrel outer PS
-            else: # L3L4
-                vmste = 'VMStubMemory' # barrel inner PS
-        return vmste
-    
-    elif module_type == 'VMStubsME':
-        vmsme = ''
-        pos = instance_name.split('_')[1][:2] # layer/disk
-        if pos in ['L1','L2','L3']: # barrel PS
-            vmsme = 'VMStubMEMemory'
-        elif pos in ['L4','L5','L6']: # barrel 2S
-            vmsme = 'VMStubMemory'
-        elif pos in ['D1','D2','D3','D4','D5']: # disk
-            vmsme = 'VMStubMEMemory'
-        return vmsme
-    
-    elif module_type == 'StubPairs':
-        return 'StubPairMemory'
-    elif module_type == 'AllStubs':
-        return 'AllStubMemory'
-    
-    elif module_type == 'TrackletProjections':
-        tproj = ''
-        pos = instance_name.split('_')[2][:2] # layer/disk
-        if pos in ['L1','L2','L3']: # barrel PS
-            tproj = 'TrackletProjectionMemory'
-        elif pos in ['L4','L5','L6']: # barrel 2S
-            tproj = 'TrackletProjectionMemory'
-        elif pos in ['D1','D2','D3','D4','D5']: # disk
-            tproj = 'TrackletProjectionMemory'
-        return tproj
-    
-    elif module_type == 'VMProjections':
-        return 'VMProjectionMemory'
-    elif module_type == 'CandidateMatch':
-        return 'CandidateMatchMemory'
-    elif module_type == 'AllProj':
-        return 'AllProjectionMemory'
-    elif module_type == 'FullMatch':
-        return 'FullMatchMemory'
-    elif module_type == 'TrackletParameters':
-        return 'TrackletParameterMemory'
-    elif module_type == 'TrackFit':
-        return 'TrackFitMemory'
-    elif module_type == 'CleanTrack':
-        return 'CleanTrackMemory'
+def getMemoryClassName_InputStub(instance_name):
+    # Two examples of instance name: IL_L1PHIB_neg_PS10G_1_A, IL_L1PHIH_PS10G_2_B
+    position = instance_name.split('_')[1][:2] # layer/disk
+    ptmodule = instance_name.replace('_neg','').split('_')[2][:2] # PS or 2S
+
+    bitformat = ''
+    if 'L' in position:
+        bitformat += 'BARREL'
     else:
-        return module_type
+        assert('D' in position)
+        bitformat += 'DISK'
+
+    assert(ptmodule in ['PS', '2S'])
+    bitformat += ptmodule
+
+    return 'InputStubMemory<'+bitformat+'>'
+    
+def getMemoryClassName_VMStubsTE(instance_name):
+    # An example of instance name: VMSTE_L6PHIB15n3
+    position = instance_name.split('_')[1][:2] # layer/disk
+    philabel = instance_name.split('_')[1][5] # PHI
+
+    memoryclass = ''
+    bitformat = ''
+    
+    if position == 'L1':
+        memoryclass = 'VMStubTEInnerMemory'  
+        if philabel in ['Q','R','S','T','W','X','Y','Z']: # L1D1 seeding
+            bitformat = 'BARRELOL'
+        elif philabel in ['A','B','C','D','E','F','G','H']: # L1L2 seeding
+            bitformat = 'BARRELPS'
+        else:
+            raise ValueError("Unknown PHI label "+philabel)
+        
+    elif position == 'L2':
+        if philabel in ['I','J','K','L','W','X','Y','Z']: # L2L3 or L2D1 seeding
+            memoryclass = 'VMStubTEInnerMemory'
+            bitformat = 'BARRELOL'
+        elif philabel in ['A','B','C','D']: # L1L2 seeding
+            memoryclass = 'VMStubTEOuterMemory'
+            bitformat = 'BARRELPS'
+        else:
+            raise ValueError("Unknown PHI label "+philabel)
+        
+    elif position == 'L3':
+        if philabel in ['A','B','C','D']: # L3L4
+            memoryclass = 'VMStubTEInnerMemory'
+            bitformat = 'BARRELPS'
+        elif philabel in ['I','J','K','L']: # L2L3
+            memoryclass = 'VMStubTEOuterMemory'
+            bitformat = 'BARRELPS'
+        else:
+            raise ValueError("Unknown PHI label "+philabel)
+        
+    elif position == 'L4' or position == 'L6':
+        assert(philabel in ['A','B','C','D']) # L3L4, L5L6 seeding
+        memoryclass = 'VMStubTEOuterMemory'
+        bitformat = 'BARREL2S'
+        
+    elif position == 'L5':
+        assert(philabel in ['A','B','C','D']) # L5L6 seeding
+        memoryclass = 'VMStubTEInnerMemory'
+        bitformat = 'BARREL2S'
+        
+    elif position == 'D1':
+        if philabel in ['A','B','C','D']: # D1D2 seeding
+            memoryclass = 'VMStubTEInnerMemory'
+            bitformat = 'DISK'
+        elif philabel in ['W','X','Y','Z']: # L1D1 or L2D1 seeding
+            memoryclass = 'VMStubTEOuterMemory'
+            bitformat = 'DISK'
+        else:
+            raise ValueError("Unknown PHI label "+philabel)
+            
+    elif position == 'D2' or position == 'D4': 
+        assert(philabel in ['A','B','C','D']) # D1D2 or D3D4 seeding
+        memoryclass = 'VMStubTEOuterMemory'
+        bitformat = 'DISK'
+
+    elif position == 'D3':
+        assert(philabel in ['A','B','C','D']) # D3D4 seeding
+        memoryclass = 'VMStubTEInnerMemory'
+        bitformat = 'DISK'
+        
+    assert(bitformat != '')
+    return memoryclass+'<'+bitformat+'>'
+
+def getMemoryClassName_VMStubsME(instance_name):
+    # An example of instance name: VMSME_D3PHIB8n1
+    position = instance_name.split('_')[1][:2] # layer/disk
+    bitformat = ''
+    
+    if position in ['L1','L2','L3']:
+        bitformat = 'BARRELPS'
+    elif position in ['L4','L5','L6']:
+        bitformat = 'BARREL2S'
+    else: # Disk
+        assert(bitformat in ['D1','D2','D3','D4','D5'])
+        bitformat = 'DISK'
+
+    return 'VMStubMEMemory<'+bitformat+'>'
+
+def getMemoryClassName_AllStubs(instance_name):
+    ######################
+    # FIXME: mix 2S and PS disk allstubs?
+    ######################
+    
+    # An example of instance name: AS_D1PHIAn5
+    position = instance_name.split('_')[1][:2]
+    if position in ['L1','L2','L3']:
+        return 'AllStubMemory<BARRELPS>'
+    elif position in ['L4','L5','L6']:
+        return 'AllStubMemory<BARREL2S>'
+    elif position in ['D1','D2','D3','D4','D5']:
+        return 'AllStubMemory<DISK>'
+    else:
+        raise ValueError("Unknown Layer/Disk "+position)
+    
+def getMemoryClassName_StubPairs(instance_name):
+    # e.g. SP_L1PHIA2_L2PHIA3
+    assert('SP_' in instance_name)
+    return 'StubPairMemory'
+
+def getMemoryClassName_TrackletParameters(instance_name):
+    # e.g. TPAR_L1L2L
+    assert('TPAR_' in instance_name)
+    return 'TrackletParameterMemory'
+
+def getMemoryClassName_TrackletProjections(instance_name):
+    # e.g. TPROJ_L5L6A_L1PHIB
+    position = instance_name.split('_')[2][:2] # layer/disk
+    bitformat = ''
+
+    if position in ['L1','L2','L3']:
+        bitformat = 'INNER'
+    elif position in ['L4','L5','L6']:
+        bitformat = 'OUTER'
+    else: # Disk
+        assert(bitformat in ['D1','D2','D3','D4','D5'])
+        bitformat = 'DISK'
+
+    return 'TrackletProjectionMemory<'+bitformat+'>'
+
+def getMemoryClassName_AllProj(instance_name):
+    # e.g. AP_L4PHIB
+    position = instance_name.split('_')[1][:2] # layer/disk
+    bitformat = ''
+
+    if position in ['L1','L2','L3']:
+        bitformat = 'BARRELPS' # INNER
+    elif position in ['L4','L5','L6']:
+        bitformat = 'BARREL2S' # OUTER
+    else: # Disk
+        assert(bitformat in ['D1','D2','D3','D4','D5'])
+        bitformat = 'DISK'
+
+    return 'AllProjectionMemory<'+bitformat+'>'
+
+def getMemoryClassName_VMProjections(instance_name):
+    # e.g. VMPROJ_D3PHIA2
+    position = instance_name.split('_')[1][:2] # layer/disk
+    if position in ['L1','L2','L3','L4','L5','L6']:
+        return 'VMProjectionMemory<BARREL>'
+    else:
+        assert(positon in ['D1','D2','D3','D4','D5'])
+        return 'VMProjectionMemory<DISK>'
+
+def getMemoryClassName_CandidateMatch(instance_name):
+    # e.g. CM_L2PHIA8
+    assert('CM_' in instance_name)
+    return 'CandidateMatchMemory'
+
+def getMemoryClassName_FullMatch(instance_name):
+    # e.g. FM_L5L6_L3PHIB
+    position = instance_name.split('_')[2][:2]
+    if position in ['L1','L2','L3','L4','L5','L6']:
+        return 'FullMatchMemory<BARREL>'
+    else:
+        assert(positon in ['D1','D2','D3','D4','D5'])
+        return 'FullMatchMemory<DISK>'
+
+def getMemoryClassName_TrackFit(instance_name):
+    # e.g. TF_L3L4
+    assert('TF_' in instance_name)
+    return 'TrackFitMemory'
+
+def getMemoryClassName_CleanTrack(instance_name):
+    # e.g. CT_L5L6
+    assert('CT_' in instance_name)
+    return 'CleanTrackMemory'
+
+
+def getHLSClassName(module):
+
+    if module.mtype == 'InputLink':
+        return getMemoryClassName_InputStub(module.inst)
+    elif module.mtype == 'VMStubsTE':
+        return getMemoryClassName_VMStubsTE(module.inst)
+    elif module.mtype == 'VMStubsME':
+        return getMemoryClassName_VMStubsME(module.inst)
+    elif module.mtype == 'AllStubs':
+        return getMemoryClassName_AllStubs(module.inst)
+    elif module.mtype == 'StubPairs':
+        return getMemoryClassName_StubPairs(module.inst)
+    elif module.mtype == 'TrackletParameters':
+        return getMemoryClassName_TrackletParameters(module.inst)
+    elif module.mtype == 'TrackletProjections':
+        return getMemoryClassName_TrackletProjections(module.inst)
+    elif module.mtype == 'AllProj':
+        return getMemoryClassName_AllProj(module.inst)
+    elif module.mtype == 'VMProjections':
+        return getMemoryClassName_VMProjections(module.inst)
+    elif module.mtype == 'CandidateMatch':
+        return getMemoryClassName_CandidateMatch(module.inst)
+    elif module.mtype == 'FullMatch':
+        return getMemoryClassName_FullMatch(module.inst)
+    elif module.mtype == 'TrackFit':
+        return getMemoryClassName_TrackFit(module.inst)
+    elif module.mtype == 'CleanTrack':
+        return getMemoryClassName_CleanTrack(module.inst)
+    else:
+        raise ValueError(module.mtype + " is unknown.")
+    
     
 #########
 def writeMemories(mem_list, streaminput=False, indentation="  "):

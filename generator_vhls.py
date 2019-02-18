@@ -30,9 +30,9 @@ def writeMemoryModules(mem_list, streaminput=False):
         if not streaminput:
             # Top function arguments are pointers to memory objects
             if aMemMod.is_initial: # Memory in the initial step
-                string_tin += "const "+memclass+"* const "+aMemMod.inst+",\n"
+                string_tin += "const "+memclass+"* "+aMemMod.inst+",\n"
             elif aMemMod.is_final: # Memory in the last step
-                string_tout += memclass+"* const "+aMemMod.inst+",\n"
+                string_tout += memclass+"* "+aMemMod.inst+",\n"
             else:
                 string_mem += "static "+memclass+" "+aMemMod.inst+";\n"
         else:
@@ -177,10 +177,10 @@ def writeTestBench(topfunc, string_inmem, string_outmem, trackletgraph,
     string_tb += "// error counts\n int err = 0;\n\n"
 
     # Lists of input memories (mem_inst, mem_class)
-    inmem_list = [(x.strip().split(' ')[-1], x.strip().split('const')[-2].strip().rstrip('*')) for x in string_inmem.split(",\n") if x]
+    inmem_list = [(x.strip().replace('const','').split('*')[-1].strip(), x.strip().replace('const','').split('*')[-2].strip()) for x in string_inmem.split(",\n") if x]
     
     # Lists of output memories (mem_inst, mem_class)
-    outmem_list = [(x.strip().split(' ')[-1], x.strip().split('const')[-2].strip().rstrip('*')) for x in string_outmem.split(",\n") if x]
+    outmem_list = [(x.strip().replace('const','').split('*')[-1].strip(), x.strip().replace('const','').split('*')[-2].strip()) for x in string_outmem.split(",\n") if x]
 
     # Input memories
     string_inmem, string_infile, string_writemem = writeTBMemories(

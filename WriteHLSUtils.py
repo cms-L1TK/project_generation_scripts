@@ -233,6 +233,177 @@ def getHLSMemoryClassName(module):
 ########################################
 # Processing functions
 ########################################
+################################
+# VMRouter
+################################
+def writeTemplatePars_VMR(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_VMR(argname, portname):
+    assert(0)
+    return False
+
+################################
+# TrackletEngine
+################################
+def writeTemplatePars_TE(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_TE(argname, portname):
+    assert(0)
+    return False
+
+################################
+# TrackletCalculator
+################################
+def writeTemplatePars_TC(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_TC(argname, portname):
+    assert(0)
+    return False
+
+################################
+# ProjectionRouter
+################################
+####
+# Write ProjectionRouter template parameters
+def writeTemplatePars_PR(aPRModule):
+    instance_name = aPRModule.inst
+    # e.g. PR_L3PHIC
+    pos = instance_name.split('_')[1][0:2]
+    PROJTYPE = ''
+    VMPTYPE = ''
+    LAYER = '0'
+    DISK = '0'
+    if pos in ['L1','L2','L3','L4','L5','L6']:
+        VMPTYPE = 'BARREL'
+        LAYER = pos[1]
+        if int(LAYER) > 3:
+            PROJTYPE = 'BARREL2S'
+        else:
+            PROJTYPE = 'BARRELPS'
+    else:
+        VMPTYPE = 'DISK'
+        PROJTYPE = 'DISK'
+        DISK = pos[1]
+
+    nInMemory = len(aPRModule.upstreams)
+
+    templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
+    return templpars_str
+
+####
+# Define rules to match the argument and the port names for ProjectionRouter
+def matchArgPortNames_PR(argname, portname):
+    
+    if 'proj' in argname and 'in' in argname:
+        # projXXin for input TrackletProjection memories
+        return argname==portname
+    elif 'allprojout' in argname:
+        # output AllProjection memory
+        return argname==portname
+    elif 'vmprojout' in argname:
+        if 'vmprojout' not in portname:
+            return False
+        # output VMProjection memories
+        # port name format: vmprojoutPHIA13
+        # get the last digits
+        vmphi_port = int(portname[13:]) # 1 - 32
+        # covert allproj phi region A, B, C, D, ... to 1, 2, 3, 4, ...
+        projphi_port = ord(portname[12].lower()) - 96
+        # The number of vmme bins per allproj phi is either 8 or 4
+        nvmme = 8 # if this is true, expect (vmphi-1)/nvmme + 1 == projphi
+        # if not, try nvmme = 4
+        if (vmphi_port-1)/nvmme + 1 != projphi_port:
+            nvmme = 4
+            assert((vmphi_port-1)/nvmme + 1 == projphi_port)
+            
+        # vmprojoutX for output VMProjection memories
+        X_port = vmphi_port%nvmme if vmphi_port%nvmme != 0 else nvmme
+        X_arg = int(argname[9:])
+        return X_arg == X_port
+    else:
+        print "matchArgPortNames_PR: Unknown argument", argname
+        return False
+    
+################################
+# MatchEngine
+################################
+####
+# Write MatchEngine template parameters
+def writeTemplatePars_ME(aVMRModule):
+    instance_name = aVMRModule.inst
+    # e.g. ME_L4PHIC20
+    pos = instance_name.split('_')[1][0:2]
+    VMSTYPE = ''
+    LAYER = '0'
+    DISK = '0'
+    if pos in ['L1','L2','L3','L4','L5','L6']:
+        LAYER = pos[1]
+        if int(LAYER) > 3:
+            VMSTYPE = 'BARREL2S'
+        else:
+            VMSTYPE = 'BARRELPS'
+    else:  # Disk
+        print "WARNING! Disk MatchEngine is not supported yet!"
+        DISK = pos[1]
+        VMSTYPE = 'DISK'
+
+    templpars_str = LAYER+','+VMSTYPE
+    return templpars_str
+
+####
+# Define rules to match the argument and the port names for MatchEngine
+def matchArgPortNames_ME(argname, portname):
+
+    if argname == 'instubdata':
+        return portname == 'vmstubin'
+    elif argname == 'inprojdata':
+        return portname == 'vmprojin'
+    elif argname == 'outcandmatch':
+        return portname == 'matchout'
+    else:
+        print "matchArgPortNames_ME: Unknown argument", argname
+        return False
+
+################################
+# MatchCalculator
+################################
+def writeTemplatePars_MC(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_MC(argname, portname):
+    assert(0)
+    return False
+
+################################
+# FitTrack
+################################
+def writeTemplatePars_FT(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_FT(argname, portname):
+    assert(0)
+    return False
+
+################################
+# PurgeDuplicate
+################################
+def writeTemplatePars_PD(aVMRModule):
+    assert(0)
+    return ""
+
+def matchArgPortNames_PD(argname, portname):
+    assert(0)
+    return False
+
+################################
 def parseProcFunction(proc_name, fname_def):
     # Parse the definition of the processing function in the header file
     # Assume all processing functions are templatized
@@ -382,164 +553,79 @@ def getProcFunctionArguments(aProcModule, argTypeList, argNameList,
     # end of loop
     
     return arguments_str.rstrip(",\n")
+
+def writeProcFunction_generic(module, hls_src_dir, f_writeTemplatePars,
+                              f_matchArgPortNames):
+    ####
+    # function name
+    assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
+                            'ProjectionRouter','MatchEngine','MatchCalculator',
+                            'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
+    function_str = module.mtype
+    # Update here if the function name is not exactly the same as the module type
+
+    ####
+    # Header file when the processing function is defined
+    fname_def = module.mtype + '.hh'
+    # Special cases (probably should make the naming consistent...)
+    if module.mtype in ['TrackletEngine','MatchEngine']:
+        fname_def = module.mtype + '.h'
+    # DiskMatchCalculator?
     
-################################
-# VMRouter
-################################
-def writeProcFunction_VMR(aVMRModule, hls_src_dir):
-    # VMRouter
-    print "TODD: the function to write VMRouter has not been implemented yet!"
-    return ""
-
-################################
-# TrackletEngine
-################################
-def writeProcFunction_TE(aTEModule, hls_src_dir):
-    # TrackletEngine
-    print "TODD: the function to write TrackletEngine has not been implemented yet!"
-    return ""
-
-################################
-# TrackletCalculator
-################################
-def writeProcFunction_TC(aTCModule, hls_src_dir):
-    # TrackletCalculator
-    print "TODD: the function to write TrackletCalculator has not been implemented yet!"
-    return ""
-
-################################
-# ProjectionRouter
-################################
-# Write ProjectionRouter template parameters
-def writeTemplatePars_PR(aPRModule):
-    instance_name = aPRModule.inst
-    # e.g. PR_L3PHIC
-    pos = instance_name.split('_')[1][0:2]
-    PROJTYPE = ''
-    VMPTYPE = ''
-    LAYER = 0
-    DISK = 0
-    if pos in ['L1','L2','L3','L4','L5','L6']:
-        VMPTYPE = 'BARREL'
-        LAYER = int(pos[1])
-        if LAYER > 3:
-            PROJTYPE = 'BARREL2S'
-        else:
-            PROJTYPE = 'BARRELPS'
-    else:
-        VMPTYPE = 'DISK'
-        PROJTYPE = 'DISK'
-        DISK = int(pos[1])
-
-    nInMemory = len(aPRModule.upstreams)
-
-    templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+str(LAYER)+','+str(DISK)
-    return templpars_str
-
-# Define rules to match the argument and the port names for ProjectionRouter
-def matchArgPortNames_pr(argname, portname):
+    fname_def = hls_src_dir.rstrip('/')+'/'+fname_def
     
-    if 'proj' in argname and 'in' in argname:
-        # projXXin for input TrackletProjection memories
-        return argname==portname
-    elif 'allprojout' in argname:
-        # output AllProjection memory
-        return argname==portname
-    elif 'vmprojout' in argname:
-        if 'vmprojout' not in portname:
-            return False
-        # output VMProjection memories
-        # port name format: vmprojoutPHIA13
-        # get the last digits
-        vmphi_port = int(portname[13:]) # 1 - 32
-        # covert allproj phi region A, B, C, D, ... to 1, 2, 3, 4, ...
-        projphi_port = ord(portname[12].lower()) - 96
-        # The number of vmme bins per allproj phi is either 8 or 4
-        nvmme = 8 # if this is true, expect (vmphi-1)/nvmme + 1 == projphi
-        # if not, try nvmme = 4
-        if (vmphi_port-1)/nvmme + 1 != projphi_port:
-            nvmme = 4
-            assert((vmphi_port-1)/nvmme + 1 == projphi_port)
-            
-        # vmprojoutX for output VMProjection memories
-        X_port = vmphi_port%nvmme if vmphi_port%nvmme != 0 else nvmme
-        X_arg = int(argname[9:])
-        return X_arg == X_port
-    else:
-        print "Unknown argument", argname
-        return False
+    ####
+    # Get the list of argument typesm names, and template parameters
+    argtypes,argnames,templpars = parseProcFunction(function_str,fname_def)
 
-def writeProcFunction_PR(aPRModule, hls_src_dir):
-    # ProjectionRouter
-    function_str = "ProjectionRouter"
-    
-    # Header
-    fname_pr = hls_src_dir.rstrip('/')+'/'+"ProjectionRouter.hh"
-    # Get the list of argument types, names, and template parameters
-    argtypes,argnames,templpars = parseProcFunction('ProjectionRouter',fname_pr)
-
+    ####
     # Determine function template parameters
-    templpars_str = writeTemplatePars_PR(aPRModule)
+    templpars_str = f_writeTemplatePars(module)
 
+    ####
     # Determine function arguments
-    arguments_str = getProcFunctionArguments(aPRModule, argtypes, argnames,
-                                             matchArgPortNames_pr)
-    
+    arguments_str = getProcFunctionArguments(module, argtypes, argnames,
+                                             f_matchArgPortNames)
+
+    ####
+    # Put ingredients togther
     function_str += "<"+templpars_str+">\n"
     function_str += "("+arguments_str+");\n"
     
     return function_str
-
-################################
-# MatchEngine
-################################
-def writeProcFunction_ME(aMEModule, hls_src_dir):
-    # MatchEngine
-    print "TODD: the function to write MatchEngine has not been implemented yet!"
-    return ""
-
-################################
-# MatchCalculator
-################################
-def writeProcFunction_MC(aMCModule, hls_src_dir):
-    # MatchCalculator
-    print "TODD: the function to write MatchCalculator has not been implemented yet!"
-    return ""
-
-################################
-# FitTrack
-################################
-def writeProcFunction_FT(aFTModule, hls_src_dir):
-    # FitTrack
-    print "TODD: the function to write FitTrack has not been implemented yet!"
-    return ""
-
-################################
-# PurgeDuplicate
-################################
-def writeProcFunction_PD(aPDModule, hls_src_dir):
-    # PurgeDuplicate
-    print "TODD: the function to write PurgeDuplicate has not been implemented yet!"
-    return ""
-
-################################
-def writeProcFunction(module, hls_src_dir):
     
+def writeProcFunction(module, hls_src_dir):
     if module.mtype == 'VMRouter':
-        return writeProcFunction_VMR(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_VMR,
+                                         matchArgPortNames_VMR)
     elif module.mtype == 'TrackletEngine':
-        return writeProcFunction_TE(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_TE,
+                                         matchArgPortNames_TE)
     elif module.mtype == 'TrackletCalculator':
-        return writeProcFunction_TC(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_TC,
+                                         matchArgPortNames_TC)
     elif module.mtype == 'ProjectionRouter':
-        return writeProcFunction_PR(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_PR,
+                                         matchArgPortNames_PR)
     elif module.mtype == 'MatchEngine':
-        return writeProcFunction_ME(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_ME,
+                                         matchArgPortNames_ME)
     elif module.mtype in ['MatchCalculator','DiskMatchCalculator']:
-        return writeProcFunction_MC(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_MC,
+                                         matchArgPortNames_MC)
     elif module.mtype == 'FitTrack':
-        return writeProcFunction_FT(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_FT,
+                                         matchArgPortNames_FT)
     elif module.mtype == 'PurgeDuplicate':
-        return writeProcFunction_PD(module, hls_src_dir)
+        return writeProcFunction_generic(module, hls_src_dir,
+                                         writeTemplatePars_PD,
+                                         matchArgPortNames_PD)
     else:
         raise ValueError(module.mtype + " is unknown.")

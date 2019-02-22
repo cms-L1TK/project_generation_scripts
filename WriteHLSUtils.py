@@ -247,7 +247,7 @@ def matchArgPortNames_VMR(argname, portname):
 ################################
 # TrackletEngine
 ################################
-def writeTemplatePars_TE(aVMRModule):
+def writeTemplatePars_TE(aTEModule):
     assert(0)
     return ""
 
@@ -258,7 +258,7 @@ def matchArgPortNames_TE(argname, portname):
 ################################
 # TrackletCalculator
 ################################
-def writeTemplatePars_TC(aVMRModule):
+def writeTemplatePars_TC(aTCModule):
     assert(0)
     return ""
 
@@ -335,8 +335,8 @@ def matchArgPortNames_PR(argname, portname):
 ################################
 ####
 # Write MatchEngine template parameters
-def writeTemplatePars_ME(aVMRModule):
-    instance_name = aVMRModule.inst
+def writeTemplatePars_ME(aMEModule):
+    instance_name = aMEModule.inst
     # e.g. ME_L4PHIC20
     pos = instance_name.split('_')[1][0:2]
     VMSTYPE = ''
@@ -367,24 +367,60 @@ def matchArgPortNames_ME(argname, portname):
     elif argname == 'outcandmatch':
         return portname == 'matchout'
     else:
-        print "matchArgPortNames_ME: Unknown argument", argname
+        print "matchArgPortNames_ME: Unknown argument name", argname
         return False
 
 ################################
 # MatchCalculator
 ################################
-def writeTemplatePars_MC(aVMRModule):
-    assert(0)
-    return ""
+def writeTemplatePars_MC(aMCModule):
+    instance_name = aMCModule.inst
+    # e.g. MC_L2PHID
+    pos = instance_name.split('_')[1][0:2]
+    ASTYPE = ''
+    APTYPE = ''
+    FMTYPE = ''
+    LAYER = '0'
+    DISK = '0'
+    if pos in ['L1','L2','L3']:
+        LAYER = pos[1]
+        FMTYPE = 'BARREL'
+        APTYPE = 'BARRELPS'
+        ASTYPE = 'BARRELPS'
+    elif pos in ['L4','L5','L6']:
+        LAYER = pos[1]
+        FMTYPE = 'BARREL'
+        APTYPE = 'BARREL2S'
+        ASTYPE = 'BARREL2S'
+    else: # Disk
+        DISK = pos[1]
+        FMTYPE = 'DISK'
+        APTYPE = 'DISK'
+        # FIXME here after the allstubs are seperated for disk ps and 2s in the configs
+        ASTYPE = 'DISKPS' # all ps for now
+        
+    templpars_str = ASTYPE+','+APTYPE+','+FMTYPE+','+LAYER+','+DISK
+    # PHISEC? Is this necessary?
+        
+    return templpars_str
 
 def matchArgPortNames_MC(argname, portname):
-    assert(0)
-    return False
+    if argname in ['match1','match2','match3','match4',
+                   'match5','match6','match7','match8',
+                   'allstub','allproj']:
+        return portname == argname+'in'
+    elif argname == 'fullmatch1':
+        return portname == 'matchout1'
+    elif argname == 'fullmatch2':
+        return portname == 'matchout2'
+    else:
+        print "matchArgPortNames_MC: Unknow argument name", argname
+        return False
 
 ################################
 # FitTrack
 ################################
-def writeTemplatePars_FT(aVMRModule):
+def writeTemplatePars_FT(aFTModule):
     assert(0)
     return ""
 
@@ -395,7 +431,7 @@ def matchArgPortNames_FT(argname, portname):
 ################################
 # PurgeDuplicate
 ################################
-def writeTemplatePars_PD(aVMRModule):
+def writeTemplatePars_PD(aPDModule):
     assert(0)
     return ""
 

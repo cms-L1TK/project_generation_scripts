@@ -49,6 +49,7 @@ class Node(object):
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
         self.index = i  # instance index from the configuration file
+        self.userlabel = "" # label for customized usage
         # drawing parameters
         self.width = 1.  # Width of the box
         self.xstart = 0  # Starting x coordinate

@@ -230,6 +230,113 @@ def getHLSMemoryClassName(module):
     else:
         raise ValueError(module.mtype + " is unknown.")
 
+def labelConnectedMemoryArrays(proc_list):
+    # label those memories that will be constructed in an array
+    for aProcModule in proc_list:
+
+        if aProcModule.mtype == 'TrackletCalculator':
+            # stubpair and allstub memories are arrays
+            # they are all inputs
+            for inmem,inport in zip(aProcModule.upstreams,aProcModule.input_port_names):
+                if 'stubpair' in inport:
+                    inmem.userlabel = 'stubPairs_'+aProcModule.inst
+                elif 'innerallstubin' in inport:
+                    inmem.userlabel = 'innerStubs_'+aProcModule.inst
+                elif 'outerallstubin' in inport:
+                    inmem.userlabel = 'outerStubs_'+aProcModule.inst
+
+        # add other processing steps here if they have array inputs/outputs
+        #elif aProcModule.mtype == '':
+
+def getListsOfGroupedMemories(aProcModule):
+    # Get a list of memories and a list of ports for a given processing module
+    # The memories are further grouped in a list if they are expected to be
+    # constructed and passed to the processing function as an array
+
+    # add array name to 'userlabel' of the connected memory module
+    labelConnectedMemoryArrays([aProcModule])
+
+    memList = list(aProcModule.upstreams + aProcModule.downstreams)
+    portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
+    # sort?
+
+    newmemList = []
+    newportList = []
+    arraycontainer_dict = {}
+
+    for memory, portname in zip(memList, portList):
+        if not memory.userlabel:  # default is '', i.e. no array label added
+            newmemList.append(memory)
+            newportList.append(portname)
+        else:
+            arrayname = memory.userlabel
+            if arrayname not in arraycontainer_dict:
+                arraycontainer_dict[arrayname] = [memory]
+            else:
+                arraycontainer_dict[arrayname].append(memory)
+    # add back memory arrays
+    for arrayname in arraycontainer_dict:
+        newmemList.append(arraycontainer_dict[arrayname])
+        newportList.append(arrayname)
+
+    return newmemList, newportList
+
+def groupAllConnectedMemories(proc_list, mem_list):
+
+    memories_inside = []  # memories instantiated inside the top function
+    memories_topin = []  # input memories at the top function interface
+    memories_topout = []  # output memories at the top function interface
+
+    # add array name to 'userlabel' of the connected memory module
+    # if they are to be constructed and connected in an array
+    labelConnectedMemoryArrays(proc_list)
+
+    arraycontainer_dict = {}
+    for memory in mem_list:
+        if not memory.userlabel:  # default is '', i.e. no array label added
+            if memory.is_initial:
+                memories_topin.append(memory)
+            elif memory.is_final:
+                memories_topout.append(memory)
+            else:
+                memories_inside.append(memory)
+        else:
+            arrayname = memory.userlabel
+            if arrayname not in arraycontainer_dict:
+                arraycontainer_dict[arrayname] = [memory]
+            else:
+                arraycontainer_dict[arrayname].append(memory)
+    # add memory arrays
+    for arrayname in arraycontainer_dict:
+        if arraycontainer_dict[arrayname][0].is_initial:
+            memories_topin.append(arraycontainer_dict[arrayname])
+        elif arraycontainer_dict[arrayname][0].is_final:
+            memories_topout.append(arraycontainer_dict[arrayname])
+        else:
+            memories_inside.append(arraycontainer_dict[arrayname])
+
+    return memories_inside, memories_topin, memories_topout
+
+def writeMemoryInstance(memModule):
+    pragma = ""
+    memclass=""
+    varname=""
+    
+    if isinstance(memModule, list): # memories in an array
+        assert(len(memModule)>0)
+        # assume all memories in the array are of the same class
+        memclass = getHLSMemoryClassName(memModule[0])
+        # extract array name from userlabel
+        varname = memModule[0].userlabel+"["+str(len(memModule))+"]"
+        pragma = "#pragma HLS ARRAY_PARTITION variable="+memModule[0].userlabel+" complete dim=0"
+    else:
+        memclass = getHLSMemoryClassName(memModule)
+        varname = memModule.inst
+
+    mem_str = "static "+memclass+" "+varname+";\n"+pragma+"\n"
+
+    return mem_str, memclass
+    
 ########################################
 # Processing functions
 ########################################
@@ -398,9 +505,11 @@ def writeTemplatePars_MC(aMCModule):
         APTYPE = 'DISK'
         # FIXME here after the allstubs are seperated for disk ps and 2s in the configs
         ASTYPE = 'DISKPS' # all ps for now
+
+    # FIXME 
+    PHISEC = '2'  # PHISEC??
         
-    templpars_str = ASTYPE+','+APTYPE+','+FMTYPE+','+LAYER+','+DISK
-    # PHISEC? Is this necessary?
+    templpars_str = ASTYPE+','+APTYPE+','+FMTYPE+','+LAYER+','+DISK+','+PHISEC
         
     return templpars_str
 
@@ -550,13 +659,12 @@ def getProcFunctionArguments(aProcModule, argTypeList, argNameList,
 
     arguments_str = ""
 
-    memModuleList = list(aProcModule.upstreams + aProcModule.downstreams)
-    portNameList = list(aProcModule.input_port_names + aProcModule.output_port_names)
+    memModuleList, portNameList = getListsOfGroupedMemories(aProcModule)
     
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argTypeList, argNameList):
         
-        # Special cases e.g. bunch crossing
+        # Bunch crossing
         if "BXType" in argtype:
             arguments_str += writeProcFunction_BX(argtype)
             continue
@@ -573,10 +681,14 @@ def getProcFunctionArguments(aProcModule, argTypeList, argNameList,
                 foundMatch = ArgName_Match_PortName(argname, portname)
 
             if foundMatch:
-                # Add the memory instance to the arguments
-                if not (memory.is_initial or memory.is_final):
-                    arguments_str += "&"
-                arguments_str += memory.inst+",\n"
+                # Add the memory instance to the arguments 
+                if isinstance(memory, list):
+                    # this is an array of memory objects
+                    # portname is the variable name
+                    arguments_str += portname+",\n"
+                else:
+                    arguments_str += "&"+memory.inst+",\n"
+
                 # Remove the already added module and name from the lists
                 memModuleList.remove(memory)
                 portNameList.remove(portname)
@@ -600,6 +712,12 @@ def writeProcFunction_generic(module, hls_src_dir, f_writeTemplatePars,
     function_str = module.mtype
     # Update here if the function name is not exactly the same as the module type
 
+    # TrackletCalculator
+    if module.mtype == 'TrackletCalculator':
+        # 'TrackletCalculator_<seeding>'
+        # extract seeding from instance name: TC_L3L4C
+        function_str += '_'+module.inst.split('_')[1][0:5]
+    
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.hh'

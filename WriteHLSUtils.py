@@ -366,12 +366,73 @@ def matchArgPortNames_TE(argname, portname):
 # TrackletCalculator
 ################################
 def writeTemplatePars_TC(aTCModule):
-    assert(0)
-    return ""
+    instance_name = aTCModule.inst
+    # e.g. TC_L3L4C
+    iTC = 'TC::'+instance_name[-1]
+
+    # Count AllStub memories
+    NASMemInner = 0  # number of inner allstub memories
+    NASMemOuter = 0  # number of outer allstub memories
+    PhiLabelASInner = []
+    PhiLabelASOuter = []
+    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+        if 'innerallstub' in portname:
+            NASMemInner += 1
+            # AS memory instance name example: AS_L1PHICn3
+            philabel = inmem.inst.split('_')[1][0:6]  # e.g. L1PHIC
+            PhiLabelASInner.append(philabel)
+        elif 'outerallstub' in portname:
+            NASMemOuter += 1
+            philabel = inmem.inst.split('_')[1][0:6]
+            PhiLabelASOuter.append(philabel)
+
+    # sort the phi label list alphabetically
+    PhiLabelASInner.sort()
+    PhiLabelASOuter.sort()
+
+    assert(NASMemInner<=2)
+    assert(NASMemOuter<=2)
+
+    # Count StubPair memories
+    NSPMem = [[0,0],[0,0]]
+
+    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+        if 'stubpair' in portname:
+            sp_instance = inmem.inst
+            # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
+            innerphilabel = sp_instance.split('_')[1][0:6]
+            outerphilabel = sp_instance.split('_')[2][0:6]
+
+            assert(innerphilabel in PhiLabelASInner)
+            innerindex = PhiLabelASInner.index(innerphilabel)
+
+            assert(outerphilabel in PhiLabelASOuter)
+            outerindex = PhiLabelASOuter.index(outerphilabel)
+
+            NSPMem[innerindex][outerindex] += 1
+
+    template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
+    # truncation parameter
+    template_str += 'kMaxProc'
+
+    return template_str
 
 def matchArgPortNames_TC(argname, portname):
-    assert(0)
-    return False
+    if 'innerStubs' in argname:
+        return 'innerStubs' in portname
+    elif 'outerStubs' in argname:
+        return 'outerStubs' in portname
+    elif 'stubPairs' in argname:
+        return 'stubPairs' in portname
+    elif 'trackletParameters' in argname:
+        return 'trackpar' in portname
+    elif 'projout' in argname:
+        # e.g. "projout_L6PHIC"
+        destination = argname.strip().split('_')[-1]
+        return destination in portname and 'projout' in portname
+    else:
+        print "matchArgPortNames_TC: Unknown argument", argname
+        return False
 
 ################################
 # ProjectionRouter
@@ -622,6 +683,9 @@ def parseProcFunction(proc_name, fname_def):
         args = args.replace("*","").strip()
         # get rid of '&' ?
 
+        # get rid of '[...]' in case it is an array
+        args = args.split('[')[0]
+
         # argument type
         atype = ' '.join(args.split()[:-1]) # combine all strings except the last
         arg_types_list.append(atype)
@@ -716,8 +780,8 @@ def writeProcFunction_generic(module, hls_src_dir, f_writeTemplatePars,
     if module.mtype == 'TrackletCalculator':
         # 'TrackletCalculator_<seeding>'
         # extract seeding from instance name: TC_L3L4C
-        function_str += '_'+module.inst.split('_')[1][0:5]
-    
+        function_str += '_'+module.inst.split('_')[1][0:4]
+
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.hh'

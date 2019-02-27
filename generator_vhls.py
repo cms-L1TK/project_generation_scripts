@@ -19,7 +19,7 @@ def writeMemoryModules(mem_list):
     string_mem = ""
 
     # Loop over memories in the list
-    for memModule in mem_list:
+    for memModule in sorted(mem_list,key=lambda x: x.index):
         amem_str,_ = writeMemoryInstance(memModule)
         string_mem += amem_str
         
@@ -248,6 +248,13 @@ def writeTcl(projname, topfunc, emData_dir):
     string_tcl = "open_project -reset "+projname+"\n"
     string_tcl += "set_top "+topfunc+"\n"
     string_tcl += "add_files ../TrackletAlgorithm/"+topfunc+".cpp -cflags \"-std=c++11\"\n"
+    
+    # for now
+    # need to add source files specific to TrackletCalculator
+    string_tcl += "add_files ../TrackletAlgorithm/TrackletCalculator.cpp -cflags \"-std=c++11\"\n"
+    string_tcl += "add_files ../TrackletAlgorithm/TC_L1L2.cpp -cflags \"-std=c++11\"\n"
+    # and other seeding pairs if available.
+    
     string_tcl += "add_files -tb ../TestBenches/"+topfunc+"_test.cpp -cflags \"-I../TrackletAlgorithm -std=c++11\"\n"
     string_tcl += "add_files -tb ../emData/"+emData_dir+"\n"
     string_tcl += "open_solution -reset \"solution1\"\n"

@@ -410,8 +410,45 @@ def writeTemplatePars_TC(aTCModule):
             outerindex = PhiLabelASOuter.index(outerphilabel)
 
             NSPMem[innerindex][outerindex] += 1
-
+            
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
+
+    # Count connected TProj memories and compute the TPROJMask parameter
+
+    # list of layers/disks the seeds projecting to for a given seeding
+    ProjLayers_List = ['L1','L2','L3','L4','L5','L6','D1','D2','D3','D4','D5']
+    # remove the ones if they are seeding layers/disks
+    TCSeed = instance_name.split('_')[-1][0:4]
+    seed1 = TCSeed[0:2]
+    seed2 = TCSeed[2:4]
+    ProjLayers_List.remove(seed1)
+    ProjLayers_List.remove(seed2)
+
+    TPROJMask = 0
+    
+    for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
+        if 'projout' in portname: # portname example: projoutL6PHID
+            layer = portname[7:9] # L6
+            phi = portname[-1] # D
+
+            assert(layer in ProjLayers_List)
+            index = ProjLayers_List.index(layer)
+
+            mask = 0
+            if phi == 'A':
+                mask = 1
+            elif phi == 'B':
+                mask = 2
+            elif phi == 'C':
+                mask = 4
+            elif phi == 'D':
+                mask = 8
+            assert(mask > 0)
+
+            TPROJMask += mask << (index * 4)
+            
+    template_str += hex(TPROJMask)+','
+    
     # truncation parameter
     template_str += 'kMaxProc'
 

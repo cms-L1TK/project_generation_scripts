@@ -290,7 +290,9 @@ if __name__ == "__main__":
                         help="Name of the configuration file for memory modules")
     parser.add_argument('-w','--wireconfig', type=str, default="wires.dat",
                         help="Name of the configuration file for wiring")
-
+    parser.add_argument('-r','--region', choices=['A','L','D'], default='A',
+                        help="Detector region. A: all, L: barrel, D: disk")
+    
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
@@ -314,7 +316,7 @@ if __name__ == "__main__":
     ########################################
 
     tracklet = TrackletGraph.from_configs(args.procconfig, args.memconfig,
-                                          args.wireconfig)
+                                          args.wireconfig, args.region)
 
     ########################################
     # Get processing and memory module lists

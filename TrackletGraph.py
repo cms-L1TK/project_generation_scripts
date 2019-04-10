@@ -1,3 +1,5 @@
+import re
+
 #######################################
 # Ordering of the processing steps
 #ProcOrder_dict = {
@@ -87,14 +89,14 @@ class TrackletGraph(object):
         self.__mem_dict = memDict if memDict is not None else {}
 
     @classmethod
-    def from_configs(cls, fname_proc, fname_mem, fname_wire):
+    def from_configs(cls, fname_proc, fname_mem, fname_wire, region='-'):
         " Initialize from the configuration .dat files "
         
         # Get processing module dictionary
         procDict = cls.get_proc_dict_from_config(fname_proc)
         
         # Get memory module dictionary
-        memDict = cls.get_mem_dict_from_config(fname_mem)
+        memDict = cls.get_mem_dict_from_config(fname_mem, region)
         
         # Wire the modules based on the wiring configuration
         cls.wire_modules_from_config(fname_wire, procDict, memDict)
@@ -131,13 +133,20 @@ class TrackletGraph(object):
         return proc_dict
     
     @staticmethod
-    def get_mem_dict_from_config(fname_mconfig):
+    def get_mem_dict_from_config(fname_mconfig, region='-'):
         """ Read the memory module configuration file and return a dictionary 
             for memory modules
             Key: instance name; Value: memory MemModule object
+            region: 'L' for barrel layers only; 'D' for disks only
         """
         mem_dict = {}
 
+        barrelstr = re.compile('L[1-6]PHI')
+        diskstr = re.compile('D[1-5]PHI')
+        barrelseed = re.compile('L[1235]L[2346]')
+        diskseed = re.compile('D[13]D[24]')
+        hybridseed = re.compile('L[12]D1')
+        
         # Open and read memory configuration file
         file_mem = open(fname_mconfig, 'r')
 
@@ -146,6 +155,39 @@ class TrackletGraph(object):
             mem_type = line_mem.split(':')[0].strip()
             # Instance name
             mem_inst = line_mem.split(':')[1].strip().split(' ')[0]
+
+            # Check which detector region the memory belongs to
+            isbarrel = False
+            isdisk = False
+
+            if mem_type in ['InputLink','VMStubsTE','VMStubsME','StubPairs',
+                            'AllStubs','VMProjections','CandidateMatch','AllProj']:
+                if barrelstr.search(mem_inst):
+                    isbarrel = True
+                if diskstr.search(mem_inst):
+                    isdisk = True
+            elif mem_type in ['TrackletProjections','FullMatch']:
+                if barrelseed.search(mem_inst) and barrelstr.search(mem_inst):
+                    isbarrel = True
+                if diskseed.search(mem_inst) and diskstr.search(mem_inst):
+                    isdisk = True
+            elif mem_type in ['TrackletParameters','TrackFit','CleanTrack']:
+                if barrelseed.search(mem_inst):
+                    isbarrel = True
+                if diskseed.search(mem_inst):
+                    isdisk = True
+            else:
+                raise ValueError("Unknown memory type: "+mem_type)
+
+            #assert(isbarrel or isdisk)
+            
+            if region == 'L': # barrel project
+                if not isbarrel or isdisk:
+                    continue
+            elif region == 'D': # disk project
+                if not isdisk or isbarrel:
+                    continue
+            
             # Construct MemModule object
             aMemMod = MemModule(mem_type, mem_inst, i)
             # Add to dictionary
@@ -171,6 +213,11 @@ class TrackletGraph(object):
             ######
             # memory instance in wiring config
             wmem_inst = line_wire.split('input=>')[0].strip()
+
+            # check if the memory is in the dictionary
+            if not wmem_inst in m_dict:
+                continue
+            
             iMem = m_dict[wmem_inst]
 
             ######
@@ -203,6 +250,14 @@ class TrackletGraph(object):
 
         # Close file
         file_wires.close()
+
+        # Remove processing modules if they do not have input/output memories
+        for name, proc in p_dict.items():
+            nInputs = len(proc.upstreams)
+            nOutputs = len(proc.downstreams)
+            
+            if nInputs == 0 or nOutputs == 0:
+                del p_dict[name]
         
     ########################################       
     # Accessors

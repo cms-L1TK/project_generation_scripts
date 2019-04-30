@@ -344,22 +344,22 @@ def writeMemoryInstance(memModule):
 # VMRouter
 ################################
 def writeTemplatePars_VMR(aVMRModule):
-    assert(0)
+    raise ValueError("VMRouter is not implemented yet!")
     return ""
 
 def matchArgPortNames_VMR(argname, portname):
-    assert(0)
+    raise ValueError("VMRouter is not implemented yet!")
     return False
 
 ################################
 # TrackletEngine
 ################################
 def writeTemplatePars_TE(aTEModule):
-    assert(0)
+    raise ValueError("TrackletEngine is not implemented yet!")
     return ""
 
 def matchArgPortNames_TE(argname, portname):
-    assert(0)
+    raise ValueError("TrackletEngine is not implemented yet!")
     return False
 
 ################################
@@ -628,22 +628,22 @@ def matchArgPortNames_MC(argname, portname):
 # FitTrack
 ################################
 def writeTemplatePars_FT(aFTModule):
-    assert(0)
+    raise ValueError("FitTrack is not implemented yet!")
     return ""
 
 def matchArgPortNames_FT(argname, portname):
-    assert(0)
+    raise ValueError("FitTrack is not implemented yet!")
     return False
 
 ################################
 # PurgeDuplicate
 ################################
 def writeTemplatePars_PD(aPDModule):
-    assert(0)
+    raise ValueError("DuplicateRemoval is not implemented yet!")
     return ""
 
 def matchArgPortNames_PD(argname, portname):
-    assert(0)
+    raise ValueError("DuplicateRemoval is not implemented yet!")
     return False
 
 ################################
@@ -709,7 +709,7 @@ def parseProcFunction(proc_name, fname_def):
     if procfunc_str == "":
         print "Cannot find processing function", proc_name, "in", fname_def
         return arg_types_list, arg_names_list, templ_pars_list
-
+    
     # get the argument lists
     arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
     
@@ -731,6 +731,11 @@ def parseProcFunction(proc_name, fname_def):
         arg_names_list.append(aname)
 
     # get the template parameter list
+    if template_buffer == "":
+        print "No template parameters are found."
+        print "Please make sure the processing function", proc_name, "is templatized in", fname_def
+        return arg_types_list, arg_names_list, templ_pars_list
+    
     templPars_str = template_buffer.split("<")[1].split(">")[0]
     
     for par in templPars_str.split(","):

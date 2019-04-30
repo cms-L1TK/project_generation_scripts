@@ -311,6 +311,9 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Script to generate HLS top function for Tracklet project")
+    parser.add_argument('hls_dir', type=str, nargs='?',
+                        default="../firmware-hls/",
+                        help="HLS firmware project directory")
     parser.add_argument('-f', '--topfunc', type=str, default="SectorProcessor",
                         help="HLS top function name")
     parser.add_argument('-n', '--projname', type=str, default="sectproc",
@@ -333,16 +336,11 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
                         help="Number of downstream processing steps to include")
 
-    parser.add_argument('--emData_dir', type=str, default="",
+    parser.add_argument('--emData_dir', type=str, default="SectorProcessorTest",
                         help="Directory where emulation printouts are stored")
-    parser.add_argument('--hls_src_dir', type=str,
-                        default="../firmware-hls/TrackletAlgorithm/",
-                        help="HLS source code directory")
     parser.add_argument('--memprint_dir', type=str,
                         default="../fpga_emulation_longVM/MemPrints/",
                         help="Directory of emulation memory printouts")
-    #parser.add_argument('--indent', type=str, default="  ",
-    #                    help="Indentation")
     #parser.add_argument('-d','--debug', action='store_true',
     #                    help="Turn on for debugging")
     
@@ -391,7 +389,12 @@ if __name__ == "__main__":
     string_memories = writeMemoryModules(memList_inside)
 
     # Write processing modules
-    string_processing = writeProcModules(process_list, args.hls_src_dir)
+    # First check if the HLS project directory exists
+    if not os.path.exists(args.hls_dir):
+        raise ValueError("Cannot find HLS project directory: "+args.hls_dir)
+    # HLS source code directory
+    source_dir = args.hls_dir.rstrip('/')+'/TrackletAlgorithm'
+    string_processing = writeProcModules(process_list, source_dir)
 
     # Top function interface
     string_topfunction = writeTopFunction(args.topfunc, memList_topin,
@@ -441,13 +444,17 @@ if __name__ == "__main__":
     ###############
     # Copy the necessary emulation memory printouts for test bench
     # make a local directory first
-    print "Creating a directory:", args.emData_dir
-    subprocess.call(['mkdir',args.emData_dir])
+    if os.path.exists(args.memprint_dir):
+        print "Creating a directory:", args.emData_dir
+        subprocess.call(['mkdir','-p',args.emData_dir])
 
-    print "Start to copy emulation printouts locally"
-    for filename in list_memprints:
-        memdir = getMemPrintDirectory(filename)+'/'
-        fullname = args.memprint_dir.rstrip('/')+'/'+memdir+filename
-        subprocess.call(['cp', fullname, args.emData_dir+'/.'])
-    print "Done copying emulation printouts"
+        print "Start to copy emulation printouts locally"
+        for filename in list_memprints:
+            memdir = getMemPrintDirectory(filename)+'/'
+            fullname = args.memprint_dir.rstrip('/')+'/'+memdir+filename
+            subprocess.call(['cp', fullname, args.emData_dir+'/.'])
+        print "Done copying emulation printouts"
+    else:
+        print "Cannot find directory", args.memprint_dir
+        print "No memory prinout files are copied."
     

@@ -19,6 +19,8 @@ Basic instructions to run the project generation
   
 * Generate the top function for Vivado HLS
 
+  (Currently CANNOT generate a full project since some processing steps are under construction)
+
       ./generator_vhls.py <hls firmware directory>
       
   Optional arguments include:

@@ -23,25 +23,25 @@ Basic instructions to run the project generation
       
   Optional arguments include:
   
-  	  -h, --help          For help
+      -h, --help          For help
   
       -f, --topfunc       Top function name
       -n, --projname      Project name
       -p, --procconfig    Name of the processing module configuration .dat file
       -m, --memconfig     Name of the memory module configuration .dat file
       -w, --wireconfig    Name of the wiring configuration .dat file
-      --memprint_dir      Directory of emulation memory printouts
-      --emData_dir        Directory where emulation printouts are stored
+      --memprint_dir      Directory to search for memory printouts produced by the emulation
+      --emData_dir        Directory into which the memory printout files are copied for the HLS project
       
       For generating a partial project:
       -r, --region        Detector region of the generated project.
-      				      Choose from A(all), L(barrel), D(disk).
+      		          Choose from A(all), L(barrel), D(disk).
       --uut               Specify a unit under test, e.g. TC_L1L2E
       -u, --nupstream     The number of processing steps to be generated upstream of the UUT 
       -d, --ndownstream   The number of processing steps to be generated downstream of the UUT
 
-	It generates the source and the header files for the top function, as well as the test bench file, the tcl script to generate the Vivado HLS project, and a diagram presenting the generated project.
-    It also copies the necessary memory prinout files from the emulation to be used in the test bench of the Vivado HLS project.
+  It generates the source and the header files for the top function, as well as the test bench file, the tcl script to generate the Vivado HLS project, and a diagram presenting the generated project.
+  It also copies the necessary memory prinout files from the emulation to be used in the test bench of the Vivado HLS project.
 
 ### Tracklet LongVM
 

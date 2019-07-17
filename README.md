@@ -21,7 +21,9 @@ Basic instructions to run the project generation
 
   (Currently CANNOT generate a full project since some processing steps are under construction)
 
-      ./generator_vhls.py <hls firmware directory>
+      1) Checkout L1Trk HLS code (https://github.com/cms-tracklet/firmware-hls) into a new directory
+      2) Ensure ROOT is in your PATH.
+      3) ./generator_vhls.py <L1Trk HLS firmware directory>
       
   Optional arguments include:
   
@@ -43,7 +45,7 @@ Basic instructions to run the project generation
       -d, --ndownstream   The number of processing steps to be generated downstream of the UUT
 
   It generates the source and the header files for the top function, as well as the test bench file, the tcl script to generate the Vivado HLS project, and a diagram presenting the generated project.
-  It also copies the necessary memory prinout files from the emulation to be used in the test bench of the Vivado HLS project.
+  It also copies the necessary memory printout files from the emulation to be used in the test bench of the Vivado HLS project.
 
 ### Tracklet LongVM
 

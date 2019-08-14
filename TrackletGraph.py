@@ -66,6 +66,8 @@ class MemModule(Node):
         # position flags
         self.is_initial = False # True if it is the initial step
         self.is_final = False # True if it is the final step
+        self.bitwidth = 0
+        self.bxbitwidth = 0
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -102,6 +104,33 @@ class TrackletGraph(object):
         cls.wire_modules_from_config(fname_wire, procDict, memDict)
         
         return cls(procDict, memDict)      
+
+    @staticmethod
+    def populate_bitwidths(mem,hls_dir):
+        # Populate data bit width
+        barrelPSList = ["L1P","L2P","L3P"]
+        barrelPS = -1
+        for item in barrelPSList:
+            barrelPS = max(barrelPS,mem.inst.find(item))
+        barrel2SList = ["L4P","L5P","L6P"]
+        barrel2S = -1
+        for item in barrel2SList:
+            barrel2S = max(barrel2S,mem.inst.find(item))
+        diskList = ["D1P","D2P","D3P","D4P","D5P"]
+        disk = -1
+        for item in diskList:
+            disk = max(disk,mem.inst.find(item))
+        if mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
+            if barrelPS>-1: mem.bitwidth = 60
+            if barrel2S>-1: mem.bitwidth = 58
+            if disk>-1: mem.bitwidth = 59
+        elif mem.mtype == "VMProjections":
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
+            if disk>-1: mem.bitwidth = 21
+
+        # Populate bx bit width
+        if mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections": mem.bxbitwidth = 1
+        elif mem.mtype == "AllProj": mem.bxbitwidth = 3
 
     @staticmethod
     def get_proc_dict_from_config(fname_pconfig):

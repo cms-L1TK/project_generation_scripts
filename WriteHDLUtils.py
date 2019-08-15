@@ -318,24 +318,33 @@ def groupAllConnectedMemories(proc_list, mem_list):
     return memories_inside, memories_topin, memories_topout
 
 def writeMemoryInstance(memModule):
-    pragma = ""
-    memclass=""
-    varname=""
+    parameterlist = ""
+    portlist = ""
+    mem_str = ""
+    
+    portlist += "  .data_ena("+memModule.inst+"_dataarray_data_V_ena),\n"
+    portlist += "  .data_wea("+memModule.inst+"_dataarray_data_V_wea),\n"
+    portlist += "  .data_addra("+memModule.inst+"_dataarray_data_V_writeaddr),\n"
+    portlist += "  .data_dina("+memModule.inst+"_dataarray_data_V_din),\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        portlist += "  .nent_"+str(i)+"_we("+memModule.inst+"_nentries_"+str(i)+"_we),\n"
+        portlist += "  .nent_"+str(i)+"_din("+memModule.inst+"_nentries_"+str(i)+"_din),\n"
+    portlist += "  .data_enb("+memModule.inst+"_dataarray_data_V_enb),\n"
+    portlist += "  .data_web("+memModule.inst+"_dataarray_data_V_web),\n"
+    portlist += "  .data_addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
+    portlist += "  .data_doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        portlist += "  .nent_"+str(i)+"_dout("+memModule.inst+"_nentries_"+str(i)+"_dout),\n"
     
     if isinstance(memModule, list): # memories in an array
-        assert(len(memModule)>0)
-        # assume all memories in the array are of the same class
         memclass = getHLSMemoryClassName(memModule[0])
-        # extract array name from userlabel
-        varname = memModule[0].userlabel+"["+str(len(memModule))+"]"
-        pragma = "#pragma HLS ARRAY_PARTITION variable="+memModule[0].userlabel+" complete dim=0"
     else:
         memclass = getHLSMemoryClassName(memModule)
-        varname = memModule.inst
 
-    mem_str = "static "+memclass+" "+varname+";\n"+pragma+"\n"
-
-    return mem_str, memclass
+    mem_str += "MemoryWrapper #("+parameterlist.rstrip("\n,")+"\n) "
+    mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
+    return mem_str,memclass
+    
     
 ########################################
 # Processing functions
@@ -765,7 +774,7 @@ def writeModuleInst_BX(aProcModule, argtype):
 
 def writePorts(aProcModule, argTypeList, argNameList,
                              ArgName_Match_PortName=None):
-    arguments_str = ""
+    ports_str = ""
 
     memModuleList, portNameList = getListsOfGroupedMemories(aProcModule)
 
@@ -774,7 +783,7 @@ def writePorts(aProcModule, argTypeList, argNameList,
 
         # Bunch crossing
         if "BXType" in argtype:
-            arguments_str += writeModuleInst_BX(aProcModule, argtype)
+            ports_str += writeModuleInst_BX(aProcModule, argtype)
             continue
 
         # Given argument name, search for the matched port name in the mem lists
@@ -789,48 +798,38 @@ def writePorts(aProcModule, argTypeList, argNameList,
                 foundMatch = ArgName_Match_PortName(argname, portname)
 
             if foundMatch:
+                # Add the memory instance to the port string
                 if argname.find("in") != -1:
-                    arguments_str += "  ."+argname+"_dataarray_data_V_ce0("
-                    arguments_str += memory.inst+"_dataarray_data_V_ce0),\n"
-                    arguments_str += "  ."+argname+"_dataarray_data_V_address0("
-                    arguments_str += memory.inst+"_dataarray_data_V_address0),\n"
-                    arguments_str += "  ."+argname+"_dataarray_data_V_q0("
-                    arguments_str += memory.inst+"_dataarray_data_V_q0),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
+                    ports_str += memory.inst+"_dataarray_data_V_enb),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_address0("
+                    ports_str += memory.inst+"_dataarray_data_V_readaddr),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_q0("
+                    ports_str += memory.inst+"_dataarray_data_V_dout),\n"
                     for i in range(0,2**memory.bxbitwidth):
-                        arguments_str += "  ."+argname+"_nentries_"+str(i)+"_V("
-                        arguments_str += memory.inst+"_nentries_"+str(i)+"_V),\n"
+                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
+                        ports_str += memory.inst+"_nentries_"+str(i)+"_dout),\n"
                 if argname.find("out") != -1:
-                    arguments_str += "  ."+argname+"_dataarray_data_V_ce0("
-                    arguments_str += memory.inst+"_dataarray_data_V_ce0),\n"
-                    arguments_str += "  ."+argname+"_dataarray_data_V_we0("
-                    arguments_str += memory.inst+"_dataarray_data_V_we0),\n"
-                    arguments_str += "  ."+argname+"_dataarray_data_V_address0("
-                    arguments_str += memory.inst+"_dataarray_data_V_address0),\n"
-                    arguments_str += "  ."+argname+"_dataarray_data_V_d0("
-                    arguments_str += memory.inst+"_dataarray_data_V_d0),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
+                    ports_str += memory.inst+"_dataarray_data_V_ena),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_we0("
+                    ports_str += memory.inst+"_dataarray_data_V_wea),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_address0("
+                    ports_str += memory.inst+"_dataarray_data_V_writeaddr),\n"
+                    ports_str += "  ."+argname+"_dataarray_data_V_d0("
+                    ports_str += memory.inst+"_dataarray_data_V_din),\n"
                     for i in range(0,2**memory.bxbitwidth):
-                        arguments_str += "  ."+argname+"_nentries_"+str(i)+"_V("
-                        arguments_str += memory.inst+"_nentries_"+str(i)+"_V),\n"
-#                # Add the memory instance to the arguments
-#                if isinstance(memory, list):
-#                    # this is an array of memory objects
-#                    # portname is the variable name
-#                    arguments_str += portname+",\n"
-#                else:
-#                    arguments_str += "&"+memory.inst+",\n"
-#
-#                # Remove the already added module and name from the lists
+                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_o_ap_vld("
+                        ports_str += memory.inst+"_nentries_"+str(i)+"_we),\n"
+                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_o("
+                        ports_str += memory.inst+"_nentries_"+str(i)+"_din),\n"
+                # Remove the already added module and name from the lists
                 memModuleList.remove(memory)
                 portNameList.remove(portname)
                 break
-
-#        if not foundMatch:
-#            # no matched memory instance found, write a null pointer
-#            arguments_str += "0,\n"
-
     # end of loop
 
-    return arguments_str.rstrip(",\n")
+    return ports_str.rstrip(",\n")
 
 
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
@@ -840,14 +839,14 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
-    function_str = module.mtype
+    module_str = module.mtype
     # Update here if the function name is not exactly the same as the module type
 
     # TrackletCalculator
     if module.mtype == 'TrackletCalculator':
         # 'TrackletCalculator_<seeding>'
         # extract seeding from instance name: TC_L3L4C
-        function_str += '_'+module.inst.split('_')[1][0:4]
+        module_str += '_'+module.inst.split('_')[1][0:4]
 
     ####
     # Header file when the processing function is defined
@@ -861,7 +860,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Get the list of argument typesm names, and template parameters
-    argtypes,argnames,templpars = parseProcFunction(function_str,fname_def)
+    argtypes,argnames,templpars = parseProcFunction(module_str,fname_def)
 
     ####
     # Determine function template parameters
@@ -870,17 +869,17 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Determine function arguments
-    arguments_str = writePorts(module, argtypes, argnames,
+    ports_str = writePorts(module, argtypes, argnames,
                                              f_matchArgPortNames)
 
     ####
     # Put ingredients togther
-    function_str += "_"+templpars_str
-    function_str += " "+function_str
-    function_str += "_inst0 (\n"
-    function_str += arguments_str+"\n);\n"
+    module_str += "_"+templpars_str
+    module_str += " "+module_str
+    module_str += "_inst0 (\n"
+    module_str += ports_str+"\n);\n"
 
-    return function_str
+    return module_str
 
 def writeModuleInst(module, hls_src_dir):
     if module.mtype == 'VMRouter':

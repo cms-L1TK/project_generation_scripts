@@ -46,10 +46,10 @@ def writeProcModules(proc_list, hls_src_dir):
 
 #########
 # Top function interface
-def writeTopModule(topfunc_name, process_list, memories_topin, memories_topout,
+def writeTopModule_interface(topmodule_name, process_list, memories_topin, memories_topout,
                      streamIO=False):
     # memories_topin, memories_topout: list of memory module(s)
-    # topfunc_name: name of the top function
+    # topmodule_name: name of the top module
 
     # TODO: Top function uses hls::stream as input/output arguments
     # Need the configuration file to map the input link to memories
@@ -58,7 +58,7 @@ def writeTopModule(topfunc_name, process_list, memories_topin, memories_topout,
     if streamIO:
         raise ValueError("hls::stream IO is not supported yet.")
 
-    string_topfunc = "module "+topfunc_name+"(\n"
+    string_topmod_interface = "module "+topmodule_name+"(\n"
 
     # Find names of first & last processing modules in project
     initial_proc = ""
@@ -70,92 +70,69 @@ def writeTopModule(topfunc_name, process_list, memories_topin, memories_topout,
             if mem.is_final: final_proc = proc.mtype
 
     # BX
-    string_topfunc += "  input[2:0] bx_in_"+initial_proc+",\n"
+    string_topmod_interface += "  input[2:0] bx_in_"+initial_proc+",\n"
 
     # Input arguments
     for memModule in memories_topin:
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
 #            memclass = getHLSMemoryClassName(memModule[0])
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topfunc += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_address0,\n"
-            string_topfunc += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_q0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_q0,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topfunc += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
 
         else:
 #            memclass = getHLSMemoryClassName(memModule)
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topfunc += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_address0,\n"
-            string_topfunc += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_q0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_q0,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topfunc += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
 
     # BX output
-    string_topfunc += "  output[2:0] bx_out_"+final_proc+",\n"
+    string_topmod_interface += "  output[2:0] bx_out_"+final_proc+",\n"
 
     # Output arguments
     for memModule in memories_topout:
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
             memclass = getHLSMemoryClassName(memModule[0])
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_we0,\n"
-            string_topfunc += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_address0,\n"
-            string_topfunc += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_d0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_we0,\n"
+            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_d0,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topfunc += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
         else:
             memclass = getHLSMemoryClassName(memModule)
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topfunc += "  output "+memModule.inst+"_dataarray_data_we0,\n"
-            string_topfunc += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_address0,\n"
-            string_topfunc += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topfunc += memModule.inst+"_dataarray_data_d0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_we0,\n"
+            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_d0,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topfunc += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
 
     # Get rid of the last comma and close the parentheses
-    string_topfunc = string_topfunc.rstrip(",\n")+"\n);\n"
+    string_topmod_interface = string_topmod_interface.rstrip(",\n")+"\n);\n\n"
 
-    return string_topfunc
-
-#########
-# Header
-def writeHeaderFile(topfunc, string_finterface):
-    header = "#ifndef "+topfunc.upper()+"_H\n"
-    header += "#define "+topfunc.upper()+"_H\n"
-    header += "\n"
-
-    # TODO: include all available/working processing functions
-    header += "#include \"Constants.hh\"\n"
-    header += "#include \"TrackletCalculator.hh\"\n"
-    header += "#include \"ProjectionRouter.hh\"\n"
-    header += "#include \"MatchEngine.h\"\n"
-    header += "#include \"MatchCalculator.hh\"\n"
-    header += "\n"
-
-    header += string_finterface.rstrip("\n")
-    header += ";\n\n"
-    
-    header += "#endif\n"
-
-    return header
+    return string_topmod_interface
 
 #########
 # Main source
-def writeTopFile(topfunc, string_finterface, string_mem, string_proc):
+def writeTopFile(string_finterface, string_mem, string_proc):
     string_src = "`timescale 1ns / 1ps\n\n"
     string_src += string_finterface
     string_src += string_mem
-    string_src += "\n"
     string_src += string_proc
 
     return string_src
@@ -425,7 +402,7 @@ if __name__ == "__main__":
         process_list, memory_list)
 
     # Write memories
-    string_memories = writeMemoryModules(memList_inside)
+    string_memModules = writeMemoryModules(memList_inside)
 
     # Write processing modules
     # First check if the HLS project directory exists
@@ -433,18 +410,15 @@ if __name__ == "__main__":
         raise ValueError("Cannot find HLS project directory: "+args.hls_dir)
     # HLS source code directory
     source_dir = args.hls_dir.rstrip('/')+'/TrackletAlgorithm'
-    string_processing = writeProcModules(process_list, source_dir)
+    string_procModules = writeProcModules(process_list, source_dir)
 
     # Top function interface
-    string_topfunction = writeTopModule(args.topfunc, process_list, memList_topin,
+    string_topmod_interface = writeTopModule_interface(args.topfunc, process_list, memList_topin,
                                           memList_topout)
 
-    # Header
-    string_header = writeHeaderFile(args.topfunc, string_topfunction)
-    
     # Source
-    string_src = writeTopFile(args.topfunc, string_topfunction,
-                                 string_memories, string_processing)
+    string_topfile = writeTopFile(string_topmod_interface,
+                                 string_memModules, string_procModules)
 
     ###############
     # Test bench
@@ -457,16 +431,12 @@ if __name__ == "__main__":
     string_tcl = writeTcl(args.projname, args.topfunc, args.emData_dir)
     
     # Write to disk
-    fname_src = args.topfunc+".v"
-    fname_header = args.topfunc+".h"
+    fname_top = args.topfunc+".v"
     fname_tb = args.topfunc+"_test.cpp"
     fname_tcl = "script_"+args.projname+".tcl"
     
-    fout_source = open(fname_src,"w")
-    fout_source.write(string_src)
-    
-    fout_header = open(fname_header,"w")
-    fout_header.write(string_header)
+    fout_top = open(fname_top,"w")
+    fout_top.write(string_topfile)
 
     fout_testbench = open(fname_tb, "w")
     fout_testbench.write(string_testbench)
@@ -475,8 +445,7 @@ if __name__ == "__main__":
     fout_tcl.write(string_tcl)
 
     ###############
-    print "Output source file:", fname_src
-    print "Output header file:", fname_header
+    print "Output top file:", fname_top
     print "Output test bench file:", fname_tb
     print "Output tcl script:", fname_tcl
     

@@ -34,13 +34,17 @@ def writeProcModules(proc_list, hls_src_dir):
     # (2) how to propagate BXs?
     
     string_proc = ""
+    proc_type_list = []
 
     # Sort the processing module list
     proc_list.sort(key=lambda x: x.index)
 
     for aProcMod in proc_list:
-#        string_proc += writeProcFunction(aProcMod, hls_src_dir)+"\n"
-        string_proc += writeModuleInst(aProcMod, hls_src_dir)+"\n"
+        if not aProcMod.mtype in proc_type_list:
+            string_proc += writeModuleInst(aProcMod, hls_src_dir, True)+"\n"
+            proc_type_list.append(aProcMod.mtype)
+        else:
+            string_proc += writeModuleInst(aProcMod, hls_src_dir, False)+"\n"
         
     return string_proc
 
@@ -64,11 +68,9 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     initial_proc = ""
     final_proc = ""
     for proc in process_list:
-        for mem in proc.upstreams:
-            if mem.is_initial: initial_proc = proc.mtype
-        for mem in proc.downstreams:
-            if mem.is_final: final_proc = proc.mtype
-
+        if proc.is_first: initial_proc = proc.mtype
+        if proc.is_last: final_proc = proc.mtype
+    
     # BX
     string_topmod_interface += "  input[2:0] bx_in_"+initial_proc+",\n"
 
@@ -77,24 +79,26 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
 #            memclass = getHLSMemoryClassName(memModule[0])
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_enb,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
             string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_q0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  input[7:0] "+memModule.inst
+                string_topmod_interface +="_nentries_"+str(i)+"_V_dout,\n"
 
         else:
 #            memclass = getHLSMemoryClassName(memModule)
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_enb,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
             string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_q0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  input[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
-
+                string_topmod_interface += "  input[7:0] "+memModule.inst
+                string_topmod_interface +="_nentries_"+str(i)+"_V_dout,\n"
+    
     # BX output
     string_topmod_interface += "  output[2:0] bx_out_"+final_proc+",\n"
 
@@ -103,24 +107,30 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
             memclass = getHLSMemoryClassName(memModule[0])
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_we0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_ena,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
             string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_d0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  output "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_we,\n"
+                string_topmod_interface += "  output[7:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
         else:
             memclass = getHLSMemoryClassName(memModule)
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_ce0,\n"
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_we0,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_ena,\n"
+            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_address0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
             string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_d0,\n"
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  output[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V,\n"
+                string_topmod_interface += "  output "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_we,\n"
+                string_topmod_interface += "  output[7:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
 
     # Get rid of the last comma and close the parentheses
     string_topmod_interface = string_topmod_interface.rstrip(",\n")+"\n);\n\n"
@@ -384,6 +394,9 @@ if __name__ == "__main__":
     # Get widths of all needed memories
     for mem in memory_list:
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
+    # Get whether processing modules are first or last in chain
+    for proc in process_list:
+        TrackletGraph.populate_firstlast(proc)
 
     ########################################
     #  Plot graph

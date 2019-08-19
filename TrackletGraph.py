@@ -76,6 +76,8 @@ class ProcModule(Node):
         #self.order = ProcOrder_dict[module_type]
         self.input_port_names = []
         self.output_port_names = []
+        self.is_first = False
+        self.is_last = False
 
 #######################################
 # Tracklet Graph
@@ -127,10 +129,29 @@ class TrackletGraph(object):
         elif mem.mtype == "VMProjections":
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
             if disk>-1: mem.bitwidth = 21
+        elif mem.mtype == "VMStubsME":
+            if barrelPS>-1: mem.bitwidth = 14
+            if barrel2S>-1 or disk>-1: mem.bitwidth = 15
+        elif mem.mtype == "CandidateMatch":
+            mem.bitwidth = 14
 
         # Populate bx bit width
-        if mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections": mem.bxbitwidth = 1
-        elif mem.mtype == "AllProj": mem.bxbitwidth = 3
+        if mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections":
+            mem.bxbitwidth = 1
+        elif mem.mtype == "AllProj" or mem.mtype == "VMStubsME":
+            mem.bxbitwidth = 3
+
+    @staticmethod
+    def populate_firstlast(proc):
+        # Populate fields saying whether proc module is first or last in slice
+        is_first = True
+        is_last = True
+        for mem in proc.upstreams:
+            if not mem.is_initial: is_first = False
+        for mem in proc.downstreams:
+            if not mem.is_final: is_last = False
+        proc.is_first = is_first
+        proc.is_last = is_last
 
     @staticmethod
     def get_proc_dict_from_config(fname_pconfig):

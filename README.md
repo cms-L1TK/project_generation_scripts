@@ -8,14 +8,23 @@ Basic instructions to run the project generation
 		
       ./HourGlassConfig.py
     
-  The default output file is *wires.input.hourglassExtended*
+  The default output file is *wires.input.hourglassExtended*.
+  Each line in the output file contains a instance of a processing module as well as all its input and output memories. The input memories, the processing module, and the output memories are separated by ">":
+
+       InMem1 InMem2 ... > ProcessModuleX > OutMem1 OutMem2 ...
 
 * Create modules and wiring .dat files
 
       ./WiresLongVM.py wires.input.hourglassExtended
 
-  Three output files are produced: 
-  *wires.dat*, *memorymodules.dat*, and *memorymodules.dat* 
+  This script parses the configuration file generated from the previous step and converts it to three output files: 
+  *wires.dat*, *memorymodules.dat*, and *processingmodules.dat*.
+  These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps.
+  In *memorymodules.dat* and *processingmodules.dat*, each line contains a module instance name and its corresponding module type, following the format
+
+     ModuleType: ModuleInstance
+
+  (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but it may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
   
 * Generate the top function for Vivado HLS
 
@@ -39,13 +48,20 @@ Basic instructions to run the project generation
       
       For generating a partial project:
       -r, --region        Detector region of the generated project.
-      		          Choose from A(all), L(barrel), D(disk).
+      		              Choose from A(all), L(barrel), D(disk).
       --uut               Specify a unit under test, e.g. TC_L1L2E
       -u, --nupstream     The number of processing steps to be generated upstream of the UUT 
       -d, --ndownstream   The number of processing steps to be generated downstream of the UUT
 
-  It generates the source and the header files for the top function, as well as the test bench file, the tcl script to generate the Vivado HLS project, and a diagram presenting the generated project.
-  It also copies the necessary memory printout files from the emulation to be used in the test bench of the Vivado HLS project.
+  This script parses the three .dat files from the previous step and instantiates a TrackletGraph object (defined in TrackletGraph.py).
+  The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
+
+  The other part of this script takes the TrakletGraph object as inputs and writes out relevant files for the top level project.
+  In order to generate correct and up-to-date functions for relevant processing steps, the script looks for and parses the function definitions in the corresponding header files in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/TrackletAlgorithm/).
+  The final product of this script includes source and header files for the HLS top function, a test bench file, and a tcl script to generate the Vivado HLS project. A diagram presenting the generated project is also produced.
+  In addition, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project.
+
+-----------------------------------------------------------------
 
 ### Tracklet LongVM
 
@@ -55,7 +71,7 @@ The master configuration file for long VM project is wires.input.longVM_sector
 
       ./SubProject_longVM.py -r <region> -s <seedings>
 
-       ./SubProject_longVM.py -h  for help
+      ./SubProject_longVM.py -h  for help
 
    It by default reads the master config file 'wires.input.longVM_sector' and generates a smaller scale project configuration 'wires.reduced', based on the user specified detector region (via option -r) and seeding pairs (via option -s).
    Choices for argument <region> are: 'A' (entire tracker), 'L' (barrel only), 'D' (disk only), 'H' (hybrid region).

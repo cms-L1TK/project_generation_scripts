@@ -22,7 +22,7 @@ Basic instructions to run the project generation
   These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps.
   In *memorymodules.dat* and *processingmodules.dat*, each line contains a module instance name and its corresponding module type, following the format
 
-     ModuleType: ModuleInstance
+      ModuleType: ModuleInstance
 
   (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but it may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
   
@@ -57,7 +57,7 @@ Basic instructions to run the project generation
   The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
 
   The other part of this script takes the TrakletGraph object as inputs and writes out relevant files for the top level project.
-  In order to generate correct and up-to-date functions for relevant processing steps, the script looks for and parses the function definitions in the corresponding header files in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/TrackletAlgorithm/).
+  In order to generate correct and up-to-date functions for relevant processing steps, the script looks for and parses the function definitions in the corresponding header files in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
   The final product of this script includes source and header files for the HLS top function, a test bench file, and a tcl script to generate the Vivado HLS project. A diagram presenting the generated project is also produced.
   In addition, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project.
 

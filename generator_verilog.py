@@ -71,6 +71,10 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
         if proc.is_first: initial_proc = proc.mtype
         if proc.is_last: final_proc = proc.mtype
     
+    # clk, reset, en_proc
+    string_topmod_interface += "  input clk,\n"
+    string_topmod_interface += "  input reset,\n"
+    string_topmod_interface += "  input en_proc,\n"
     # BX
     string_topmod_interface += "  input[2:0] bx_in_"+initial_proc+",\n"
 

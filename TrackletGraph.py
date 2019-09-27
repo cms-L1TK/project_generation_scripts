@@ -122,7 +122,9 @@ class TrackletGraph(object):
         disk = -1
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
-        if mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
+        if mem.mtype == "AllStubs":
+            mem.bitwidth = 36
+        elif mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
             if barrelPS>-1: mem.bitwidth = 60
             if barrel2S>-1: mem.bitwidth = 58
             if disk>-1: mem.bitwidth = 59
@@ -134,12 +136,21 @@ class TrackletGraph(object):
             if barrel2S>-1 or disk>-1: mem.bitwidth = 15
         elif mem.mtype == "CandidateMatch":
             mem.bitwidth = 14
+        elif mem.mtype == "FullMatch":
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 45
+            if disk>-1: mem.bitwidth = 43
+        else:
+            raise ValueError("Bitwidth undefined for "+mem.mtype)
 
         # Populate bx bit width
-        if mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections":
+        if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
+               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"):
             mem.bxbitwidth = 1
-        elif mem.mtype == "AllProj" or mem.mtype == "VMStubsME":
+        elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
+               or mem.mtype == "AllStubs"):
             mem.bxbitwidth = 3
+        else:
+            raise ValueError("Bxbitwidth undefined for "+mem.mtype)
 
     @staticmethod
     def populate_firstlast(proc):

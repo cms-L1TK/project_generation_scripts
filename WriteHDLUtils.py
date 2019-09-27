@@ -343,6 +343,8 @@ def writeMemoryInstance(memModule):
     # Write parameters
 
     # Write ports
+    portlist += "  .clka(clk),\n"
+    portlist += "  .clkb(clk),\n"
     portlist += "  .data_ena("+memModule.inst+"_dataarray_data_V_ena),\n"
     portlist += "  .data_wea("+memModule.inst+"_dataarray_data_V_wea),\n"
     portlist += "  .data_addra("+memModule.inst+"_dataarray_data_V_writeaddr),\n"
@@ -799,6 +801,18 @@ def writePorts(aProcModule, argTypeList, argNameList,
 
     memModuleList, portNameList = getListsOfGroupedMemories(aProcModule)
 
+    # clock, reset, start
+    startport = ""
+    if aProcModule.is_first:
+        startport += "en_proc),\n"
+    else:
+        startport += aProcModule.mtype+"_start),\n"
+    ports_str += "  .ap_clk(clk),\n"
+    ports_str += "  .ap_rst(reset),\n"
+    ports_str += "  .ap_start("+startport
+    if first_of_type:
+        ports_str += "  .ap_done("+aProcModule.mtype+"_done),\n"
+
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argTypeList, argNameList):
 
@@ -806,7 +820,7 @@ def writePorts(aProcModule, argTypeList, argNameList,
         if "BXType" in argtype:
             ports_str += writeModuleInst_BX(aProcModule, argtype, first_of_type)
             continue
-
+        
         # Given argument name, search for the matched port name in the mem lists
         foundMatch = False
         for memory, portname in zip(memModuleList, portNameList):
@@ -820,7 +834,7 @@ def writePorts(aProcModule, argTypeList, argNameList,
 
             if foundMatch:
                 # Add the memory instance to the port string
-                if argname.find("in") != -1:
+                if portname.find("in") != -1:
                     ports_str += "  ."+argname+"_dataarray_data_V_ce0("
                     ports_str += memory.inst+"_dataarray_data_V_enb),\n"
                     ports_str += "  ."+argname+"_dataarray_data_V_address0("
@@ -830,7 +844,7 @@ def writePorts(aProcModule, argTypeList, argNameList,
                     for i in range(0,2**memory.bxbitwidth):
                         ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
                         ports_str += memory.inst+"_nentries_"+str(i)+"_V_dout),\n"
-                if argname.find("out") != -1:
+                if portname.find("out") != -1:
                     ports_str += "  ."+argname+"_dataarray_data_V_ce0("
                     ports_str += memory.inst+"_dataarray_data_V_ena),\n"
                     ports_str += "  ."+argname+"_dataarray_data_V_we0("
@@ -860,7 +874,26 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
-    module_str = module.mtype
+#    # Add internal BX wire
+    internal_bx_str = ""
+    if first_of_type:
+        internal_bx_str += "wire[2:0] bx_out_"+module.mtype+"\n\n"
+
+    # Add internal start registers
+    int_ctrl_sig = ""
+    if first_of_type:
+        if not module.is_last:
+            int_ctrl_sig += "wire "+module.mtype+"_done;\n"
+            for mem in module.downstreams:
+                if mem.bxbitwidth != 1: continue
+                int_ctrl_sig += "reg "+mem.downstreams[0].mtype+"_start;\n"
+                int_ctrl_sig += "initial "+mem.downstreams[0].mtype+"_start = 1'b0;\n\n"
+                int_ctrl_sig += "always @("+module.mtype+"_done) begin\n"
+                int_ctrl_sig += "  if ("+module.mtype+"_done) "+mem.downstreams[0].mtype+"_start = 1'b1;\n"
+                int_ctrl_sig += "end\n\n"
+                break
+        
+    module_str = internal_bx_str+int_ctrl_sig+module.mtype
     # Update here if the function name is not exactly the same as the module type
 
     # TrackletCalculator
@@ -881,7 +914,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Get the list of argument typesm names, and template parameters
-    argtypes,argnames,templpars = parseProcFunction(module_str,fname_def)
+    # WARNING, MAY NOT WORK FOR TC
+    argtypes,argnames,templpars = parseProcFunction(module.mtype,fname_def)
 
     ####
     # Determine function template parameters

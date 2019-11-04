@@ -26,13 +26,15 @@ Basic instructions to run the project generation
 
   (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but it may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
   
-* Generate the top function for Vivado HLS
+* Generate the top function for Vivado HLS (in HLS or HDL)
 
   (Currently CANNOT generate a full project since some processing steps are under construction)
 
       1) Checkout L1Trk HLS code (https://github.com/cms-tracklet/firmware-hls) into a new directory
       2) Ensure ROOT is in your PATH.
-      3) ./generator_vhls.py <L1Trk HLS firmware directory>
+      3 - for HLS) ./generator_vhls.py <L1Trk HLS firmware directory>
+      OR
+      3 - for Verliog) ./generator_verilog.py <L1Trk HLS firmware directory>
       
   Optional arguments include:
   
@@ -58,8 +60,12 @@ Basic instructions to run the project generation
 
   The other part of this script takes the TrakletGraph object as inputs and writes out relevant files for the top level project.
   In order to generate correct and up-to-date functions for relevant processing steps, the script looks for and parses the function definitions in the corresponding header files in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
-  The final product of this script includes source and header files for the HLS top function, a test bench file, and a tcl script to generate the Vivado HLS project. A diagram presenting the generated project is also produced.
+
+  HLS: The final product of this script includes source and header files for the HLS top function, a test bench file, and a tcl script to generate the Vivado HLS project. A diagram presenting the generated project is also produced.
   In addition, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project.
+
+  HDL: The final product of this script includes a top-level verilog module which instantiates all the relevant HLS processing blocks and verilog memory modules, as well as a verilog test bench. In the future, the script will generate a tcl script needed to generate the project.
+  In addition, like the HLS version, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project (this feature is currently broken for the verilog version, but it will be fixed).
 
 -----------------------------------------------------------------
 

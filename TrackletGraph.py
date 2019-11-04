@@ -66,6 +66,8 @@ class MemModule(Node):
         # position flags
         self.is_initial = False # True if it is the initial step
         self.is_final = False # True if it is the final step
+        self.bitwidth = 0
+        self.bxbitwidth = 0
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -74,6 +76,8 @@ class ProcModule(Node):
         #self.order = ProcOrder_dict[module_type]
         self.input_port_names = []
         self.output_port_names = []
+        self.is_first = False
+        self.is_last = False
 
 #######################################
 # Tracklet Graph
@@ -102,6 +106,63 @@ class TrackletGraph(object):
         cls.wire_modules_from_config(fname_wire, procDict, memDict)
         
         return cls(procDict, memDict)      
+
+    @staticmethod
+    def populate_bitwidths(mem,hls_dir):
+        # Populate data bit width
+        barrelPSList = ["L1P","L2P","L3P"]
+        barrelPS = -1
+        for item in barrelPSList:
+            barrelPS = max(barrelPS,mem.inst.find(item))
+        barrel2SList = ["L4P","L5P","L6P"]
+        barrel2S = -1
+        for item in barrel2SList:
+            barrel2S = max(barrel2S,mem.inst.find(item))
+        diskList = ["D1P","D2P","D3P","D4P","D5P"]
+        disk = -1
+        for item in diskList:
+            disk = max(disk,mem.inst.find(item))
+        if mem.mtype == "AllStubs":
+            mem.bitwidth = 36
+        elif mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
+            if barrelPS>-1: mem.bitwidth = 60
+            if barrel2S>-1: mem.bitwidth = 58
+            if disk>-1: mem.bitwidth = 59
+        elif mem.mtype == "VMProjections":
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
+            if disk>-1: mem.bitwidth = 21
+        elif mem.mtype == "VMStubsME":
+            if barrelPS>-1: mem.bitwidth = 14
+            if barrel2S>-1 or disk>-1: mem.bitwidth = 15
+        elif mem.mtype == "CandidateMatch":
+            mem.bitwidth = 14
+        elif mem.mtype == "FullMatch":
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 45
+            if disk>-1: mem.bitwidth = 43
+        else:
+            raise ValueError("Bitwidth undefined for "+mem.mtype)
+
+        # Populate bx bit width
+        if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
+               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"):
+            mem.bxbitwidth = 1
+        elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
+               or mem.mtype == "AllStubs"):
+            mem.bxbitwidth = 3
+        else:
+            raise ValueError("Bxbitwidth undefined for "+mem.mtype)
+
+    @staticmethod
+    def populate_firstlast(proc):
+        # Populate fields saying whether proc module is first or last in slice
+        is_first = True
+        is_last = True
+        for mem in proc.upstreams:
+            if not mem.is_initial: is_first = False
+        for mem in proc.downstreams:
+            if not mem.is_final: is_last = False
+        proc.is_first = is_first
+        proc.is_last = is_last
 
     @staticmethod
     def get_proc_dict_from_config(fname_pconfig):

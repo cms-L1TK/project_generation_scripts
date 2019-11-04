@@ -248,35 +248,6 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "end\n"
     string_tb += "wire bx_out\n\n"
 
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # headers
-#    string_tb += "#include <algorithm>\n"+"#include <iterator>\n\n"
-#    string_tb += "#include \"FileReadUtility.hh\"\n"
-#    string_tb += "#include \"Constants.hh\"\n"
-#    string_tb += "#include \""+topfunc+".h\"\n\n"
-#    
-#    string_tb += "const int nevents = 5;  // number of events to run\n\n"
-#    string_tb += "using namespace std;\n\n"
-#    #
-#    string_tb += "int main() {\n\n"
-#    string_tb += "// error counts\n int err = 0;\n\n"
-#
     string_inmem, string_infile, string_writemem = writeTBMemories(
         memories_in, True, emData_dir, sector, fnames_memprint)
     string_outmem, string_outfile, string_compmem = writeTBMemories(
@@ -328,44 +299,6 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
             string_tb += memModule.inst+"_nentries_"+str(i)+"_V_din),\n"
     string_tb = string_tb.rstrip(",\n")
     string_tb += "\n);\n\nendmodule"
-#    # loop over events
-#    string_tb += "// loop over events\n"
-#    string_tb += "cout << \"Start event loop ...\" << endl;\n\n"
-#    string_tb += "for (unsigned int ievt = 0; ievt < nevents; ++ievt) {\n"
-#    string_tb += "cout << \"Event: \" << dec << ievt << endl;\n\n"
-#    string_tb += "// read event and write to memories\n"
-#    string_tb += string_writemem+"\n"
-#    # bx
-#    string_tb += "// bx\n"+"BXType bx = ievt;\n"+"BXType bx_out;\n\n"
-#    # call top function
-#    string_tb += "// Unit Under Test\n"
-#    string_tb += topfunc+"(bx,\n"
-#    # input memories
-#    for memModule in memories_in:
-#        if isinstance(memModule,list):
-#            string_tb += memModule[0].userlabel
-#        else:
-#            string_tb += memModule.inst
-#        string_tb += ",\n"
-#    # bx_o
-#    string_tb += "bx_out,\n"
-#    # output memories
-#    for memModule in memories_out:
-#        if isinstance(memModule,list):
-#            string_tb += memModule[0].userlabel
-#        else:
-#            string_tb += memModule.inst
-#        string_tb += ",\n"
-#    #
-#    string_tb = string_tb.rstrip(",\n")+");\n\n"
-#
-#    # compare outputs
-#    string_tb += "// compare the computed outputs with the expected ones\n"
-#    string_tb += "bool truncation = false;\n"
-#    string_tb += string_compmem
-#    string_tb += "\n"+"} // end of the event loop\n\n"
-#    string_tb += "return err;\n\n"
-#    string_tb += "}"
     
     return string_tb, fnames_memprint
 

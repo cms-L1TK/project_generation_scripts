@@ -876,7 +876,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
 #    # Add internal BX wire
     internal_bx_str = ""
-    if first_of_type:
+    if first_of_type and not module.is_last:
         internal_bx_str += "wire[2:0] bx_out_"+module.mtype+"\n\n"
 
     # Add internal start registers

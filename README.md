@@ -65,7 +65,7 @@ Basic instructions to run the project generation
   In addition, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project.
 
   HDL: The final product of this script includes a top-level verilog module which instantiates all the relevant HLS processing blocks and verilog memory modules, as well as a verilog test bench. In the future, the script will generate a tcl script needed to generate the project.
-  (\*Currently broken, but will be fixed\*) In addition, like the HLS version, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project.
+  In addition, like the HLS version, the script tries to select and copy necessary memory printout files, if available, from the emulation to be used in the test bench of the Vivado HLS project (this feature is currently broken for the verilog version, but it will be fixed).
 
 -----------------------------------------------------------------
 

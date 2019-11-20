@@ -84,6 +84,6 @@ Basic instructions to run the project generation
       root[1] DrawTrackletProject()
 
 * You can also generate the 'zoomed in' views of all the processing modules
-after running the Wires.py script by doing
+after running the WiresLongVM.py script by doing
 
       ./generatesubgraphs

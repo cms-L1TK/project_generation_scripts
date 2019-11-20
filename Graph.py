@@ -17,7 +17,7 @@ for line in fi :
         memorymodules.append([2,splitline[1]])
     if (splitline[0]=="StubsByDisk:") :
         memorymodules.append([2,splitline[1]])
-    if (splitline[0]=="AllStubs:" or splitline[0]=="VMStubs:") :        
+    if (splitline[0]=="AllStubs:" or splitline[0]=="VMStubsTE:" or splitline[0]=="VMStubsME:") :        
         basename=splitline[1].split("n")[0]
         number=0
         if (len(splitline[1].split("n"))>1) :
@@ -110,7 +110,7 @@ for line in fi :
         processingmodules.append([6,splitline[1]])
     if (splitline[0]=="MatchEngine:") :
         processingmodules.append([7,splitline[1]])
-    if (splitline[0]=="MatchCalculator:") :
+    if (splitline[0]=="MatchCalculator:" or splitline[0]=="DiskMatchCalculator:") :
         processingmodules.append([8,splitline[1]])
     if (splitline[0]=="MatchTransceiver:") :
         processingmodules.append([9,splitline[1]])

@@ -1,14 +1,27 @@
 #!/usr/bin/env python
 
+#########################################################################
+# Produces file wires.input.hourglassExtended indicating
+# all input & output memories connected to each individual algo block 
+#
+# Detailed description in README.md.
+#
+# The code below is organised in 3 sections:
+#   cfg params, python functions, python main routine.
+#
+#########################################################################
+
 import math
 import sys
 import random
+
+#=== CONFIGURATION PARAMETERS
 
 NSector = 9
 rcrit = 55.0
 
 rinvmax=0.0057
-d0max=3.0;
+d0max=3.0; # Max d0 of displaced tracking seeds.
 tdisk=2.4
 tLLD =1.7
 
@@ -70,6 +83,7 @@ dispDDL = [[1,2,2]]
 # use prompt VM divisions for layers and overlap divisions for disk 
 dispLLD = [[2,3,1]]
 
+#=== FUNCTION DEFINITIONS. (MAIN ROUTINE MUCH FURTHER DOWN).
 
 def phiRange():
 
@@ -90,10 +104,12 @@ phirange=phiRange()
 print "phi ranage : ",phirange
 
 def split(a, n):
+    # Divide vector "a" into n smaller vectors. 
     k, m = divmod(len(a), n)
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in xrange(n))
 
 def letter(i) :
+    # Assign letter symbol to coarse phi regions.
     if i==1 :
         return "A"
     if i==2 :
@@ -288,9 +304,14 @@ def letter_as(s) :
         return "H"
     print "letter_as can not handle input ", s
     return ""
+
+# Get d0 range of particle passing through specified phi coords in layers ilayer & ilayer-1,
+# and given max 1/R.
     
 def d0(ilayer,phiinner,phiouter,maxrinv)   :
+    # d0 for infinite Pt.
     d01 = -rlayers[ilayer-1]*rlayers[ilayer]/(rlayers[ilayer]-rlayers[ilayer-1])*(phiouter-phiinner)
+    # Change in d0 for finite Pt.
     d02 = rlayers[ilayer-1]*rlayers[ilayer]*maxrinv / 2.
     return [d01-d02, d01+d02]
 
@@ -576,6 +597,8 @@ def phiproj5stdisk_to_layer(idisk,projlayer, ivminner, ivmouter) :
 
     return [minp,maxp]
 
+
+# Get inverse radius of particle passing through specified phi coords in layers ilayer & ilayer-1. 
     
 def rinv(ilayer,phiinner,phiouter) :
     return 2*math.sin(phiinner-phiouter)/(rlayers[ilayer-1]-rlayers[ilayer])
@@ -583,18 +606,24 @@ def rinv(ilayer,phiinner,phiouter) :
 def rinvdisk(idisk,phiinner,phiouter) :
     return 2*math.sin(phiinner-phiouter)/(rpsmax*(zdisks[idisk-1]-zdisks[idisk])/zdisks[idisk-1])
 
+#------------------------------------------------------------------------------------------------
+# Determines if two VMs in neighbouring layers should be used to search for stubs in the ME.
+# This is based on whether the seed would have good Pt.
+# (Several almost identical functions for barrel, endcap).
+#------------------------------------------------------------------------------------------------
+
 def validtepair(ilayer,ivminner,ivmouter) :
 
     dphiinner=phirange/nallstubslayers[ilayer-1]/nvmtelayers[ilayer-1]
     dphiouter=phirange/nallstubslayers[ilayer]/nvmtelayers[ilayer]
 
-    phiinner1=dphiinner*ivminner
+    phiinner1=dphiinner*ivminner # Phi range of stubs in these two VMs.
     phiinner2=phiinner1+dphiinner
     
     phiouter1=dphiouter*ivmouter
     phiouter2=phiouter1+dphiouter
 
-    rinv11=rinv(ilayer,phiinner1,phiouter1)
+    rinv11=rinv(ilayer,phiinner1,phiouter1) # 1/R range of particle crossing these two VMs.
     rinv12=rinv(ilayer,phiinner1,phiouter2)
     rinv21=rinv(ilayer,phiinner2,phiouter1)
     rinv22=rinv(ilayer,phiinner2,phiouter2)
@@ -689,22 +718,30 @@ def validtepairoverlap(ilayer,ivminner,ivmouter) :
     
     return True
 
+#------------------------------------------------------------------------------------------------
+# Displaced tracking:
+# Determines if two VMs in neighbouring layers should be used to search for stubs in the ME.
+# This is based on whether the seed would have good Pt & d0.
+# (Several almost identical functions for barrel, endcap).
+#------------------------------------------------------------------------------------------------
+
 def validtedpair(ilayer,ivminner,ivmouter) :
 
     dphiinner=phirange/nallstubslayers[ilayer-1]/nvmtelayers[ilayer-1]
     dphiouter=phirange/nallstubslayers[ilayer]/nvmtelayers[ilayer]
 
-    phiinner2=dphiinner*ivminner
+    phiinner2=dphiinner*ivminner # Phi range of stubs in these two VMs.
     phiinner1=phiinner2-dphiinner
     
     phiouter2=dphiouter*ivmouter
     phiouter1=phiouter2-dphiouter
 
-    d11=d0(ilayer,phiinner1,phiouter1,rinvmax)
+    d11=d0(ilayer,phiinner1,phiouter1,rinvmax) # Range in d0 allowed by Pt cut.
     d12=d0(ilayer,phiinner1,phiouter2,rinvmax)
     d21=d0(ilayer,phiinner2,phiouter1,rinvmax)
     d22=d0(ilayer,phiinner2,phiouter2,rinvmax)
     
+    # Only reject VM pair if particles with 1/R = 1/rinvmax & -1/rinvmax would both fail d0 cut.
     if d11[0]>d0max and d12[0]>d0max and d21[0]>d0max and d22[0]>d0max and d11[1]>d0max and d12[1]>d0max and d21[1]>d0max and d22[1]>d0max :
         return False
     if d11[0]<-d0max and d12[0]<-d0max and d21[0]<-d0max and d22[0]<-d0max and d11[1]<-d0max and d12[1]<-d0max and d21[1]<-d0max and d22[1]<-d0max :
@@ -759,6 +796,7 @@ def validtedpairoverlap(ilayer,ivminner,ivmouter) :
     return True
 
 def asmems(sp_list):
+    # Decode names of two (three for displaced) VMs that make up StubPair memory.
     as_list1 = []
     as_list2 = []
     as_list3 = []
@@ -768,14 +806,14 @@ def asmems(sp_list):
         j = 0
         while (i >= 0):
            as_i  = letter_as(sp[i+3])
-           as_name = "AS_"+sp[i-2:i]+"PHI"+as_i
+           as_name = "AS_"+sp[i-2:i]+"PHI"+as_i # Name of one of two VMs forming StubPair
            if as_name not in as_list:
                as_list.append(as_name)
-               if   j==0 :
+               if   j==0 :  # inner VM
                    as_list1.append(as_name)
-               elif j==1:
+               elif j==1:   # outer VM
                    as_list2.append(as_name)
-               elif j==2 :
+               elif j==2 :  # for triplets
                    as_list3.append(as_name)
                else:
                    print "too many PHI segments in a name!", sp
@@ -803,6 +841,9 @@ def asmems3(st_list):
 
     return as_list       
 
+###################################################################################################
+# Get phi projection to layer projlayer from seeding layer ilayer where stub was at phi.
+###################################################################################################
 
 def phiproj(ilayer,phi,rinv,projlayer) :
 
@@ -831,27 +872,30 @@ def phiprojlayertodisk(ilayer,phi,rinv,projdisk) :
 
     return phi+dphi;
 
-    
+###################################################################################################
+# For given seeding layer & projection layer, & StubPair memory (defining VM pair) in seed layers,
+# determine phi projection to projection layer.
+###################################################################################################    
 
 def phiprojrange(ilayer, projlayer, splist) :
 
     projrange=[]
     
     for spname in splist :
-        ivminner=int(spname.split("PHI")[1].split("_")[0][1:])
+        ivminner=int(spname.split("PHI")[1].split("_")[0][1:]) # Get pair of VMs
         ivmouter=int(spname.split("PHI")[2][1:])
         #print projlayer, spname, spname.split("PHI"),ivminner,ivmouter
 
         dphiinner=phirange/nallstubslayers[ilayer-1]/nvmtelayers[ilayer-1]
         dphiouter=phirange/nallstubslayers[ilayer]/nvmtelayers[ilayer]
 
-        phiinner1=dphiinner*ivminner
+        phiinner1=dphiinner*ivminner # Phi range of inner & outer VM.
         phiinner2=phiinner1+dphiinner
     
         phiouter1=dphiouter*ivmouter
         phiouter2=phiouter1+dphiouter
 
-        rinv11=rinv(ilayer,phiinner1,phiouter1)
+        rinv11=rinv(ilayer,phiinner1,phiouter1)  # 1/R of tracks passing through these VMs
         rinv12=rinv(ilayer,phiinner1,phiouter2)
         rinv21=rinv(ilayer,phiinner2,phiouter1)
         rinv22=rinv(ilayer,phiinner2,phiouter2)
@@ -884,7 +928,7 @@ def phiprojrange(ilayer, projlayer, splist) :
             minrinv=rinvmax
 
             
-        phiminproj1=phiproj(ilayer,phiinner1,minrinv,projlayer)
+        phiminproj1=phiproj(ilayer,phiinner1,minrinv,projlayer) # Range in phi at proj layer.
         phiminproj2=phiproj(ilayer+1,phiouter1,minrinv,projlayer)
 
         phimin=min(phiminproj1,phiminproj2)-0.05
@@ -1209,6 +1253,12 @@ def readUnusedProj() :
 
 def findInputLinks(dtcphirange) :
 
+    #------------------------------------------------------------------------------------------------
+    # Reads file (produced by C++ emulation) listing each DTC and range in phi it reads stubs from.
+    # As each layer divided into 4-8 coarse phi regions, can determine which correspond to each DTC.
+    # Outputs array of strings, each giving name of (DTC,coarse phi) pair that belong together.
+    #------------------------------------------------------------------------------------------------
+
     fi = open(dtcphirange,"r")
 
     ilinks=[]
@@ -1232,7 +1282,7 @@ def findInputLinks(dtcphirange) :
             nallstubs=nallstubslayers[layer-1]
             dphi=phirange/nallstubs
             for iallstub in range(0,nallstubs) :
-                phiminallstub=iallstub*dphi
+                phiminallstub=iallstub*dphi        # Phi range of coarse phi region.
                 phimaxallstub=phiminallstub+dphi
                 #print "Allstub phimin,max :",phiminallstub,phimaxallstub
                 if (phiminallstub<phimax1 and phimaxallstub>phimin1) or (phiminallstub<phimax2 and phimaxallstub>phimin2) :
@@ -1265,7 +1315,9 @@ def findInputLinks(dtcphirange) :
 
     return ilinks
 
-inputlinks=findInputLinks("dtcphirange.txt")
+#=== FUNCTION DEFS FINISHED. NOW BACK INSIDE MAIN.
+
+inputlinks=findInputLinks("dtcphirange.txt") # Get arrays of strings of all (DTC, coarse phi region) pairs.
 
 print "Inputlinks :",len(inputlinks),inputlinks
 
@@ -1293,14 +1345,14 @@ for ilayer in range(1,7) :
     fp.write("#\n")
     fp.write("# VMRouters for the TEs in layer "+str(ilayer)+" \n")
     fp.write("#\n")
-    for iallstubmem in range(1,nallstubslayers[ilayer-1]+1) :
+    for iallstubmem in range(1,nallstubslayers[ilayer-1]+1) : # Loop on AllStub RAMs in this layer.
         allstubsmemname="L"+str(ilayer)+"PHI"+letter(iallstubmem)
-        for il in inputlinks :
+        for il in inputlinks : # Each DTC fed separate copy of AllStub RAM, so loop over all to merge them.
             if allstubsmemname in il :
                 fp.write(il+" ")
         fp.write("> VMR_L"+str(ilayer)+"PHI"+letter(iallstubmem)+" > ")
         fp.write("AS_L"+str(ilayer)+"PHI"+letter(iallstubmem))
-        for ivm in range(1,nvmmelayers[ilayer-1]+1) :
+        for ivm in range(1,nvmmelayers[ilayer-1]+1) : # Fill also VMs for ME & TE.
             fp.write(" VMSME_L"+str(ilayer)+"PHI"+letter(iallstubmem)+str((iallstubmem-1)*nvmmelayers[ilayer-1]+ivm))
         for ivm in range(1,nvmtelayers[ilayer-1]+1) :
             fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letter(iallstubmem)+str((iallstubmem-1)*nvmtelayers[ilayer-1]+ivm))
@@ -1443,7 +1495,7 @@ for idisk in range(1,6) :
 
 
 #
-# Do the TED for the LL->L
+# Do the TED (displaced TE) for the LL->L
 #
 
 SPD_list=[]
@@ -1480,7 +1532,7 @@ if displacedseeding :
                     fp.write("\n\n")
 
     #
-    # Do the TED for the LL->D
+    # Do the TED (displaced TE) for the LL->D
     #
 
     for lll in dispLLD :
@@ -1547,20 +1599,20 @@ if displacedseeding :
 
                 
 #
-# Do the TE for the layers
+# Do the TE (find seeds from stub pairs) for the layers
 #
 
 SP_list=[]
 
-for ilayer in (1,3,5) :
+for ilayer in (1,3,5) : # Hard-wired seeding layers
     fp.write("\n")
     fp.write("#\n")
     fp.write("# Tracklet Engines for seeding layer "+str(ilayer)+" \n")
     fp.write("#\n")
     #print "layer = ",ilayer
-    for ivminner in range(1,nallstubslayers[ilayer-1]*nvmtelayers[ilayer-1]+1) :
+    for ivminner in range(1,nallstubslayers[ilayer-1]*nvmtelayers[ilayer-1]+1) : # Loop on VM in neighbouring layers
         for ivmouter in range(1,nallstubslayers[ilayer]*nvmtelayers[ilayer]+1) :
-            if validtepair(ilayer,ivminner,ivmouter) :
+            if validtepair(ilayer,ivminner,ivmouter) : # Check if VM pair corresponds to Pt > 2 GeV etc.
                 fp.write("VMSTE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
                 fp.write(" VMSTE_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter))
                 fp.write(" > TE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
@@ -1568,10 +1620,10 @@ for ilayer in (1,3,5) :
                 sp_name="SP_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter)
                 fp.write(" > "+sp_name)
                 fp.write("\n\n")
-                SP_list.append(sp_name)
+                SP_list.append(sp_name) # Store list of StubPair memories containing VM pairs.
 
 
-for ilayer in [2] :
+for ilayer in [2] : # Additional hard-wired seeding from layer 2.
     if not extraseeding :
         continue
     fp.write("\n")
@@ -1650,7 +1702,7 @@ for ilayer in (1,2) :
 TPROJ_list=[]
 TPAR_list=[]
                 
-for ilayer in (1,2,3,5) :
+for ilayer in (1,2,3,5) :  # Hard-wired seeding layers.
     if ilayer==2 and not extraseeding :
         continue
     fp.write("\n")
@@ -1659,12 +1711,12 @@ for ilayer in (1,2,3,5) :
     fp.write("#\n")
 
     sp_layer=[]
-    for sp_name in SP_list :
+    for sp_name in SP_list : # Loop over StubPair memories (containing VM pairs) in this seeding layer pair.
         if "_L"+str(ilayer) in sp_name and "_L"+str(ilayer+1) in sp_name :
             #print ilayer,sp_name
             sp_layer.append(sp_name)
 
-    tcs=12
+    tcs=12 # No. of tracklet calcs in this layer.
     if ilayer==2 :
         tcs=2
     if ilayer==3 :
@@ -1672,7 +1724,7 @@ for ilayer in (1,2,3,5) :
     if ilayer==5 :
         tcs=4
 
-    sp_per_tc=split(sp_layer,tcs)
+    sp_per_tc=split(sp_layer,tcs) # Divide StubPair memories between TCs.
     
     tc_count=0
     for sps in  sp_per_tc :
@@ -1680,20 +1732,21 @@ for ilayer in (1,2,3,5) :
         for sp_name in sps :
             fp.write(sp_name+" ")
         tc_count+=1
-        as_names = asmems(sps)
+        as_names = asmems(sps) # Get names of VMs making up this StubPair
         for asn in as_names:
             fp.write(asn+" ")    
-        tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count)
+        tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count) # Note memory to store track params
         fp.write(" > TC_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tc_count)+" > "+tpar_name)
         TPAR_list.append(tpar_name)
-        for projlayer in range(1,7) :
+        for projlayer in range(1,7) : # Extrapolate seed to other tracker layers
             if ilayer==2 and projlayer==6:
                 continue #seeding in L2L3 assumed not to project to L6
-            if projlayer!=ilayer and projlayer!=ilayer+1 :
+            if projlayer!=ilayer and projlayer!=ilayer+1 : # Exclude seeding layers
                 projrange=phiprojrange(ilayer,projlayer,sps)
-                for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
+                for iallproj in range(1,nallprojlayers[projlayer-1]+1) : # Track proj memories divided up in phi
                     phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
                     phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                    # If track projection consistent with phi range of this memory, note memory name.
                     if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
                         proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
                         if proj_name not in unusedproj :
@@ -1731,7 +1784,7 @@ for ilayer in (1,2,3,5) :
 for idisk in (1,3) :
     fp.write("\n")
     fp.write("#\n")
-    fp.write("# Tracklet Calculators for seeding diks "+str(idisk)+" \n")
+    fp.write("# Tracklet Calculators for seeding disks "+str(idisk)+" \n")
     fp.write("#\n")
 
     sp_disk=[]
@@ -2247,13 +2300,13 @@ else :
         fp.write("#\n")
         fp.write("# PROJRouters for the MEs in layer "+str(ilayer)+" \n")
         fp.write("#\n")
-        for iallprojmem in range(1,nallprojlayers[ilayer-1]+1) :
+        for iallprojmem in range(1,nallprojlayers[ilayer-1]+1) : # Loop over coarse phi regions
             projmemname="L"+str(ilayer)+"PHI"+letter(iallprojmem)
-            for proj_name in TPROJ_list :
+            for proj_name in TPROJ_list :  # Write all TPROJ memories (to contain helix intercept) in this coarse phi region of this layer.
                 if projmemname in proj_name :
                     fp.write(proj_name+" ")
             fp.write("> PR_L"+str(ilayer)+"PHI"+letter(iallprojmem)+" > AP_L"+str(ilayer)+"PHI"+letter(iallprojmem))
-            for ivm in range(1,nvmmelayers[ilayer-1]+1) :
+            for ivm in range(1,nvmmelayers[ilayer-1]+1) : # Write VMPROJ memories for all VMs in this coarse phi region (to record tracklets intercepting each VM). - Doesn't check if VM consistent with extrapolation?
                 fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(iallprojmem)+str((iallprojmem-1)*nvmmelayers[ilayer-1]+ivm))
             fp.write("\n\n")
 
@@ -2291,7 +2344,7 @@ else :
         fp.write("# Match Engines for layer "+str(ilayer)+" \n")
         fp.write("#\n")
         print "layer = ",ilayer
-        for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) :
+        for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) : # Loop over VMs in layer
             fp.write("VMSME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm))
             fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" >")
             fp.write(" ME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" > ")
@@ -2333,12 +2386,13 @@ else :
         fp.write("#\n")
         print "layer = ",ilayer
         for iproj in range(1,nallprojlayers[ilayer-1]+1) :
-            for ivm in range(1,nvmmelayers[ilayer-1]+1) :
+            for ivm in range(1,nvmmelayers[ilayer-1]+1) : # Loop over VMs in layer
                 fp.write("CM_L"+str(ilayer)+"PHI"+letter(iproj)+str((iproj-1)*nvmmelayers[ilayer-1]+ivm)+" ")
             fp.write("AP_L"+str(ilayer)+"PHI"+letter(iproj)+" ")
             fp.write("AS_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
             fp.write("MC_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
             
+            # Output Full Match memories for all seeding layer pairs that could extrapolate to this layer.
             fm_name="FM_L1L2XX_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer!=1 and ilayer!=2 :
                 fp.write(fm_name+" ")

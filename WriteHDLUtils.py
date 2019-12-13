@@ -317,20 +317,25 @@ def groupAllConnectedMemories(proc_list, mem_list):
 
     return memories_inside, memories_topin, memories_topout
 
-def writeMemoryInstance(memModule):
+def writeMemoryInstance(memModule, isInput=False):
     wirelist = ""
     parameterlist = ""
     portlist = ""
     mem_str = ""
     # Write wires
-    wirelist += "wire "+memModule.inst+"_dataarray_data_V_ena;\n"
-    wirelist += "wire "+memModule.inst+"_dataarray_data_V_wea;\n"
+    if isInput:
+        wirelist += "reg "+memModule.inst+"_dataarray_data_V_wea;\n"
+    else:
+        wirelist += "wire "+memModule.inst+"_dataarray_data_V_wea;\n"
     wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
     wirelist += memModule.inst+"_dataarray_data_V_writeaddr;\n"
     wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
     wirelist += memModule.inst+"_dataarray_data_V_din;\n"
     for i in range(0,2**memModule.bxbitwidth):
-        wirelist += "wire "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
+        if isInput:
+            wirelist += "reg "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
+        else:
+            wirelist += "wire "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
         wirelist += "wire[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V_din;\n"
     wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
     wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
@@ -339,32 +344,59 @@ def writeMemoryInstance(memModule):
     wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
     for i in range(0,2**memModule.bxbitwidth):
         wirelist += "wire[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
-    
+
+    # Initialize write-enable ports on nentries
+    if isInput:
+        wirelist += "\ninitial begin\n"
+        for i in range(0,2**memModule.bxbitwidth):
+            wirelist += "  "+memModule.inst+"_nentries_"+str(i)+"_V_we = 1'b1;\n"
+        wirelist += "end\n\n"
+
+    # Initialize registers that drive nentries values in memories
+    # For now these are set to zero, and require manual adjustment
+    if isInput:
+        for i in range(0,2**memModule.bxbitwidth):
+            wirelist += "reg[7:0] "+memModule.inst+"_nentreg_"+str(i)
+            wirelist += " = 8'b00001001; // FIX\n"
+        for i in range(0,2**memModule.bxbitwidth):
+            wirelist += "assign "+memModule.inst+"_nentries_"+str(i)+"_V_din = "
+            wirelist += memModule.inst+"_nentreg_"+str(i)+";\n"
+
     # Write parameters
+    parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
+    parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
+    parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
+    parameterlist += "  .HEX(0),\n"
+    if isInput:
+#        parameterlist += "  .INIT_FILE(\"FIXME\"),\n"
+#        parameterlist += "  .INIT_FILE(\"/mnt/scratch/djc448/firmware-hls/IntegrationTests/PR_Test/emData/TrackletProjections_TPROJ_L1L2G_L3PHIC_04_mod.dat\"),\n"
+        parameterlist += "  .INIT_FILE(\""+memModule.inst+".dat\"),\n"
+    else:
+        parameterlist += "  .INIT_FILE(\"\"),\n"
 
     # Write ports
     portlist += "  .clka(clk),\n"
     portlist += "  .clkb(clk),\n"
-    portlist += "  .data_ena("+memModule.inst+"_dataarray_data_V_ena),\n"
-    portlist += "  .data_wea("+memModule.inst+"_dataarray_data_V_wea),\n"
-    portlist += "  .data_addra("+memModule.inst+"_dataarray_data_V_writeaddr),\n"
-    portlist += "  .data_dina("+memModule.inst+"_dataarray_data_V_din),\n"
+    portlist += "  .wea("+memModule.inst+"_dataarray_data_V_wea),\n"
+    portlist += "  .addra("+memModule.inst+"_dataarray_data_V_writeaddr),\n"
+    portlist += "  .dina("+memModule.inst+"_dataarray_data_V_din),\n"
     for i in range(0,2**memModule.bxbitwidth):
-        portlist += "  .nent_"+str(i)+"_we("+memModule.inst+"_nentries_"+str(i)+"_V_we),\n"
-        portlist += "  .nent_"+str(i)+"_din("+memModule.inst+"_nentries_"+str(i)+"_V_din),\n"
-    portlist += "  .data_enb("+memModule.inst+"_dataarray_data_V_enb),\n"
-    portlist += "  .data_addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
-    portlist += "  .data_doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
+        portlist += "  .nent_we"+str(i)+"("+memModule.inst+"_nentries_"+str(i)+"_V_we),\n"
+        portlist += "  .nent_i"+str(i)+"("+memModule.inst+"_nentries_"+str(i)+"_V_din),\n"
+    portlist += "  .enb("+memModule.inst+"_dataarray_data_V_enb),\n"
+    portlist += "  .addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
+    portlist += "  .doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
     for i in range(0,2**memModule.bxbitwidth):
-        portlist += "  .nent_"+str(i)+"_dout("+memModule.inst
+        portlist += "  .nent_o"+str(i)+"("+memModule.inst
         portlist += "_nentries_"+str(i)+"_V_dout),\n"
+    portlist += "  .regceb(1'b1),\n"
     
     if isinstance(memModule, list): # memories in an array
         memclass = getHLSMemoryClassName(memModule[0])
     else:
         memclass = getHLSMemoryClassName(memModule)
 
-    mem_str += wirelist + "\nMemoryWrapper #("+parameterlist.rstrip("\n,")+"\n) "
+    mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
     mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
     return mem_str,memclass
     
@@ -845,8 +877,8 @@ def writePorts(aProcModule, argTypeList, argNameList,
                         ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
                         ports_str += memory.inst+"_nentries_"+str(i)+"_V_dout),\n"
                 if portname.find("out") != -1:
-                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
-                    ports_str += memory.inst+"_dataarray_data_V_ena),\n"
+#                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
+#                    ports_str += memory.inst+"_dataarray_data_V_ena),\n"
                     ports_str += "  ."+argname+"_dataarray_data_V_we0("
                     ports_str += memory.inst+"_dataarray_data_V_wea),\n"
                     ports_str += "  ."+argname+"_dataarray_data_V_address0("
@@ -854,9 +886,9 @@ def writePorts(aProcModule, argTypeList, argNameList,
                     ports_str += "  ."+argname+"_dataarray_data_V_d0("
                     ports_str += memory.inst+"_dataarray_data_V_din),\n"
                     for i in range(0,2**memory.bxbitwidth):
-                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_o_ap_vld("
+                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_ap_vld("
                         ports_str += memory.inst+"_nentries_"+str(i)+"_V_we),\n"
-                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_o("
+                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
                         ports_str += memory.inst+"_nentries_"+str(i)+"_V_din),\n"
                 # Remove the already added module and name from the lists
                 memModuleList.remove(memory)

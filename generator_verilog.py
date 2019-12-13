@@ -111,7 +111,6 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
             memclass = getHLSMemoryClassName(memModule[0])
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_ena,\n"
             string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
             string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
@@ -124,7 +123,6 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
                 string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
         else:
             memclass = getHLSMemoryClassName(memModule)
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_ena,\n"
             string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
             string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
             string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
@@ -135,6 +133,9 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
                 string_topmod_interface += "_nentries_"+str(i)+"_V_we,\n"
                 string_topmod_interface += "  output[7:0] "+memModule.inst
                 string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
+
+    # Done signal
+    string_topmod_interface += "  output "+final_proc+"_done,\n"
 
     # Get rid of the last comma and close the parentheses
     string_topmod_interface = string_topmod_interface.rstrip(",\n")+"\n);\n\n"
@@ -148,6 +149,7 @@ def writeTopFile(string_finterface, string_mem, string_proc):
     string_src += string_finterface
     string_src += string_mem
     string_src += string_proc
+    string_src += "endmodule"
 
     return string_src
 
@@ -165,54 +167,69 @@ def writeTBMemories(memories_list, isInput, emData_dir="", sector="04",
     string_loop = ""
 
     for memModule in memories_list:
-        amem_str, memclass = writeMemoryInstance(memModule)
+        amem_str, memclass = writeMemoryInstance(memModule,isInput)
         string_mem += amem_str
 
-#        # Emulation files
-#        # If memories are in an array, open file for each of the memory object in the array
-#        isMemArray = isinstance(memModule, list)
-#
-#        mems = memModule if isMemArray else [memModule]   
-#        for im, mem in enumerate(mems):
-#            meminst = mem.inst
-#            validflag = "valid_"+meminst
-#            flabel = "f"+inout+"_"+meminst
-#
-#            memtype = mem.mtype
-#            # special cases for VMStubsTE, VMStubsME and CandidateMatch
-#            memtype = memtype.rstrip("TE")
-#            memtype = memtype.rstrip("ME")
-#            memtype = memtype.replace("CandidateMatch","CandidateMatches")
-#            memtype = memtype.replace("FullMatch","FullMatches")
-#            fname = memtype+"_"+meminst+"_"+sector+".dat"
-#            memprint_list.append(fname)
-#            if emData_dir:
-#                emData_dir = emData_dir.rstrip('/').split('/')[-1]+'/'
-#            fname = emData_dir + fname
-#            string_file += "ifstream "+flabel+";\n"
-#            string_file += "bool "+validflag+" = openDataFile("+flabel+", \""+fname+"\");\n"
-#            string_file += "if (not "+validflag+") return -1;\n\n"
-#
-#            memname = mem.userlabel+"["+str(im)+"]" if isMemArray else meminst
-#            
-#            if isInput:
-#                string_loop += "writeMemFromFile<"+memclass+">("
-#                string_loop += memname+", "+flabel+", ievt);\n"
-#            else:
-#                string_loop += "err += compareMemWithFile<"+memclass+">("
-#                string_loop += memname+", "+flabel+", ievt, \""+memname+"\", "
-#                string_loop += "truncation);\n"
-#
+        # Emulation files
+        # If memories are in an array, open file for each of the memory object in the array
+        isMemArray = isinstance(memModule, list)
+
+        mems = memModule if isMemArray else [memModule]   
+        for im, mem in enumerate(mems):
+            meminst = mem.inst
+            validflag = "valid_"+meminst
+            flabel = "f"+inout+"_"+meminst
+
+            memtype = mem.mtype
+            # special cases for VMStubsTE, VMStubsME and CandidateMatch
+            memtype = memtype.rstrip("TE")
+            memtype = memtype.rstrip("ME")
+            memtype = memtype.replace("CandidateMatch","CandidateMatches")
+            memtype = memtype.replace("FullMatch","FullMatches")
+            fname = memtype+"_"+meminst+"_"+sector+".dat"
+            memprint_list.append(fname)
+            if emData_dir:
+                emData_dir = emData_dir.rstrip('/').split('/')[-1]+'/'
+            fname = emData_dir + fname
+            string_file += "ifstream "+flabel+";\n"
+            string_file += "bool "+validflag+" = openDataFile("+flabel+", \""+fname+"\");\n"
+            string_file += "if (not "+validflag+") return -1;\n\n"
+
+            memname = mem.userlabel+"["+str(im)+"]" if isMemArray else meminst
+            
+            if isInput:
+                string_loop += "writeMemFromFile<"+memclass+">("
+                string_loop += memname+", "+flabel+", ievt);\n"
+            else:
+                string_loop += "err += compareMemWithFile<"+memclass+">("
+                string_loop += memname+", "+flabel+", ievt, \""+memname+"\", "
+                string_loop += "truncation);\n"
+
     string_mem += "\n"
 
-#    return string_mem, string_file, string_loop
-    return string_mem, "", ""
+    return string_mem, string_file, string_loop
+#    return string_mem, "", ""
 
 def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     # memories_in, memories_out: list of (memModule(s), portname)
 
     fnames_memprint = []
+
+    string_inmem, string_infile, string_writemem = writeTBMemories(
+        memories_in, True, emData_dir, sector, fnames_memprint)
+    string_outmem, string_outfile, string_compmem = writeTBMemories(
+        memories_out, False, emData_dir, sector, fnames_memprint)
+
+    for memModule in memories_in:
+        if memModule.downstreams[0].is_first:
+            string_first_proc = memModule.downstreams[0].mtype
+            break    
     
+    for memModule in memories_out:
+        if memModule.upstreams[0].is_last:
+            string_last_proc = memModule.upstreams[0].mtype
+            break    
+
     string_tb = "// Test bench generated by generator_verilog.py\n\n"
     string_tb += "`timescale 1ns / 1ps\n\n"
 
@@ -227,7 +244,7 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "end\n\n"
 
     string_tb += "initial begin\n"
-    string_tb += "  #155\n"
+    string_tb += "  #1080\n"
     string_tb += "  reset = 1'b0;\n"
     string_tb += "end\n\n"
 
@@ -241,17 +258,13 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "  #2.5 clk = ~clk;\n"
     string_tb += "end\n\n"
 
-    string_tb += "reg [2:0] bx_in;\n"
-    string_tb += "initial bx_in = 3'b000;\n"
+    string_tb += "reg[2:0] bx_in_"+string_first_proc+";\n"
+    string_tb += "initial bx_in_"+string_first_proc+" = 3'b110;\n"
     string_tb += "always begin\n"
-    string_tb += "  #80 bx_in <= bx_in + 1'b1;\n"
+    string_tb += "  #540 bx_in_"+string_first_proc+" <= bx_in_"
+    string_tb += string_first_proc+" + 1'b1;\n"
     string_tb += "end\n"
-    string_tb += "wire bx_out\n\n"
-
-    string_inmem, string_infile, string_writemem = writeTBMemories(
-        memories_in, True, emData_dir, sector, fnames_memprint)
-    string_outmem, string_outfile, string_compmem = writeTBMemories(
-        memories_out, False, emData_dir, sector, fnames_memprint)
+    string_tb += "wire[2:0] bx_out_"+string_last_proc+";\n\n"
 
     string_tb += string_inmem
     string_tb += string_outmem
@@ -263,11 +276,10 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "  .clk(clk),\n"
     string_tb += "  .reset(reset),\n"
     string_tb += "  .en_proc(en_proc),\n"
-    for memModule in memories_in:
-        if memModule.downstreams[0].is_first:
-            string_tb += "  .bx_in_"+memModule.downstreams[0].mtype
-            string_tb += "(bx_in_"+memModule.downstreams[0].mtype+"),\n"
-            break
+    
+    string_tb += "  .bx_in_"+string_first_proc
+    string_tb += "(bx_in_"+string_first_proc+"),\n"
+
     for memModule in memories_in:
         string_tb += "  ."+memModule.inst+"_dataarray_data_V_enb("
         string_tb += memModule.inst+"_dataarray_data_V_enb),\n"
@@ -278,14 +290,11 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
         for i in range(0,2**memModule.bxbitwidth):
             string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_dout("
             string_tb += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
+
+    string_tb += "  .bx_out_"+string_last_proc
+    string_tb += "(bx_out_"+string_last_proc+"),\n"
+
     for memModule in memories_out:
-        if memModule.upstreams[0].is_last:
-            string_tb += "  .bx_out_"+memModule.upstreams[0].mtype
-            string_tb += "(bx_out_"+memModule.upstreams[0].mtype+"),\n"
-            break
-    for memModule in memories_out:
-        string_tb += "  ."+memModule.inst+"_dataarray_data_V_ena("
-        string_tb += memModule.inst+"_dataarray_data_V_ena),\n"
         string_tb += "  ."+memModule.inst+"_dataarray_data_V_wea("
         string_tb += memModule.inst+"_dataarray_data_V_wea),\n"
         string_tb += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("

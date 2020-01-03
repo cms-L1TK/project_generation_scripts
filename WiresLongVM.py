@@ -97,7 +97,7 @@ def printsum(memname,nmem,memwidth,memdepth,nbx,shortmem,longmem,nbits):
     if (n18bits==2 or n18bits==4 or n18bits==6 or n18bits==8):
         longmem+=bram*nmem*n18bits/2 # Incremement no. of 36kb BRAMs needed (gives depth 1024)
     if (n18bits==1):
-        shortmem+=bram*nmem; # Incremement no. of 18kb BRAMs needed (gives depth 512)
+        shortmem+=bram*nmem; # Incremement no. of 18kb BRAMs needed (gives depth 1024)
     if (n18bits==3):
         longmem+=bram*nmem;
         shortmem+=bram*nmem;

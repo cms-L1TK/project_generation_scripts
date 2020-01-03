@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
-#########################################################################
+############################################################################
 # Produces file wires.input.hourglassExtended indicating
-# all input & output memories connected to each individual algo block 
+# all input & output memories connected to each individual processing block 
 #
-# Detailed description in README.md.
+# Detailed description & format of output file in README.md.
 #
 # The code below is organised in 3 sections:
 #   cfg params, python functions, python main routine.
 #
-#########################################################################
+############################################################################
 
 import math
 import sys

@@ -31,7 +31,7 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
       Mem  input=> ProcModuleWrite.pinX  output=>ProcModuleRead.pinY
 
-In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
+  In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
 
       ModuleType: ModuleInstance
 

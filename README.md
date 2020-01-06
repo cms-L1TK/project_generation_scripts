@@ -16,7 +16,7 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
        InMem1 InMem2 ... > ProcessModuleX > OutMem1 OutMem2 ...
 
-  The names of the output memories are unique, such that none is written by > 1 proc module to avoid conflicts. (The script does not prevent input memories being read by > 1 proc module, but this is fixed by WiresLongVM.py).
+  The names of the output memories are unique, such that none is written by > 1 proc module to avoid conflicts. (The script does not prevent input memories being read by > 1 proc module, but this is fixed by WiresLongVM.py). 
 
 * Create modules and wiring .dat files (despite name, this is for official Tracker geom).
 
@@ -25,13 +25,15 @@ Basic instructions to run the project generation for the Vivado HLS project with
   This script parses the configuration file generated from the previous step and converts it to three output files: 
   *wires.dat*, *memorymodules.dat*, *processingmodules.dat* & *processingmodules_input.dat* (not used).
 
-  These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps. However, if the script detects that a memory is read by > 1 proc module, it clones it to avoid conflicts, appending an index to its name to distinguish these clones. Furthermore, it names the input/output pins used in the proc module.
+  These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps. However, if the script detects that a memory is read by > 1 proc module, it clones it to avoid conflicts. Furthermore, as each proc module connects to several memories, it names the input/output pins of the proc module used for each connection.
 
-  **DATA FORMAT**: In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
+  **DATA FORMAT**: The key output is wires.dat, where each line contains a single instance of a memory modules and the proc modules that read/write to it, together with the I/O pins used. Clones are distinguished by "n1", "n2" etc. in the name. Pin names include "in" or "out" to distinguish read or write.
+
+      Mem  input=> ProcModuleWrite.pinX  output=>ProcModuleRead.pinY
+
+In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
 
       ModuleType: ModuleInstance
-
-  In wires.dat, all memories are listed, one per line, giving also the name of the proc block (and its pin name after ".") that connect to the memory's input/output port.
 
   (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but is used to estimate RAM useage. It may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
   
@@ -203,4 +205,4 @@ e) Writes file wires.dat.
 
 VMSTE_L1PHIA4n2 input=> VMR_L1PHIA.vmstuboutPHIA4n2  output=> TE_L1PHIA4_L2PHIA3.innervmstubin
 
-Says that memory VMSTE_L1PHIA4 is written by algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts); ".vmstuboutphiA4n2" & ".innervmstubin" are a unique name given to the pin of the processing block that writes/reads this memory.
+e.g. The VM memory "4" in coarse phi region "A" VMSTE_L1PHIA4 is written by VM router algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts). The I/O pins of the proc blocks are ".vmstuboutphiA4n2" & ".innervmstubin", whose names include "in" or "out" to distinguish read or write, and also include parts of the names of the memories they connect to, so make clear what sort of data the internal logic of the proc block must read/write to the pin. (These pin names appear in the HLS code interface).

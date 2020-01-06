@@ -443,7 +443,7 @@ for mem in inputmemorymodules :
         if "AS_" in mem or "VMSTE_" in mem or "VMSME_" in mem:
             n="n1"
     found=False
-    # Hard-wired [36] etc. indicate required memory bit width. Should match https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat but doesn't!? Should also match args of printsum() below.
+    # Hard-wired [36] etc. indicate required memory bit width. Should match https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat but doesn't!? FIX! Should also match args of printsum() below.
     if "IL" in mem:
         fp3.write("InputLink: "+mem+n+" [36]\n") # a.k.a. InputStub
         IL_mem+=1

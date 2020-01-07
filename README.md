@@ -11,22 +11,31 @@ Basic instructions to run the project generation for the Vivado HLS project with
       ./HourGlassConfig.py
     
   The default output file is *wires.input.hourglassExtended*.
+
   **DATA FORMAT**: Each line in the output file contains a instance of a processing module as well as all its input and output memories. The input memories, the processing module, and the output memories are separated by ">":
 
        InMem1 InMem2 ... > ProcessModuleX > OutMem1 OutMem2 ...
+
+  The names of the output memories are unique, such that none is written by > 1 proc module to avoid conflicts. (The script does not prevent input memories being read by > 1 proc module, but this is fixed by WiresLongVM.py). 
 
 * Create modules and wiring .dat files (despite name, this is for official Tracker geom).
 
       ./WiresLongVM.py wires.input.hourglassExtended
 
   This script parses the configuration file generated from the previous step and converts it to three output files: 
-  *wires.dat*, *memorymodules.dat*, and *processingmodules.dat*.
-  These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps.
-  **DATA FORMAT**: In *memorymodules.dat* and *processingmodules.dat*, each line contains a module instance name and its corresponding module type, following the format
+  *wires.dat*, *memorymodules.dat*, *processingmodules.dat* & *processingmodules_input.dat* (not used).
+
+  These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps. However, if the script detects that a memory is read by > 1 proc module, it clones it to avoid conflicts. Furthermore, as each proc module connects to several memories, it names the input/output pins of the proc module used for each connection.
+
+  **DATA FORMAT**: The key output is wires.dat, where each line contains a single instance of a memory modules and the proc modules that read/write to it, together with the I/O pins used. Clones are distinguished by "n1", "n2" etc. in the name. Pin names include "in" or "out" to distinguish read or write.
+
+      Mem  input=> ProcModuleWrite.pinX  output=>ProcModuleRead.pinY
+
+  In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
 
       ModuleType: ModuleInstance
 
-  (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but it may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
+  (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but is used to estimate RAM useage. It may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
   
 * Generate the top function for Vivado HLS (in HLS or HDL)
 
@@ -133,7 +142,7 @@ and written to corresponding SP memory.
 
 validtepair*(...) checks of each VM pair would be consistent with a track of Pt > 2 GeV.
 
-For displaced tracking, function validtedpair*(...) used instead, which checks if the VM pair is consistent with |d0| < 3cm for all possible abs(q/Pt) < 1/2.
+For displaced tracking, function validtedpair*(...) used instead, which requires the VM pair to be consistent with |d0| < 3cm for at least one of q/Pt = 1/2 or -1/2.
 
 4) "Tracklet Calculators (TC) for seeding layer / disk"
 
@@ -149,7 +158,7 @@ This step also stores the list of all TPAR & TPROJ memories in arrays TPROJ_list
 
 TPROJ_L3L4XXA_L2PHIA TPROJ_L3L4XXB_L2PHIA TPROJ_L3L4XXC_L2PHIA > PR_L2PHIA > AP_L2PHIA VMPROJ_L2PHIA1 VMPROJ_L2PHIA2 
 
-e.g. This merges all projections (e.g. TPROJ_L3L4XXB_L2PHIA, seed L3L4 extrapolated to coarse phi region A of L2 (L2PHIA) using the B'th tracklet calculator) that point to the same coarse phi region of the extrapolation layer from various seeding layers. This list of these is taken from array TPROJ_list, mentioned above. THese are all processed by a single Projection Router algo. It writes intercept point of helix with coarse phi region to All Projection (AP) memory. And whenever intercept lies within a VM, (although code doesn't check this, only if intercept is consistent with coarse phi region), writes index of tracklet to  VM Projection (VMProj) memory for that VM.
+e.g. This merges all projections (e.g. TPROJ_L3L4XXB_L2PHIA, seed L3L4 extrapolated to coarse phi region A of L2 (L2PHIA) using the B'th tracklet calculator) that point to the same coarse phi region of the extrapolation layer from various seeding layers. This list of these is taken from array TPROJ_list, mentioned above. These are all processed by a single Projection Router algo. It writes intercept point of helix with coarse phi region to All Projection (AP) memory. And whenever intercept lies within a VM, (although code doesn't check this, only if intercept is consistent with coarse phi region), writes index of tracklet to  VM Projection (VMProj) memory for that VM.
 
 6) "Match Engines for the layers / disks"
 
@@ -169,7 +178,31 @@ FM_L5L6XX_L1PHIA FM_L5L6XX_L1PHIB FM_L5L6XX_L1PHIC > FT_L5L6XX > TF_L5L6XX
 
 A fit algo is run for each seeding layer pair. It reads the matches (FM) of stubs to tracklets from each layer and all coarse phi regions.
 
+### ./WiresLongVM.py
 
+N.B. HourGlassConfig.py ensures that no output memory is written by > 1 proc module, to avoid conflicts. However, it doesn't ensure that no input memory is read by > 1 proc module, so this must be fixed by WiresLongVM.py. It does this by cloning the memories if they are read by > 1 proc module, (appending "n1", "n2" etc. to their name to identify each clone); and then using several output pins of the proc module that writes to this memory, with each pin writing to one clone of the memory. Furthermore, as wires.input.hourglassExtended indicates that each proc block reads/writes several memories, and a different pin of proc block must be used for each, this script names the pins (after "." in the module name).
 
+a) Reads file wires.input.hourglassExtended (written by HourGlassConfig.py) showing which processing blocks are connected to which input & output memories.
 
+b) Writes file processingmodules_inputs.dat (never used!?) showing number of input memories connected to each proc step. e.g.
 
+VMR_D3PHIB  has 6 inputs
+
+gives #inputs to VMRouter "D3PHIB" (naming convention given above under HourGlassConfig.py).
+
+c) Writes file processingmodules.dat listing all processing blocks, and the generic algo step each corresponds to. e.g.
+
+VMRouter: VMR_D3PHIB
+
+d) Writes file memorymodules.dat.
+
+VMStubsTE: VMSTE_L5PHIA1n1 [18]
+VMStubsTE: VMSTE_L5PHIA1n2 [18]
+
+listing all input memories (naming convention given above under HourGlassConfig.py) with "n2" etc. appended to their names, if multuple copies of a given memory are needed (to avoid conflicts if it is read by multiple proc blocks) indicating which copy it is. The string "VMEStubsTE:" just indicates the generic memory type (e.g. VM memory to be used by TE). The string "[18]" indicates assumed the data word width, hard-wired in the script, which should correspond to https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat .
+
+e) Writes file wires.dat.
+
+VMSTE_L1PHIA4n2 input=> VMR_L1PHIA.vmstuboutPHIA4n2  output=> TE_L1PHIA4_L2PHIA3.innervmstubin
+
+e.g. The VM memory "4" in coarse phi region "A" VMSTE_L1PHIA4 is written by VM router algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts). The I/O pins of the proc blocks are ".vmstuboutphiA4n2" & ".innervmstubin", whose names include "in" or "out" to distinguish read or write, and also include parts of the names of the memories they connect to, so make clear what sort of data the internal logic of the proc block must read/write to the pin. (These pin names appear in the HLS code interface).

@@ -142,7 +142,7 @@ and written to corresponding SP memory.
 
 validtepair*(...) checks of each VM pair would be consistent with a track of Pt > 2 GeV.
 
-For displaced tracking, function validtedpair*(...) used instead, which requires the VM pair to be consistent with |d0| < 3cm for at least one of abs(q/Pt) = 1/2 or -1/2.
+For displaced tracking, function validtedpair*(...) used instead, which requires the VM pair to be consistent with |d0| < 3cm for at least one of q/Pt = 1/2 or -1/2.
 
 4) "Tracklet Calculators (TC) for seeding layer / disk"
 

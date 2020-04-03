@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
-from WriteHDLUtils import getHLSMemoryClassName, groupAllConnectedMemories, writeMemoryInstance, writeModuleInst
+from WriteHDLUtils import getHLSMemoryClassName, groupAllConnectedMemories, writeMemoryInstance, writeTBMemoryInstance, writeModuleInst
 import os, subprocess
 
 ########################################
@@ -12,7 +12,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(mem_list):
+def writeMemoryModules(mem_list, interface=0):
     # mem_list: a list memory module(s)
     # the element cound be a list if the memories are grouped in an array
 
@@ -20,7 +20,7 @@ def writeMemoryModules(mem_list):
 
     # Loop over memories in the list
     for memModule in sorted(mem_list,key=lambda x: x.index):
-        amem_str,_ = writeMemoryInstance(memModule)
+        amem_str,_ = writeMemoryInstance(memModule,interface)
         string_mem += amem_str
         
     return string_mem
@@ -76,64 +76,62 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     string_topmod_interface += "  input reset,\n"
     string_topmod_interface += "  input en_proc,\n"
     # BX
-    string_topmod_interface += "  input[2:0] bx_in_"+initial_proc+",\n"
+    string_topmod_interface += "  input [2:0] bx_in_"+initial_proc+",\n"
 
     # Input arguments
     for memModule in memories_topin:
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
 #            memclass = getHLSMemoryClassName(memModule[0])
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_enb,\n"
-            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
-            string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
+            #TODO Need to add functionality for arrays of memory classes here
+            string_topmod_interface += "  input "+memModule.inst+"_dataarray_data_V_wea,\n"
+            string_topmod_interface += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
+            string_topmod_interface += "  input ["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  input[7:0] "+memModule.inst
-                string_topmod_interface +="_nentries_"+str(i)+"_V_dout,\n"
-
+                string_topmod_interface += "  input "+memModule.inst+"_nentries_"+str(i)+"_V_we,\n"
+                string_topmod_interface += "  input [6:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
         else:
 #            memclass = getHLSMemoryClassName(memModule)
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_enb,\n"
-            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
-            string_topmod_interface += "  input["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
+            string_topmod_interface += "  input "+memModule.inst+"_dataarray_data_V_wea,\n"
+            string_topmod_interface += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
+            string_topmod_interface += "  input ["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  input[7:0] "+memModule.inst
-                string_topmod_interface +="_nentries_"+str(i)+"_V_dout,\n"
-    
-    # BX output
-    string_topmod_interface += "  output[2:0] bx_out_"+final_proc+",\n"
+                string_topmod_interface += "  input "+memModule.inst+"_nentries_"+str(i)+"_V_we,\n"
+                string_topmod_interface += "  input [6:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
 
     # Output arguments
     for memModule in memories_topout:
         if isinstance(memModule, list): # memories in an array
             assert(len(memModule)>0)
-            memclass = getHLSMemoryClassName(memModule[0])
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
-            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
-            string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
+#            memclass = getHLSMemoryClassName(memModule[0])
+            #TODO Need to add functionality for arrays of memory classes here
+            string_topmod_interface += "  input "+memModule.inst+"_dataarray_data_V_enb,\n"
+            string_topmod_interface += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
+            string_topmod_interface += "  output ["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  output "+memModule.inst
-                string_topmod_interface += "_nentries_"+str(i)+"_V_we,\n"
-                string_topmod_interface += "  output[7:0] "+memModule.inst
-                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
+                string_topmod_interface += "  output [6:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_dout,\n"
         else:
-            memclass = getHLSMemoryClassName(memModule)
-            string_topmod_interface += "  output "+memModule.inst+"_dataarray_data_V_wea,\n"
-            string_topmod_interface += "  output["+str(6+memModule.bxbitwidth)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_writeaddr,\n"
-            string_topmod_interface += "  output["+str(memModule.bitwidth-1)+":0] "
-            string_topmod_interface += memModule.inst+"_dataarray_data_V_din,\n"
+#            memclass = getHLSMemoryClassName(memModule)
+            string_topmod_interface += "  input "+memModule.inst+"_dataarray_data_V_enb,\n"
+            string_topmod_interface += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_readaddr,\n"
+            string_topmod_interface += "  output ["+str(memModule.bitwidth-1)+":0] "
+            string_topmod_interface += memModule.inst+"_dataarray_data_V_dout,\n"
             for i in range(0,2**memModule.bxbitwidth):
-                string_topmod_interface += "  output "+memModule.inst
-                string_topmod_interface += "_nentries_"+str(i)+"_V_we,\n"
-                string_topmod_interface += "  output[7:0] "+memModule.inst
-                string_topmod_interface += "_nentries_"+str(i)+"_V_din,\n"
+                string_topmod_interface += "  output [6:0] "+memModule.inst
+                string_topmod_interface += "_nentries_"+str(i)+"_V_dout,\n"
 
+    # BX output
+    string_topmod_interface += "  output[2:0] bx_out_"+final_proc+",\n"
     # Done signal
     string_topmod_interface += "  output "+final_proc+"_done,\n"
 
@@ -167,7 +165,7 @@ def writeTBMemories(memories_list, isInput, emData_dir="", sector="04",
     string_loop = ""
 
     for memModule in memories_list:
-        amem_str, memclass = writeMemoryInstance(memModule,isInput)
+        amem_str = writeTBMemoryInstance(memModule,isInput)
         string_mem += amem_str
 
         # Emulation files
@@ -197,18 +195,18 @@ def writeTBMemories(memories_list, isInput, emData_dir="", sector="04",
 
             memname = mem.userlabel+"["+str(im)+"]" if isMemArray else meminst
             
-            if isInput:
-                string_loop += "writeMemFromFile<"+memclass+">("
-                string_loop += memname+", "+flabel+", ievt);\n"
-            else:
-                string_loop += "err += compareMemWithFile<"+memclass+">("
-                string_loop += memname+", "+flabel+", ievt, \""+memname+"\", "
-                string_loop += "truncation);\n"
+#            if isInput:
+#                string_loop += "writeMemFromFile<"+memclass+">("
+#                string_loop += memname+", "+flabel+", ievt);\n"
+#            else:
+#                string_loop += "err += compareMemWithFile<"+memclass+">("
+#                string_loop += memname+", "+flabel+", ievt, \""+memname+"\", "
+#                string_loop += "truncation);\n"
 
     string_mem += "\n"
 
-    return string_mem, string_file, string_loop
-#    return string_mem, "", ""
+#    return string_mem, string_file, string_loop
+    return string_mem, "", ""
 
 def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     # memories_in, memories_out: list of (memModule(s), portname)
@@ -244,7 +242,7 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "end\n\n"
 
     string_tb += "initial begin\n"
-    string_tb += "  #1080\n"
+    string_tb += "  #5400\n"
     string_tb += "  reset = 1'b0;\n"
     string_tb += "end\n\n"
 
@@ -281,6 +279,20 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += "(bx_in_"+string_first_proc+"),\n"
 
     for memModule in memories_in:
+        string_tb += "  ."+memModule.inst+"_dataarray_data_V_wea(1'b1),\n"
+        string_tb += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("
+        string_tb += memModule.inst+"_dataarray_data_V_writeaddr),\n"
+        string_tb += "  ."+memModule.inst+"_dataarray_data_V_din("
+        string_tb += memModule.inst+"_dataarray_data_V_dout),\n"
+        for i in range(0,2**memModule.bxbitwidth):
+            string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_we(1'b1),\n"
+            string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_din("
+            string_tb += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
+
+    string_tb += "  .bx_out_"+string_last_proc
+    string_tb += "(bx_out_"+string_last_proc+"),\n"
+
+    for memModule in memories_out:
         string_tb += "  ."+memModule.inst+"_dataarray_data_V_enb("
         string_tb += memModule.inst+"_dataarray_data_V_enb),\n"
         string_tb += "  ."+memModule.inst+"_dataarray_data_V_readaddr("
@@ -290,22 +302,6 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
         for i in range(0,2**memModule.bxbitwidth):
             string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_dout("
             string_tb += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
-
-    string_tb += "  .bx_out_"+string_last_proc
-    string_tb += "(bx_out_"+string_last_proc+"),\n"
-
-    for memModule in memories_out:
-        string_tb += "  ."+memModule.inst+"_dataarray_data_V_wea("
-        string_tb += memModule.inst+"_dataarray_data_V_wea),\n"
-        string_tb += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("
-        string_tb += memModule.inst+"_dataarray_data_V_writeaddr),\n"
-        string_tb += "  ."+memModule.inst+"_dataarray_data_V_din("
-        string_tb += memModule.inst+"_dataarray_data_V_din),\n"
-        for i in range(0,2**memModule.bxbitwidth):
-            string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_we("
-            string_tb += memModule.inst+"_nentries_"+str(i)+"_V_we),\n"
-            string_tb += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_din("
-            string_tb += memModule.inst+"_nentries_"+str(i)+"_V_din),\n"
     string_tb = string_tb.rstrip(",\n")
     string_tb += "\n);\n\nendmodule"
     
@@ -455,7 +451,9 @@ if __name__ == "__main__":
         process_list, memory_list)
 
     # Write memories
-    string_memModules = writeMemoryModules(memList_inside)
+    string_memModules = writeMemoryModules(memList_topin,-1)
+    string_memModules += writeMemoryModules(memList_inside,0)
+    string_memModules += writeMemoryModules(memList_topout,1)
 
     # Write processing modules
     # First check if the HLS project directory exists

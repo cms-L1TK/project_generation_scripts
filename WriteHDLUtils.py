@@ -317,62 +317,115 @@ def groupAllConnectedMemories(proc_list, mem_list):
 
     return memories_inside, memories_topin, memories_topout
 
-def writeMemoryInstance(memModule, isInput=False):
+def writeTBMemoryInstance(memModule, isInput):
     wirelist = ""
     parameterlist = ""
     portlist = ""
     mem_str = ""
     # Write wires
     if isInput:
-        wirelist += "reg "+memModule.inst+"_dataarray_data_V_wea;\n"
-    else:
-        wirelist += "wire "+memModule.inst+"_dataarray_data_V_wea;\n"
-    wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
-    wirelist += memModule.inst+"_dataarray_data_V_writeaddr;\n"
-    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-    wirelist += memModule.inst+"_dataarray_data_V_din;\n"
-    for i in range(0,2**memModule.bxbitwidth):
-        if isInput:
-            wirelist += "reg "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
-        else:
-            wirelist += "wire "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
-        wirelist += "wire[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V_din;\n"
-    wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
-    wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
-    wirelist += memModule.inst+"_dataarray_data_V_readaddr;\n"
-    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-    wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
-    for i in range(0,2**memModule.bxbitwidth):
-        wirelist += "wire[7:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
-
-    # Initialize write-enable ports on nentries
-    if isInput:
-        wirelist += "\ninitial begin\n"
+        wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr = 8'b00000000;\n"
+        wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_writeaddr = "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr - 2;\n"
+        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
         for i in range(0,2**memModule.bxbitwidth):
-            wirelist += "  "+memModule.inst+"_nentries_"+str(i)+"_V_we = 1'b1;\n"
+            wirelist += "reg[6:0] "+memModule.inst+"_nentries_"
+            wirelist += str(i)+"_V_dout = 7'b1101100;\n"
+        wirelist += "always @(posedge clk) begin\n  "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr <= "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr + 1;\n"
+        wirelist += memModule.inst+"_dataarray_data_V_writeaddr <= "
+        wirelist += memModule.inst+"_dataarray_data_V_writeaddr + 1;\n"
         wirelist += "end\n\n"
+    else:
+        wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
+        wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr;\n"
+        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
+        for i in range(0,2**memModule.bxbitwidth):
+            wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
 
-    # Initialize registers that drive nentries values in memories
-    # For now these are set to zero, and require manual adjustment
+    # Write parameters
     if isInput:
+        parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
+        parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
+        parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
+        parameterlist += "  .HEX(1),\n"
+        parameterlist += "  .INIT_FILE(\"\"),\n"
+
+        # Write ports
+        portlist += "  .clka(clk),\n"
+        portlist += "  .clkb(clk),\n"
+        portlist += "  .enb(1'b1),\n"
+        portlist += "  .addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
+        portlist += "  .doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
+        portlist += "  .regceb(1'b1),\n"
+
+    if isInput:
+        mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
+        mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
+    else:
+        mem_str += wirelist
+
+    return mem_str
+
+def writeMemoryInstance(memModule, interface=0):
+    wirelist = ""
+    parameterlist = ""
+    portlist = ""
+    mem_str = ""
+    # Write wires
+    if interface != -1:
+        wirelist += "wire "+memModule.inst+"_dataarray_data_V_wea;\n"
+        wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_writeaddr;\n"
+        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_din;\n"
         for i in range(0,2**memModule.bxbitwidth):
-            wirelist += "reg[7:0] "+memModule.inst+"_nentreg_"+str(i)
-            wirelist += " = 8'b00001001; // FIX\n"
+            wirelist += "wire "+memModule.inst+"_nentries_"+str(i)+"_V_we;\n"
+            wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_din;\n"
+    if interface != 1:
+        wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
+        wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_readaddr;\n"
+        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+        wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
         for i in range(0,2**memModule.bxbitwidth):
-            wirelist += "assign "+memModule.inst+"_nentries_"+str(i)+"_V_din = "
-            wirelist += memModule.inst+"_nentreg_"+str(i)+";\n"
+            wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
+
+#    # Initialize write-enable ports on nentries
+#    if isInput:
+#        wirelist += "\ninitial begin\n"
+#        for i in range(0,2**memModule.bxbitwidth):
+#            wirelist += "  "+memModule.inst+"_nentries_"+str(i)+"_V_we = 1'b1;\n"
+#        wirelist += "end\n\n"
+#
+#    # Initialize registers that drive nentries values in memories
+#    # For now these are set to zero, and require manual adjustment
+#    if isInput:
+#        for i in range(0,2**memModule.bxbitwidth):
+#            wirelist += "reg[7:0] "+memModule.inst+"_nentreg_"+str(i)
+#            wirelist += " = 8'b00001001; // FIX\n"
+#        for i in range(0,2**memModule.bxbitwidth):
+#            wirelist += "assign "+memModule.inst+"_nentries_"+str(i)+"_V_din = "
+#            wirelist += memModule.inst+"_nentreg_"+str(i)+";\n"
 
     # Write parameters
     parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
     parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
     parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
-    parameterlist += "  .HEX(0),\n"
-    if isInput:
+    parameterlist += "  .HEX(1),\n"
+    parameterlist += "  .INIT_FILE(\"\"),\n"
+#    if isInput:
 #        parameterlist += "  .INIT_FILE(\"FIXME\"),\n"
 #        parameterlist += "  .INIT_FILE(\"/mnt/scratch/djc448/firmware-hls/IntegrationTests/PR_Test/emData/TrackletProjections_TPROJ_L1L2G_L3PHIC_04_mod.dat\"),\n"
-        parameterlist += "  .INIT_FILE(\""+memModule.inst+".dat\"),\n"
-    else:
-        parameterlist += "  .INIT_FILE(\"\"),\n"
+#        parameterlist += "  .INIT_FILE(\""+memModule.inst+".dat\"),\n"
+#    else:
+#        parameterlist += "  .INIT_FILE(\"\"),\n"
 
     # Write ports
     portlist += "  .clka(clk),\n"
@@ -909,7 +962,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 #    # Add internal BX wire
     internal_bx_str = ""
     if first_of_type and not module.is_last:
-        internal_bx_str += "wire[2:0] bx_out_"+module.mtype+"\n\n"
+        internal_bx_str += "wire[2:0] bx_out_"+module.mtype+";\n\n"
 
     # Add internal start registers
     int_ctrl_sig = ""

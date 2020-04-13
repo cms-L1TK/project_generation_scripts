@@ -25,8 +25,17 @@ d0max=3.0; # Max d0 of displaced tracking seeds.
 tdisk=2.4
 tLLD =1.7
 
+#If False don't do disks
+doDisk=True
+
+#If true only L1L2 seeding
+doOnlyL1L2=False
+
+#If true it will use a TrackletProcessor to replace TEs, TCs
+combinedTP=False
+
 #If true it will use a MatchProcessor to replace PRs, MEs, MC
-combined=False 
+combinedMP=False
 
 # if true use L2L3 seeding
 extraseeding=True
@@ -48,11 +57,18 @@ nallstubslayers = [ 8, 4, 4, 4, 4, 4 ]
 
 nvmtelayers = [4, 8, 4, 8, 4, 8 ]
 
+    
 nvmteextralayers = [-1, 4, 4, -1, -1, -1 ] #only L2&L3 used
 
 nallprojlayers = [ 8, 4, 4, 4, 4, 4 ]
 
 nvmmelayers = [4, 8, 8, 8, 8, 8 ]
+
+if doOnlyL1L2 :
+    nallstubslayers = [ 4, 2, 2, 2, 2, 2 ]
+    nallprojlayers = [ 4, 2, 2, 2, 2, 2 ]
+    nvmtelayers = [4, 4, 4, 8, 4, 8 ]
+    nvmmelayers = [4, 8, 2, 2, 2, 2 ]
 
 nallstubsdisks = [4, 4, 4, 4, 4 ]
 
@@ -83,7 +99,7 @@ dispDDL = [[1,2,2]]
 # use prompt VM divisions for layers and overlap divisions for disk 
 dispLLD = [[2,3,1]]
 
-#=== FUNCTION DEFINITIONS. (MAIN ROUTINE MUCH FURTHER DOWN).
+xx="" # can be set to "XX"
 
 def phiRange():
 
@@ -98,6 +114,7 @@ def phiRange():
     
     return two_pi/NSector+2*phimax
 
+#=== FUNCTION DEFINITIONS. (MAIN ROUTINE MUCH FURTHER DOWN).
 
 phirange=phiRange()
 
@@ -1251,6 +1268,18 @@ def readUnusedProj() :
 
     return unusedproj
 
+def readEmptySP() :
+    fi = open("emptysp.txt","r")
+
+    emptysp=[]
+
+    return emptysp
+    
+    for line in fi:
+        emptysp.append(line.split('\n')[0])
+
+    return emptysp
+
 def findInputLinks(dtcphirange) :
 
     #------------------------------------------------------------------------------------------------
@@ -1323,10 +1352,12 @@ print "Inputlinks :",len(inputlinks),inputlinks
 
 unusedproj=readUnusedProj()
 
+emptysp=readEmptySP()
+
 print "Unusedproj :",unusedproj
 
 
-fp = open("wires.input.hourglassExtended","w")
+fp = open("wires.input.hourglass","w")
 
 #
 # Do the VM routers for the TE in the layers
@@ -1353,10 +1384,14 @@ for ilayer in range(1,7) :
         fp.write("> VMR_L"+str(ilayer)+"PHI"+letter(iallstubmem)+" > ")
         fp.write("AS_L"+str(ilayer)+"PHI"+letter(iallstubmem))
         for ivm in range(1,nvmmelayers[ilayer-1]+1) : # Fill also VMs for ME & TE.
+            if doOnlyL1L2 and ilayer<=2 :
+                continue
             fp.write(" VMSME_L"+str(ilayer)+"PHI"+letter(iallstubmem)+str((iallstubmem-1)*nvmmelayers[ilayer-1]+ivm))
         for ivm in range(1,nvmtelayers[ilayer-1]+1) :
+            if doOnlyL1L2 and ilayer>=3 :
+                continue
             fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letter(iallstubmem)+str((iallstubmem-1)*nvmtelayers[ilayer-1]+ivm))
-        if extraseeding :
+        if extraseeding and not doOnlyL1L2:
             if (nvmteextralayers[ilayer-1]>0) :
                 for ivm in range(1,nvmteextralayers[ilayer-1]+1) :
                     fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letterextra(iallstubmem)+str((iallstubmem-1)*nvmteextralayers[ilayer-1]+ivm))
@@ -1379,30 +1414,13 @@ for ilayer in range(1,7) :
 # Do the VM routers for the TE in the overlap layers
 #
 
-#for ilayer in range(1,3) :
-#    print "layer =",ilayer,"allstub memories",nallstubslayers[ilayer-1]
-#    fp.write("\n")
-#    fp.write("#\n")
-#    fp.write("# VMRouters for the TEs in overlap layer "+str(ilayer)+" \n")
-#    fp.write("#\n")
-#    for iallstubmem in range(1,nallstubsoverlaplayers[ilayer-1]+1) :
-#        allstubsmemname="L"+str(ilayer)+"PHI"+letter(iallstubmem)
-#        for il in inputlinks :
-#            if allstubsmemname in il :
-#                fp.write(il+" ")
-#        fp.write("> VMRTE_L"+str(ilayer)+"PHI"+letteroverlap(iallstubmem)+" > "#)
-#        fp.write("AS_L"+str(ilayer)+"PHI"+letteroverlap(iallstubmem))
-#        for ivm in range(1,nvmteoverlaplayers[ilayer-1]+1) :
-#            fp.write(" VMSTE_L"+str(ilayer)+"PHI"+letteroverlap(iallstubmem)+str((iallstubmem-1)*nvmteoverlaplayers[ilayer-1]+ivm))
-#        fp.write("\n\n")
-
-
-
 #
 # Do the VM routers for the TE in the disks
 #
 
 for idisk in range(1,6) :
+    if not doDisk :
+        continue
     print "disk =",idisk,"allstub memories",nallstubsdisks[idisk-1]
     fp.write("\n")
     fp.write("#\n")
@@ -1595,310 +1613,595 @@ if displacedseeding :
                             SPD_list.append(spd_name)
                     fp.write("\n\n")
 
-
-
-                
-#
-# Do the TE (find seeds from stub pairs) for the layers
-#
+TPROJ_list=[]
+TPAR_list=[]
 
 SP_list=[]
 
-for ilayer in (1,3,5) : # Hard-wired seeding layers
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Engines for seeding layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    #print "layer = ",ilayer
-    for ivminner in range(1,nallstubslayers[ilayer-1]*nvmtelayers[ilayer-1]+1) : # Loop on VM in neighbouring layers
-        for ivmouter in range(1,nallstubslayers[ilayer]*nvmtelayers[ilayer]+1) :
-            if validtepair(ilayer,ivminner,ivmouter) : # Check if VM pair corresponds to Pt > 2 GeV etc.
-                fp.write("VMSTE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
-                fp.write(" VMSTE_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter))
-                fp.write(" > TE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
-                fp.write("_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter))
-                sp_name="SP_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter)
-                fp.write(" > "+sp_name)
-                fp.write("\n\n")
-                SP_list.append(sp_name) # Store list of StubPair memories containing VM pairs.
 
+if combinedTP :
 
-for ilayer in [2] : # Additional hard-wired seeding from layer 2.
-    if not extraseeding :
-        continue
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Engines for extra seeding layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    print "layer = ",ilayer
-    for ivminner in range(1,nallstubslayers[ilayer-1]*nvmteextralayers[ilayer-1]+1) :
-        for ivmouter in range(1,nallstubslayers[ilayer]*nvmteextralayers[ilayer]+1) :
-            if validtepairextra(ilayer,ivminner,ivmouter) :
-                fp.write("VMSTE_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner))
-                fp.write(" VMSTE_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter))
-                fp.write(" > TE_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner))
-                fp.write("_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter))
-                sp_name="SP_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter)
-                fp.write(" > "+sp_name)
-                fp.write("\n\n")
-                SP_list.append(sp_name)
-
-
-
-
-#
-# Do the TE for the disks
-#
-
-for idisk in (1,3) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Engines for seeding disk "+str(idisk)+" \n")
-    fp.write("#\n")
-    #print "disk = ",idisk
-    for ivminner in range(1,nallstubsdisks[idisk-1]*nvmtedisks[idisk-1]+1) :
-        for ivmouter in range(1,nallstubsdisks[idisk]*nvmtedisks[idisk]+1) :
-            if validtepairdisk(idisk,ivminner,ivmouter) :
-                fp.write("VMSTE_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner))
-                fp.write(" VMSTE_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter))
-                fp.write(" > TE_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner))
-                fp.write("_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter))
-                sp_name="SP_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner)+"_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter)
-                fp.write(" > "+sp_name)
-                fp.write("\n\n")
-                SP_list.append(sp_name)
-
-
-
-#
-# Do the TE for the overlap
-#
-
-for ilayer in (1,2) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Engines for overlap seeding layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-    #print "layer = ",ilayer
-    for ivminner in range(1,nallstubsoverlaplayers[ilayer-1]*nvmteoverlaplayers[ilayer-1]+1) :
-        for ivmouter in range(1,nallstubsoverlapdisks[0]*nvmteoverlapdisks[0]+1) :
-            if validtepairoverlap(ilayer,ivminner,ivmouter) :
-                fp.write("VMSTE_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner))
-                fp.write(" VMSTE_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter))
-                fp.write(" > TE_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner))
-                fp.write("_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter))
-                sp_name="SP_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner)+"_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter)
-                fp.write(" > "+sp_name)
-                fp.write("\n\n")
-                SP_list.append(sp_name)
-
-
+    #
+    # Do the TP for the layers
+    #
                 
-                
-#
-# Do the TC for the layers
-#
+    for ilayer in (1,2,3,5) : # Hard-wired seeding layers
+        if ilayer==2 and not extraseeding :
+            continue
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Processors for seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
 
-TPROJ_list=[]
-TPAR_list=[]
-                
-for ilayer in (1,2,3,5) :  # Hard-wired seeding layers.
-    if ilayer==2 and not extraseeding :
-        continue
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Calculators for seeding layer "+str(ilayer)+" \n")
-    fp.write("#\n")
+        if ilayer!=2 : 
+            for ivminner in range(1,nallstubslayers[ilayer-1]*nvmtelayers[ilayer-1]+1) : # Loop on VM in neighbouring layers
+                for ivmouter in range(1,nallstubslayers[ilayer]*nvmtelayers[ilayer]+1) :
+                    if validtepair(ilayer,ivminner,ivmouter) : # Check if VM pair corresponds to Pt > 2 GeV etc.
+                        sp_name="SP_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter)
+                        SP_list.append(sp_name) # Store list of StubPair memories containing VM pairs.
+        else :
+            for ivminner in range(1,nallstubslayers[ilayer-1]*nvmteextralayers[ilayer-1]+1) : # Loop on VM in neighbouring layers
+                for ivmouter in range(1,nallstubslayers[ilayer]*nvmteextralayers[ilayer]+1) :
+                    if validtepairextra(ilayer,ivminner,ivmouter) : # Check if VM pair corresponds to Pt > 2 GeV etc.
+                        sp_name="SP_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter)
+                        SP_list.append(sp_name)
 
-    sp_layer=[]
-    for sp_name in SP_list : # Loop over StubPair memories (containing VM pairs) in this seeding layer pair.
-        if "_L"+str(ilayer) in sp_name and "_L"+str(ilayer+1) in sp_name :
-            #print ilayer,sp_name
-            sp_layer.append(sp_name)
+                    
+        sp_layer=[]
+        for sp_name in SP_list :
+            if sp_name in emptysp:
+                continue
+            if "_L"+str(ilayer) in sp_name and "_L"+str(ilayer+1) in sp_name :
+                #print ilayer,sp_name
+                sp_layer.append(sp_name)
 
-    tcs=12 # No. of tracklet calcs in this layer.
-    if ilayer==2 :
-        tcs=2
-    if ilayer==3 :
-        tcs=8
-    if ilayer==5 :
-        tcs=4
-
-    sp_per_tc=split(sp_layer,tcs) # Divide StubPair memories between TCs.
-    
-    tc_count=0
-    for sps in  sp_per_tc :
-        print len(sps), sps
-        for sp_name in sps :
-            fp.write(sp_name+" ")
-        tc_count+=1
-        as_names = asmems(sps) # Get names of VMs making up this StubPair
-        for asn in as_names:
-            fp.write(asn+" ")    
-        tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count) # Note memory to store track params
-        fp.write(" > TC_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tc_count)+" > "+tpar_name)
-        TPAR_list.append(tpar_name)
-        for projlayer in range(1,7) : # Extrapolate seed to other tracker layers
-            if ilayer==2 and projlayer==6:
-                continue #seeding in L2L3 assumed not to project to L6
-            if projlayer!=ilayer and projlayer!=ilayer+1 : # Exclude seeding layers
-                projrange=phiprojrange(ilayer,projlayer,sps)
-                for iallproj in range(1,nallprojlayers[projlayer-1]+1) : # Track proj memories divided up in phi
-                    phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
-                    phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
-                    # If track projection consistent with phi range of this memory, note memory name.
-                    if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
-                        proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
-                        if proj_name not in unusedproj :
-                            fp.write(" "+proj_name)
-                            TPROJ_list.append(proj_name)
-        projdisks=[]
-        if ilayer<5 :
-            projdisks.append(1)
-            projdisks.append(2)
+        tcs=12
         if ilayer==2 :
-            projdisks.append(3)
-            projdisks.append(4)
-        if ilayer==1 :
-            projdisks.append(3)
-            projdisks.append(4)
-            projdisks.append(5)
-        for projdisk in projdisks :
-            projrange=phiprojrangelayertodisk(ilayer,projdisk,sps)
-            for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
-                phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
-                phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
-                if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
-                    proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+"XX"+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
-                    if proj_name not in unusedproj :
-                        fp.write(" "+proj_name)
-                        TPROJ_list.append(proj_name)
-        fp.write("\n\n")
+            tcs=2
+        if ilayer==3 :
+            tcs=8
+        if ilayer==5 :
+            tcs=4
 
-
-#
-# Do the TC for the disks
-#
-
-                
-for idisk in (1,3) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Calculators for seeding disks "+str(idisk)+" \n")
-    fp.write("#\n")
-
-    sp_disk=[]
-    for sp_name in SP_list :
-        if "_D"+str(idisk) in sp_name and "_D"+str(idisk+1) in sp_name :
-            #print idisk,sp_name
-            sp_disk.append(sp_name)
-
-    tcs=6
-    if idisk==3 :
-        tcs=2
-
-    sp_per_tc=split(sp_disk,tcs)
+        sp_per_tc=split(sp_layer,tcs)
     
-    tc_count=0
-    for sps in  sp_per_tc :
-        #print len(sps), sps
-        for sp_name in sps :
-            fp.write(sp_name+" ")
-        tc_count+=1
-        as_names = asmems(sps)
-        for asn in as_names:
-            fp.write(asn+" ")    
-        tpar_name="TPAR_D"+str(idisk)+"D"+str(idisk+1)+"XX"+letter(tc_count)
-        fp.write(" > TC_D"+str(idisk)+"D"+str(idisk+1)+letter(tc_count)+" > "+tpar_name)
-        TPAR_list.append(tpar_name)
-        for projdisk in range(1,6) :
-            if projdisk!=idisk and projdisk!=idisk+1 :
-                projrange=phiprojrangedisk(idisk,projdisk,sps)
+        tp_count=0
+        for sps in  sp_per_tc :
+            print len(sps), sps
+            innervms=[]
+            outervms=[]
+            for sp_name in sps :
+                innervm=sp_name.split("_")[1]
+                outervm=sp_name.split("_")[2]
+                fp.write("VMSTE_"+innervm+" VMSTE_"+outervm+" ")
+            tp_count+=1
+            as_names = asmems(sps)
+            for asn in as_names:
+                fp.write(asn+" ")    
+            tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tp_count)
+            fp.write(" > TP_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tp_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            for projlayer in range(1,7) :
+                if ilayer==2 and projlayer==6:
+                    continue #seeding in L2L3 assumed not to project to L6
+                if projlayer!=ilayer and projlayer!=ilayer+1 :
+                    projrange=phiprojrange(ilayer,projlayer,sps)
+                    for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
+                        phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tp_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projdisks=[]
+            if ilayer<5 :
+                projdisks.append(1)
+                projdisks.append(2)
+            if ilayer==2 :
+                projdisks.append(3)
+                projdisks.append(4)
+            if ilayer==1 :
+                projdisks.append(3)
+                projdisks.append(4)
+                projdisks.append(5)
+            for projdisk in projdisks :
+                projrange=phiprojrangelayertodisk(ilayer,projdisk,sps)
                 for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
-                    print "looking for projection to disk iallproj",projdisk,iallproj
-                    phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                    phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1) 
                     phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
                     if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
-                        proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+"XX"+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                        proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tp_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
                         if proj_name not in unusedproj :
                             fp.write(" "+proj_name)
                             TPROJ_list.append(proj_name)
-        projlayers=[]
-        projlayers.append(1)
-        if idisk==1 :
-            projlayers.append(2)
-        for projlayer in projlayers :
-            projrange=phiprojrangedisktolayer(idisk,projlayer,sps)
-            for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
-                phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
-                phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
-                if projrange[0]<=phiprojmax and projrange[1]>=phiprojmin :
-                    proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+"XX"+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
-                    if proj_name not in unusedproj :
-                        fp.write(" "+proj_name)
-                        TPROJ_list.append(proj_name)
-        fp.write("\n\n")
-
-
-#
-# Do the TC for the overlap
-#
-                
-for ilayer in (1,2) :
-    fp.write("\n")
-    fp.write("#\n")
-    fp.write("# Tracklet Calculators for seeding in overlap layer "+str(ilayer)+" \n")
-    fp.write("#\n")
-
-    sp_layer=[]
-    for sp_name in SP_list :
-        if "_L"+str(ilayer) in sp_name and "_D1" in sp_name :
-            #print ilayer,sp_name
-            sp_layer.append(sp_name)
-
-    tcs=6
-    if ilayer==2 :
-        tcs=2
-
-    sp_per_tc=split(sp_layer,tcs)
+            fp.write("\n\n")
+            
     
-    tc_count=0
-    for sps in  sp_per_tc :
-        #print len(sps), sps
-        for sp_name in sps :
-            fp.write(sp_name+" ")
-        tc_count+=1
-        as_names = asmems(sps)
-        for asn in as_names:
-            fp.write(asn+" ")    
+    #
+    # Do the TP for the disks
+    #
+                
+    for idisk in (1,3) :
+        fp.write("#\n")
+        fp.write("# Tracklet Processors for seeding disk "+str(idisk)+" \n")
+        fp.write("#\n")
 
-        tpar_name="TPAR_L"+str(ilayer)+"D1"+"XX"+letter(tc_count)
-        fp.write(" > TC_L"+str(ilayer)+"D1"+letter(tc_count)+" > "+tpar_name)
-        TPAR_list.append(tpar_name)
-        if ilayer==2 :
-            for projlayer in range(1,2) :
-                projrange=phiprojrange(ilayer,projlayer,sps)
-                #print ilayer, iallstubmeminner,projlayer,projrange
+        for ivminner in range(1,nallstubsdisks[idisk-1]*nvmtedisks[idisk-1]+1) :
+            for ivmouter in range(1,nallstubsdisks[idisk]*nvmtedisks[idisk]+1) :
+                if validtepairdisk(idisk,ivminner,ivmouter) :
+                    sp_name="SP_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner)+"_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter)
+                    SP_list.append(sp_name)
+
+        
+        sp_disk=[]
+        for sp_name in SP_list :
+            if sp_name in emptysp:
+                continue
+            if "_D"+str(idisk) in sp_name and "_D"+str(idisk+1) in sp_name :
+                #print idisk,sp_name
+                sp_disk.append(sp_name)
+
+
+        tcs=6
+        if idisk==3 :
+            tcs=2
+
+        sp_per_tc=split(sp_disk,tcs)
+    
+        tc_count=0
+        for sps in  sp_per_tc :
+            #print len(sps), sps
+            for sp_name in sps :
+                innervm=sp_name.split("_")[1]
+                outervm=sp_name.split("_")[2]
+                fp.write("VMSTE_"+innervm+" VMSTE_"+outervm+" ")
+            tc_count+=1
+            as_names = asmems(sps)
+            for asn in as_names:
+                fp.write(asn+" ")    
+            tpar_name="TPAR_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)
+            fp.write(" > TP_D"+str(idisk)+"D"+str(idisk+1)+letter(tc_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            for projdisk in range(1,6) :
+                if not doDisk :
+                    continue
+                if projdisk!=idisk and projdisk!=idisk+1 :
+                    #print "idisk, projdisk, sps:",idisk, projdisk,sps
+                    projrange=phiprojrangedisk(idisk,projdisk,sps)
+                    for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
+                        print "looking for projection to disk iallproj",projdisk,iallproj
+                        phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projlayers=[]
+            projlayers.append(1)
+            if idisk==1 :
+                projlayers.append(2)
+            for projlayer in projlayers :
+                projrange=phiprojrangedisktolayer(idisk,projlayer,sps)
                 for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
                     phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
                     phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
-                    if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
-                        proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+"XX"+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                    if projrange[0]<=phiprojmax and projrange[1]>=phiprojmin :
+                        proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
                         if proj_name not in unusedproj :
                             fp.write(" "+proj_name)
                             TPROJ_list.append(proj_name)
-        projdisks=[2,3,4,5]
-        for projdisk in projdisks :
-            projrange=phiprojrangeoverlaplayertodisk(ilayer,projdisk,sps)
-            for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
-                phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
-                phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
-                if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
-                    proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+"XX"+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
-                    if proj_name not in unusedproj :
-                        fp.write(" "+proj_name)
-                        TPROJ_list.append(proj_name)
-        fp.write("\n\n")
+            fp.write("\n\n")
+
+    #
+    # Do the TP for the overlaps
+    #
+
+
+    for ilayer in (1,2) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Engines for overlap seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        #print "layer = ",ilayer
+        for ivminner in range(1,nallstubsoverlaplayers[ilayer-1]*nvmteoverlaplayers[ilayer-1]+1) :
+            for ivmouter in range(1,nallstubsoverlapdisks[0]*nvmteoverlapdisks[0]+1) :
+                if validtepairoverlap(ilayer,ivminner,ivmouter) :
+                    sp_name="SP_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner)+"_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter)
+                    SP_list.append(sp_name)
+
+
+
+    for ilayer in (1,2) :
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Calculators for seeding in overlap layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+
+        sp_layer=[]
+        for sp_name in SP_list :
+            if sp_name in emptysp:
+                continue
+            if "_L"+str(ilayer) in sp_name and "_D1" in sp_name :
+                #print ilayer,sp_name
+                sp_layer.append(sp_name)
+
+        tcs=6
+        if ilayer==2 :
+            tcs=2
+
+        sp_per_tc=split(sp_layer,tcs)
+    
+        tc_count=0
+        for sps in  sp_per_tc :
+            #print len(sps), sps
+            for sp_name in sps :
+                innervm=sp_name.split("_")[1]
+                outervm=sp_name.split("_")[2]
+                fp.write("VMSTE_"+innervm+" VMSTE_"+outervm+" ")
+            tc_count+=1
+            as_names = asmems(sps)
+            for asn in as_names:
+                fp.write(asn+" ")    
+
+            tpar_name="TPAR_L"+str(ilayer)+"D1"+xx+letter(tc_count)
+            fp.write(" > TP_L"+str(ilayer)+"D1"+letter(tc_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            if ilayer==2 :
+                for projlayer in range(1,2) :
+                    projrange=phiprojrange(ilayer,projlayer,sps)
+                    #print ilayer, iallstubmeminner,projlayer,projrange
+                    for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
+                        phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+xx+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projdisks=[2,3,4,5]
+            for projdisk in projdisks :
+                projrange=phiprojrangeoverlaplayertodisk(ilayer,projdisk,sps)
+                for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
+                    phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                    phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
+                    if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                        proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+xx+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                        if proj_name not in unusedproj :
+                            fp.write(" "+proj_name)
+                            TPROJ_list.append(proj_name)
+            fp.write("\n\n")
+                    
+
+            
+else :    
+    
+    #
+    # Do the TE for the layers
+    #
+
+    for ilayer in (1,3,5) : # Hard-wired seeding layers.
+        if doOnlyL1L2 and ilayer>=2 :
+            continue
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Engines for seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        #print "layer = ",ilayer
+        for ivminner in range(1,nallstubslayers[ilayer-1]*nvmtelayers[ilayer-1]+1) :
+            for ivmouter in range(1,nallstubslayers[ilayer]*nvmtelayers[ilayer]+1) :
+                if validtepair(ilayer,ivminner,ivmouter) :
+                    fp.write("VMSTE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
+                    fp.write(" VMSTE_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter))
+                    fp.write(" > TE_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner))
+                    fp.write("_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter))
+                    sp_name="SP_L"+str(ilayer)+"PHI"+letter((ivminner-1)/nvmtelayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letter((ivmouter-1)/nvmtelayers[ilayer]+1)+str(ivmouter)
+                    fp.write(" > "+sp_name)
+                    fp.write("\n\n")
+                    SP_list.append(sp_name)
+
+
+    for ilayer in [2] :
+        if doOnlyL1L2 :
+            continue
+        if not extraseeding :
+            continue
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Engines for extra seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        print "layer = ",ilayer
+        for ivminner in range(1,nallstubslayers[ilayer-1]*nvmteextralayers[ilayer-1]+1) :
+            for ivmouter in range(1,nallstubslayers[ilayer]*nvmteextralayers[ilayer]+1) :
+                if validtepairextra(ilayer,ivminner,ivmouter) :
+                    fp.write("VMSTE_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner))
+                    fp.write(" VMSTE_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter))
+                    fp.write(" > TE_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner))
+                    fp.write("_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter))
+                    sp_name="SP_L"+str(ilayer)+"PHI"+letterextra((ivminner-1)/nvmteextralayers[ilayer-1]+1)+str(ivminner)+"_L"+str(ilayer+1)+"PHI"+letterextra((ivmouter-1)/nvmteextralayers[ilayer]+1)+str(ivmouter)
+                    fp.write(" > "+sp_name)
+                    fp.write("\n\n")
+                    SP_list.append(sp_name)
+
+
+
+
+    #
+    # Do the TE for the disks
+    #
+
+    for idisk in (1,3) :
+        if not doDisk :
+            continue
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Engines for seeding disk "+str(idisk)+" \n")
+        fp.write("#\n")
+        #print "disk = ",idisk
+        for ivminner in range(1,nallstubsdisks[idisk-1]*nvmtedisks[idisk-1]+1) :
+            for ivmouter in range(1,nallstubsdisks[idisk]*nvmtedisks[idisk]+1) :
+                if validtepairdisk(idisk,ivminner,ivmouter) :
+                    fp.write("VMSTE_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner))
+                    fp.write(" VMSTE_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter))
+                    fp.write(" > TE_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner))
+                    fp.write("_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter))
+                    sp_name="SP_D"+str(idisk)+"PHI"+letter((ivminner-1)/nvmtedisks[idisk-1]+1)+str(ivminner)+"_D"+str(idisk+1)+"PHI"+letter((ivmouter-1)/nvmtedisks[idisk]+1)+str(ivmouter)
+                    fp.write(" > "+sp_name)
+                    fp.write("\n\n")
+                    SP_list.append(sp_name)
+
+
+
+    #
+    # Do the TE for the overlap
+    #
+
+    for ilayer in (1,2) :
+        if doOnlyL1L2 :
+            continue
+
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Engines for overlap seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+        #print "layer = ",ilayer
+        for ivminner in range(1,nallstubsoverlaplayers[ilayer-1]*nvmteoverlaplayers[ilayer-1]+1) :
+            for ivmouter in range(1,nallstubsoverlapdisks[0]*nvmteoverlapdisks[0]+1) :
+                if validtepairoverlap(ilayer,ivminner,ivmouter) :
+                    fp.write("VMSTE_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner))
+                    fp.write(" VMSTE_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter))
+                    fp.write(" > TE_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner))
+                    fp.write("_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter))
+                    sp_name="SP_L"+str(ilayer)+"PHI"+letteroverlap((ivminner-1)/nvmteoverlaplayers[ilayer-1]+1)+str(ivminner)+"_D"+str(1)+"PHI"+letteroverlap((ivmouter-1)/nvmteoverlapdisks[0]+1)+str(ivmouter)
+                    fp.write(" > "+sp_name)
+                    fp.write("\n\n")
+                    SP_list.append(sp_name)
+
+
+                
+                
+    #
+    # Do the TC for the layers
+    #
+
+    for ilayer in (1,2,3,5) :
+        if doOnlyL1L2 and ilayer>=2 :
+            continue
+
+        if ilayer==2 and not extraseeding :
+            continue
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Calculators for seeding layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+
+        sp_layer=[]
+        for sp_name in SP_list : # Loop over StubPair memories (containing VM pairs) in this seeding layer pair.
+            if sp_name in emptysp:
+                continue
+            if "_L"+str(ilayer) in sp_name and "_L"+str(ilayer+1) in sp_name :
+                #print ilayer,sp_name
+                sp_layer.append(sp_name)
+
+        tcs=12  # No. of tracklet calcs in this layer.
+        if ilayer==2 :
+            tcs=2
+        if ilayer==3 :
+            tcs=8
+        if ilayer==5 :
+            tcs=4
+
+        if doOnlyL1L2 :
+            tcs=4
+
+        sp_per_tc=split(sp_layer,tcs)  # Divide StubPair memories between TCs.
+    
+        tc_count=0
+        for sps in  sp_per_tc :
+            print len(sps), sps
+            for sp_name in sps :
+                fp.write(sp_name+" ")
+            tc_count+=1
+            as_names = asmems(sps)  # Get names of VMs making up this StubPair
+            for asn in as_names:
+                fp.write(asn+" ")    
+            tpar_name="TPAR_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tc_count) # Note memory to store track params
+            fp.write(" > TC_L"+str(ilayer)+"L"+str(ilayer+1)+letter(tc_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            for projlayer in range(1,7) : # Extrapolate seed to other tracker layers
+                if ilayer==2 and projlayer==6:
+                    continue #seeding in L2L3 assumed not to project to L6
+                if projlayer!=ilayer and projlayer!=ilayer+1 :  # Exclude seeding layers
+                    projrange=phiprojrange(ilayer,projlayer,sps)
+                    for iallproj in range(1,nallprojlayers[projlayer-1]+1) :  # Track proj memories divided up in phi
+                        phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                        # If track projection consistent with phi range of this memory, note memory name.
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projdisks=[]
+            if ilayer<5 :
+                projdisks.append(1)
+                projdisks.append(2)
+            if ilayer==2 :
+                projdisks.append(3)
+                projdisks.append(4)
+            if ilayer==1 :
+                projdisks.append(3)
+                projdisks.append(4)
+                projdisks.append(5)
+            for projdisk in projdisks :
+                projrange=phiprojrangelayertodisk(ilayer,projdisk,sps)
+                for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
+                    phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                    phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
+                    if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                        proj_name="TPROJ_L"+str(ilayer)+"L"+str(ilayer+1)+xx+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                        if proj_name not in unusedproj :
+                            fp.write(" "+proj_name)
+                            TPROJ_list.append(proj_name)
+            fp.write("\n\n")
+            
+
+    #
+    # Do the TC for the disks
+    #
+
+                
+    for idisk in (1,3) :
+        if not doDisk :
+            continue
+
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Calculators for seeding disks "+str(idisk)+" \n")
+        fp.write("#\n")
+
+        sp_disk=[]
+        for sp_name in SP_list :
+            if sp_name in emptysp:
+                continue
+            if "_D"+str(idisk) in sp_name and "_D"+str(idisk+1) in sp_name :
+                #print idisk,sp_name
+                sp_disk.append(sp_name)
+
+        tcs=6
+        if idisk==3 :
+            tcs=2
+
+        sp_per_tc=split(sp_disk,tcs)
+    
+        tc_count=0
+        for sps in  sp_per_tc :
+            #print len(sps), sps
+            for sp_name in sps :
+                fp.write(sp_name+" ")
+            tc_count+=1
+            as_names = asmems(sps)
+            for asn in as_names:
+                fp.write(asn+" ")    
+            tpar_name="TPAR_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)
+            fp.write(" > TC_D"+str(idisk)+"D"+str(idisk+1)+letter(tc_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            for projdisk in range(1,6) :
+                if not doDisk :
+                    continue
+                if projdisk!=idisk and projdisk!=idisk+1 :
+                    projrange=phiprojrangedisk(idisk,projdisk,sps)
+                    for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
+                        print "looking for projection to disk iallproj",projdisk,iallproj
+                        phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projlayers=[]
+            projlayers.append(1)
+            if idisk==1 :
+                projlayers.append(2)
+            for projlayer in projlayers :
+                projrange=phiprojrangedisktolayer(idisk,projlayer,sps)
+                for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
+                    phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
+                    phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                    if projrange[0]<=phiprojmax and projrange[1]>=phiprojmin :
+                        proj_name="TPROJ_D"+str(idisk)+"D"+str(idisk+1)+xx+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                        if proj_name not in unusedproj :
+                            fp.write(" "+proj_name)
+                            TPROJ_list.append(proj_name)
+            fp.write("\n\n")
+
+
+    #
+    # Do the TC for the overlap
+    #
+                
+    for ilayer in (1,2) :
+        if doOnlyL1L2 :
+            continue
+        
+        fp.write("\n")
+        fp.write("#\n")
+        fp.write("# Tracklet Calculators for seeding in overlap layer "+str(ilayer)+" \n")
+        fp.write("#\n")
+
+        sp_layer=[]
+        for sp_name in SP_list :
+            if sp_name in emptysp:
+                continue
+            if "_L"+str(ilayer) in sp_name and "_D1" in sp_name :
+                #print ilayer,sp_name
+                sp_layer.append(sp_name)
+
+        tcs=6
+        if ilayer==2 :
+            tcs=2
+
+        sp_per_tc=split(sp_layer,tcs)
+    
+        tc_count=0
+        for sps in  sp_per_tc :
+            #print len(sps), sps
+            for sp_name in sps :
+                fp.write(sp_name+" ")
+            tc_count+=1
+            as_names = asmems(sps)
+            for asn in as_names:
+                fp.write(asn+" ")    
+
+            tpar_name="TPAR_L"+str(ilayer)+"D1"+xx+letter(tc_count)
+            fp.write(" > TC_L"+str(ilayer)+"D1"+letter(tc_count)+" > "+tpar_name)
+            TPAR_list.append(tpar_name)
+            if ilayer==2 :
+                for projlayer in range(1,2) :
+                    projrange=phiprojrange(ilayer,projlayer,sps)
+                    #print ilayer, iallstubmeminner,projlayer,projrange
+                    for iallproj in range(1,nallprojlayers[projlayer-1]+1) :
+                        phiprojmin=phirange/nallprojlayers[projlayer-1]*(iallproj-1)
+                        phiprojmax=phirange/nallprojlayers[projlayer-1]*iallproj
+                        if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                            proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+xx+letter(tc_count)+"_L"+str(projlayer)+"PHI"+letter(iallproj)
+                            if proj_name not in unusedproj :
+                                fp.write(" "+proj_name)
+                                TPROJ_list.append(proj_name)
+            projdisks=[2,3,4,5]
+            for projdisk in projdisks :
+                projrange=phiprojrangeoverlaplayertodisk(ilayer,projdisk,sps)
+                for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
+                    phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
+                    phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
+                    if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
+                        proj_name="TPROJ_L"+str(ilayer)+"D"+str(1)+xx+letter(tc_count)+"_D"+str(projdisk)+"PHI"+letter(iallproj)
+                        if proj_name not in unusedproj :
+                            fp.write(" "+proj_name)
+                            TPROJ_list.append(proj_name)
+            fp.write("\n\n")
 
 
 if displacedseeding : 
@@ -2194,7 +2497,7 @@ FM_list=[]
 CM_list=[]
 
 
-if combined :
+if combinedMP :
 
     for ilayer in range(1,7) :
         print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
@@ -2217,6 +2520,10 @@ if combined :
             fp.write(" > MP_L"+str(ilayer)+"PHI"+letter(iallprojmem)+" > ")
             fm_name="FM_L1L2_L"+str(ilayer)+"PHI"+letter(iallprojmem)
             if ilayer!=1 and ilayer!=2 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
+            fm_name="FM_L2L3_L"+str(ilayer)+"PHI"+letter(iallprojmem)
+            if ilayer!=2 and ilayer!=3 and ilayer!=6:  #do not allow L2L3 projections to L6
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
             fm_name="FM_L3L4_L"+str(ilayer)+"PHI"+letter(iallprojmem)
@@ -2242,6 +2549,8 @@ if combined :
             fp.write("\n\n")
 
     for idisk in range(1,6) :
+        if not doDisk :
+            continue
         print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
         fp.write("\n")
         fp.write("#\n")
@@ -2271,6 +2580,10 @@ if combined :
             if idisk!=5 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
+            fm_name="FM_L2L3_D"+str(idisk)+"PHI"+letter(iallprojmem)
+            if idisk!=5 :
+                fp.write(fm_name+" ")
+                FM_list.append(fm_name)
             fm_name="FM_L3L4_D"+str(idisk)+"PHI"+letter(iallprojmem)
             if idisk==1 or idisk==2 :
                 fp.write(fm_name+" ")
@@ -2295,6 +2608,9 @@ else :
     #
 
     for ilayer in range(1,7) :
+        if doOnlyL1L2 and ilayer<=2 :
+            continue
+
         print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
         fp.write("\n")
         fp.write("#\n")
@@ -2316,6 +2632,8 @@ else :
     #
 
     for idisk in range(1,6) :
+        if not doDisk :
+            continue
         print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
         fp.write("\n")
         fp.write("#\n")
@@ -2339,6 +2657,9 @@ else :
     CM_list=[]
 
     for ilayer in range(1,7) :
+        if doOnlyL1L2 and ilayer<=2 :
+            continue
+
         fp.write("\n")
         fp.write("#\n")
         fp.write("# Match Engines for layer "+str(ilayer)+" \n")
@@ -2359,6 +2680,8 @@ else :
     #
 
     for idisk in range(1,6) :
+        if not doDisk :
+            continue
         fp.write("\n")
         fp.write("#\n")
         fp.write("# Match Engines for disk "+str(idisk)+" \n")
@@ -2380,6 +2703,9 @@ else :
     #
 
     for ilayer in range(1,7) :
+        if doOnlyL1L2 and ilayer<=2 :
+            continue
+
         fp.write("\n")
         fp.write("#\n")
         fp.write("# Match Calculator for layer "+str(ilayer)+" \n")
@@ -2391,34 +2717,35 @@ else :
             fp.write("AP_L"+str(ilayer)+"PHI"+letter(iproj)+" ")
             fp.write("AS_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
             fp.write("MC_L"+str(ilayer)+"PHI"+letter(iproj)+" > ")
-            
+
+
             # Output Full Match memories for all seeding layer pairs that could extrapolate to this layer.
-            fm_name="FM_L1L2XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_L1L2"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer!=1 and ilayer!=2 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
             if extraseeding :
-                fm_name="FM_L2L3XX_L"+str(ilayer)+"PHI"+letter(iproj)
+                fm_name="FM_L2L3"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
                 if ilayer!=2 and ilayer!=3 and ilayer!=6 :
                     fp.write(fm_name+" ")
                     FM_list.append(fm_name)
-            fm_name="FM_L3L4XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_L3L4"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer!=3 and ilayer!=4 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_L5L6XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_L5L6"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer!=5 and ilayer!=6 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_D1D2XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_D1D2"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer==1 or ilayer==2 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_D3D4XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_D3D4"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer==1 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_L2D1XX_L"+str(ilayer)+"PHI"+letter(iproj)
+            fm_name="FM_L2D1"+xx+"_L"+str(ilayer)+"PHI"+letter(iproj)
             if ilayer==1 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
@@ -2447,6 +2774,8 @@ else :
     #
 
     for idisk in range(1,6) :
+        if not doDisk :
+            continue
         fp.write("\n")
         fp.write("#\n")
         fp.write("# Match Calculator for disk "+str(idisk)+" \n")
@@ -2459,32 +2788,32 @@ else :
             fp.write("AS_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
             fp.write("MC_D"+str(idisk)+"PHI"+letter(iproj)+" > ")
             
-            fm_name="FM_D1D2XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_D1D2"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk!=1 and idisk!=2 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_D3D4XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_D3D4"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk!=3 and idisk!=4 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_L1L2XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_L1L2"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk!=5 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
             if extraseeding :
-                fm_name="FM_L2L3XX_D"+str(idisk)+"PHI"+letter(iproj)
+                fm_name="FM_L2L3"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
                 if idisk==1 or idisk==2 or idisk==3 or idisk==4 :
                     fp.write(fm_name+" ")
                     FM_list.append(fm_name)
-            fm_name="FM_L3L4XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_L3L4"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk==1 or idisk==2 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_L1D1XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_L1D1"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk!=1 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
-            fm_name="FM_L2D1XX_D"+str(idisk)+"PHI"+letter(iproj)
+            fm_name="FM_L2D1"+xx+"_D"+str(idisk)+"PHI"+letter(iproj)
             if idisk!=1 and idisk!=5 :
                 fp.write(fm_name+" ")
                 FM_list.append(fm_name)
@@ -2510,10 +2839,10 @@ else :
 # Do the Track Fits
 #
 
-fits = ["L1L2XX","L3L4XX","L5L6XX","D1D2XX","D3D4XX","L1D1XX","L2D1XX"]
+fits = ["L1L2"+xx,"L3L4"+xx,"L5L6"+xx,"D1D2"+xx,"D3D4"+xx,"L1D1"+xx,"L2D1"+xx]
 
 if extraseeding :
-    fits.append("L2L3XX")
+    fits.append("L2L3"+xx)
 
 if displacedseeding : 
     fits = fits + ["L3L4L2","L5L6L4","L2L3D1","D1D2L2"]
@@ -2521,6 +2850,8 @@ if displacedseeding :
 
 
 for fitname in fits:
+    if doOnlyL1L2 and "L1L2" not in fitname :
+        continue;
     fp.write("\n")
     fp.write("#\n")
     fp.write("# Tracklet Fit for seeding "+fitname+" \n")
@@ -2544,9 +2875,13 @@ fp.write("#\n")
 fp.write("# Purge Duplicates\n")
 fp.write("#\n")
 for fitname in fits:
+    if doOnlyL1L2 and "L1L2" not in fitname :
+        continue;
     fp.write("TF_"+fitname+" ")
 fp.write("> PD > ")
 for fitname in fits:
+    if doOnlyL1L2 and "L1L2" not in fitname :
+        continue;
     fp.write("CT_"+fitname+" ")
    
 

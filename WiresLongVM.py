@@ -45,7 +45,7 @@ processingmodules = []
 
 projsize={}
 
-fprojsize = open("TPROJ_Size.dat","r")
+fprojsize = open("TPROJ_Size.txt","r")
 for line in fprojsize :
     name=line.split()[0]
     size=int(line.split()[1])

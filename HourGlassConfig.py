@@ -1348,13 +1348,13 @@ def findInputLinks(dtcphirange) :
 
 inputlinks=findInputLinks("dtcphirange.txt") # Get arrays of strings of all (DTC, coarse phi region) pairs.
 
-print "Inputlinks :",len(inputlinks),inputlinks
+#print "Inputlinks :",len(inputlinks),inputlinks
 
 unusedproj=readUnusedProj()
 
 emptysp=readEmptySP()
 
-print "Unusedproj :",unusedproj
+#print "Unusedproj :",unusedproj
 
 
 fp = open("wires.input.hourglass","w")
@@ -1371,7 +1371,7 @@ fp = open("wires.input.hourglass","w")
 
 
 for ilayer in range(1,7) :
-    print "layer =",ilayer,"allstub memories",nallstubslayers[ilayer-1]
+    #print "layer =",ilayer,"allstub memories",nallstubslayers[ilayer-1]
     fp.write("\n")
     fp.write("#\n")
     fp.write("# VMRouters for the TEs in layer "+str(ilayer)+" \n")
@@ -1421,7 +1421,7 @@ for ilayer in range(1,7) :
 for idisk in range(1,6) :
     if not doDisk :
         continue
-    print "disk =",idisk,"allstub memories",nallstubsdisks[idisk-1]
+    #print "disk =",idisk,"allstub memories",nallstubsdisks[idisk-1]
     fp.write("\n")
     fp.write("#\n")
     fp.write("# VMRouters for the TEs in disk "+str(idisk)+" \n")
@@ -1667,7 +1667,7 @@ if combinedTP :
     
         tp_count=0
         for sps in  sp_per_tc :
-            print len(sps), sps
+            #print len(sps), sps
             innervms=[]
             outervms=[]
             for sp_name in sps :
@@ -1770,7 +1770,7 @@ if combinedTP :
                     #print "idisk, projdisk, sps:",idisk, projdisk,sps
                     projrange=phiprojrangedisk(idisk,projdisk,sps)
                     for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
-                        print "looking for projection to disk iallproj",projdisk,iallproj
+                        #print "looking for projection to disk iallproj",projdisk,iallproj
                         phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
                         phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
                         if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
@@ -1911,7 +1911,7 @@ else :
         fp.write("#\n")
         fp.write("# Tracklet Engines for extra seeding layer "+str(ilayer)+" \n")
         fp.write("#\n")
-        print "layer = ",ilayer
+        #print "layer = ",ilayer
         for ivminner in range(1,nallstubslayers[ilayer-1]*nvmteextralayers[ilayer-1]+1) :
             for ivmouter in range(1,nallstubslayers[ilayer]*nvmteextralayers[ilayer]+1) :
                 if validtepairextra(ilayer,ivminner,ivmouter) :
@@ -2019,7 +2019,7 @@ else :
     
         tc_count=0
         for sps in  sp_per_tc :
-            print len(sps), sps
+            #print len(sps), sps
             for sp_name in sps :
                 fp.write(sp_name+" ")
             tc_count+=1
@@ -2113,7 +2113,7 @@ else :
                 if projdisk!=idisk and projdisk!=idisk+1 :
                     projrange=phiprojrangedisk(idisk,projdisk,sps)
                     for iallproj in range(1,nallprojdisks[projdisk-1]+1) :
-                        print "looking for projection to disk iallproj",projdisk,iallproj
+                        #print "looking for projection to disk iallproj",projdisk,iallproj
                         phiprojmin=phirange/nallprojdisks[projdisk-1]*(iallproj-1)
                         phiprojmax=phirange/nallprojdisks[projdisk-1]*iallproj
                         if projrange[0]<phiprojmax and projrange[1]>phiprojmin :
@@ -2500,7 +2500,7 @@ CM_list=[]
 if combinedMP :
 
     for ilayer in range(1,7) :
-        print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
+        #print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
         fp.write("\n")
         fp.write("#\n")
         fp.write("# PROJRouters+MatchEngines+MatchCalculator in layer "+str(ilayer)+" \n")
@@ -2551,7 +2551,7 @@ if combinedMP :
     for idisk in range(1,6) :
         if not doDisk :
             continue
-        print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
+        #print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
         fp.write("\n")
         fp.write("#\n")
         fp.write("# PROJRouters+MatchEngine+MatchCalculator in disk "+str(idisk)+" \n")
@@ -2611,7 +2611,7 @@ else :
         if doOnlyL1L2 and ilayer<=2 :
             continue
 
-        print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
+        #print "layer =",ilayer,"allstub memories",nallprojlayers[ilayer-1]
         fp.write("\n")
         fp.write("#\n")
         fp.write("# PROJRouters for the MEs in layer "+str(ilayer)+" \n")
@@ -2634,7 +2634,7 @@ else :
     for idisk in range(1,6) :
         if not doDisk :
             continue
-        print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
+        #print "disk =",idisk,"allstub memories",nallprojdisks[idisk-1]
         fp.write("\n")
         fp.write("#\n")
         fp.write("# PROJRouters for the MEs in disk "+str(idisk)+" \n")
@@ -2664,7 +2664,7 @@ else :
         fp.write("#\n")
         fp.write("# Match Engines for layer "+str(ilayer)+" \n")
         fp.write("#\n")
-        print "layer = ",ilayer
+        #print "layer = ",ilayer
         for ivm in range(1,nallprojlayers[ilayer-1]*nvmmelayers[ilayer-1]+1) : # Loop over VMs in layer
             fp.write("VMSME_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm))
             fp.write(" VMPROJ_L"+str(ilayer)+"PHI"+letter(1+(ivm-1)/nvmmelayers[ilayer-1])+str(ivm)+" >")
@@ -2686,7 +2686,7 @@ else :
         fp.write("#\n")
         fp.write("# Match Engines for disk "+str(idisk)+" \n")
         fp.write("#\n")
-        print "disk = ",idisk
+        #print "disk = ",idisk
         for ivm in range(1,nallprojdisks[idisk-1]*nvmmedisks[idisk-1]+1) :
             fp.write("VMSME_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm))
             fp.write(" VMPROJ_D"+str(idisk)+"PHI"+letter(1+(ivm-1)/nvmmedisks[idisk-1])+str(ivm)+" >")
@@ -2710,7 +2710,7 @@ else :
         fp.write("#\n")
         fp.write("# Match Calculator for layer "+str(ilayer)+" \n")
         fp.write("#\n")
-        print "layer = ",ilayer
+        #print "layer = ",ilayer
         for iproj in range(1,nallprojlayers[ilayer-1]+1) :
             for ivm in range(1,nvmmelayers[ilayer-1]+1) : # Loop over VMs in layer
                 fp.write("CM_L"+str(ilayer)+"PHI"+letter(iproj)+str((iproj-1)*nvmmelayers[ilayer-1]+ivm)+" ")
@@ -2780,7 +2780,7 @@ else :
         fp.write("#\n")
         fp.write("# Match Calculator for disk "+str(idisk)+" \n")
         fp.write("#\n")
-        print "disk = ",idisk
+        #print "disk = ",idisk
         for iproj in range(1,nallprojdisks[idisk-1]+1) :
             for ivm in range(1,nvmmedisks[idisk-1]+1) :
                 fp.write("CM_D"+str(idisk)+"PHI"+letter(iproj)+str((iproj-1)*nvmmedisks[idisk-1]+ivm)+" ")

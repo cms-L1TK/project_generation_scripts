@@ -16,11 +16,11 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
        InMem1 InMem2 ... > ProcessModuleX > OutMem1 OutMem2 ...
 
-  The names of the output memories are unique, such that none is written by > 1 proc module to avoid conflicts. (The script does not prevent input memories being read by > 1 proc module, but this is fixed by WiresLongVM.py). 
+  The names of the output memories are unique, such that none is written by > 1 proc module to avoid conflicts. (The script does not prevent input memories being read by > 1 proc module, but this is fixed by Wires.py). 
 
 * Create modules and wiring .dat files (despite name, this is for official Tracker geom).
 
-      ./WiresLongVM.py wires.input.hourglassExtended
+      ./Wires.py wires.input.hourglassExtended
 
   This script parses the configuration file generated from the previous step and converts it to three output files: 
   *wires.dat*, *memorymodules.dat*, *processingmodules.dat* & *processingmodules_input.dat* (not used).
@@ -93,7 +93,7 @@ Basic instructions to run the project generation for the Vivado HLS project with
       root[1] DrawTrackletProject()
 
 * You can also generate the 'zoomed in' views of all the processing modules
-after running the WiresLongVM.py script by doing
+after running the Wires.py script by doing
 
       ./generatesubgraphs
 
@@ -178,9 +178,9 @@ FM_L5L6XX_L1PHIA FM_L5L6XX_L1PHIB FM_L5L6XX_L1PHIC > FT_L5L6XX > TF_L5L6XX
 
 A fit algo is run for each seeding layer pair. It reads the matches (FM) of stubs to tracklets from each layer and all coarse phi regions.
 
-### ./WiresLongVM.py
+### ./Wires.py
 
-N.B. HourGlassConfig.py ensures that no output memory is written by > 1 proc module, to avoid conflicts. However, it doesn't ensure that no input memory is read by > 1 proc module, so this must be fixed by WiresLongVM.py. It does this by cloning the memories if they are read by > 1 proc module, (appending "n1", "n2" etc. to their name to identify each clone); and then using several output pins of the proc module that writes to this memory, with each pin writing to one clone of the memory. Furthermore, as wires.input.hourglassExtended indicates that each proc block reads/writes several memories, and a different pin of proc block must be used for each, this script names the pins (after "." in the module name).
+N.B. HourGlassConfig.py ensures that no output memory is written by > 1 proc module, to avoid conflicts. However, it doesn't ensure that no input memory is read by > 1 proc module, so this must be fixed by Wires.py. It does this by cloning the memories if they are read by > 1 proc module, (appending "n1", "n2" etc. to their name to identify each clone); and then using several output pins of the proc module that writes to this memory, with each pin writing to one clone of the memory. Furthermore, as wires.input.hourglassExtended indicates that each proc block reads/writes several memories, and a different pin of proc block must be used for each, this script names the pins (after "." in the module name).
 
 a) Reads file wires.input.hourglassExtended (written by HourGlassConfig.py) showing which processing blocks are connected to which input & output memories.
 

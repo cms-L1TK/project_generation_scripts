@@ -101,6 +101,8 @@ dispLLD = [[2,3,1]]
 
 xx="" # can be set to "XX"
 
+#=== FUNCTION DEFINITIONS. (MAIN ROUTINE MUCH FURTHER DOWN).
+
 def phiRange():
 
     phicrit=math.asin(0.5*rinvmax*rcrit)
@@ -113,8 +115,6 @@ def phiRange():
             phimax=dphi
     
     return two_pi/NSector+2*phimax
-
-#=== FUNCTION DEFINITIONS. (MAIN ROUTINE MUCH FURTHER DOWN).
 
 phirange=phiRange()
 

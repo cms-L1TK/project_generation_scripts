@@ -232,6 +232,10 @@ def getHLSMemoryClassName(module):
 
 def labelConnectedMemoryArrays(proc_list):
     # label those memories that will be constructed in an array
+    # (if these scripts end up generating the HLS top levels, will this function
+    # be needed? That is, even if the templated HLS function has arrays on the
+    # interface, the top-level could still be individual memories, although you'd
+    # still have to pass those individual memories to the templated block as an array
     for aProcModule in proc_list:
 
         if aProcModule.mtype == 'TrackletCalculator':
@@ -282,9 +286,13 @@ def getListsOfGroupedMemories(aProcModule):
     return newmemList, newportList
 
 def groupAllConnectedMemories(proc_list, mem_list):
+    # Regroup memories into the lists called inside, topin, topout
+    #   topin:  memories at the top of the fw block, stimulated by test bench
+    #   inside: memories internal to the fw block
+    #   topout: memories at the bottom of the fw blcok, read by test bench
 
-    memories_inside = []  # memories instantiated inside the top function
     memories_topin = []  # input memories at the top function interface
+    memories_inside = []  # memories instantiated inside the top function
     memories_topout = []  # output memories at the top function interface
 
     # add array name to 'userlabel' of the connected memory module
@@ -315,65 +323,70 @@ def groupAllConnectedMemories(proc_list, mem_list):
         else:
             memories_inside.append(arraycontainer_dict[arrayname])
 
-    return memories_inside, memories_topin, memories_topout
+    return memories_topin, memories_inside, memories_topout
 
-def writeTBMemoryInstance(memModule, isInput):
+def writeTBMemoryStimulusInstance(memModule):
+    # this will have to change, once Robert has a more sensible method for
+    # stimulating the initial memories. But this does work for now
+    
     wirelist = ""
     parameterlist = ""
     portlist = ""
     mem_str = ""
     # Write wires
-    if isInput:
-        wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
-        wirelist += memModule.inst+"_dataarray_data_V_readaddr = 8'b00000000;\n"
-        wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
-        wirelist += memModule.inst+"_dataarray_data_V_writeaddr = "
-        wirelist += memModule.inst+"_dataarray_data_V_readaddr - 2;\n"
-        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-        wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
-        for i in range(0,2**memModule.bxbitwidth):
-            wirelist += "reg[6:0] "+memModule.inst+"_nentries_"
-            wirelist += str(i)+"_V_dout = 7'b1101100;\n"
-        wirelist += "always @(posedge clk) begin\n  "
-        wirelist += memModule.inst+"_dataarray_data_V_readaddr <= "
-        wirelist += memModule.inst+"_dataarray_data_V_readaddr + 1;\n"
-        wirelist += memModule.inst+"_dataarray_data_V_writeaddr <= "
-        wirelist += memModule.inst+"_dataarray_data_V_writeaddr + 1;\n"
-        wirelist += "end\n\n"
-    else:
-        wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
-        wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
-        wirelist += memModule.inst+"_dataarray_data_V_readaddr;\n"
-        wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-        wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
-        for i in range(0,2**memModule.bxbitwidth):
-            wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
+    wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
+    wirelist += memModule.inst+"_dataarray_data_V_readaddr = 8'b00000000;\n"
+    wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
+    wirelist += memModule.inst+"_dataarray_data_V_writeaddr = "
+    wirelist += memModule.inst+"_dataarray_data_V_readaddr - 2;\n"
+    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+    wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        wirelist += "reg[6:0] "+memModule.inst+"_nentries_"
+        wirelist += str(i)+"_V_dout = 7'b1101100;\n"
+    wirelist += "always @(posedge clk) begin\n  "
+    wirelist += memModule.inst+"_dataarray_data_V_readaddr <= "
+    wirelist += memModule.inst+"_dataarray_data_V_readaddr + 1;\n"
+    wirelist += memModule.inst+"_dataarray_data_V_writeaddr <= "
+    wirelist += memModule.inst+"_dataarray_data_V_writeaddr + 1;\n"
+    wirelist += "end\n\n"
 
     # Write parameters
-    if isInput:
-        parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
-        parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
-        parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
-        parameterlist += "  .HEX(1),\n"
-        parameterlist += "  .INIT_FILE(\"\"),\n"
+    parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
+    parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
+    parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
+    parameterlist += "  .HEX(1),\n"
+    parameterlist += "  .INIT_FILE(\"\"),\n"
 
-        # Write ports
-        portlist += "  .clka(clk),\n"
-        portlist += "  .clkb(clk),\n"
-        portlist += "  .enb(1'b1),\n"
-        portlist += "  .addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
-        portlist += "  .doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
-        portlist += "  .regceb(1'b1),\n"
+    # Write ports
+    portlist += "  .clka(clk),\n"
+    portlist += "  .clkb(clk),\n"
+    portlist += "  .enb(1'b1),\n"
+    portlist += "  .addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
+    portlist += "  .doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
+    portlist += "  .regceb(1'b1),\n"
 
-    if isInput:
-        mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
-        mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
-    else:
-        mem_str += wirelist
+    mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
+    mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
 
     return mem_str
 
-def writeMemoryInstance(memModule, interface=0):
+def writeTBMemoryReadInstance(memModule):
+    # this will have to change, once Robert has a more sensible method for
+    # stimulating the initial memories. But this does work for now
+    
+    wirelist = ""
+    # Write wires
+    wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
+    wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
+    wirelist += memModule.inst+"_dataarray_data_V_readaddr;\n"
+    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
+    wirelist += memModule.inst+"_dataarray_data_V_dout;\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
+    return wirelist
+
+def writeTopLevelMemoryInstance(memModule, interface=0):
     wirelist = ""
     parameterlist = ""
     portlist = ""
@@ -397,35 +410,12 @@ def writeMemoryInstance(memModule, interface=0):
         for i in range(0,2**memModule.bxbitwidth):
             wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
 
-#    # Initialize write-enable ports on nentries
-#    if isInput:
-#        wirelist += "\ninitial begin\n"
-#        for i in range(0,2**memModule.bxbitwidth):
-#            wirelist += "  "+memModule.inst+"_nentries_"+str(i)+"_V_we = 1'b1;\n"
-#        wirelist += "end\n\n"
-#
-#    # Initialize registers that drive nentries values in memories
-#    # For now these are set to zero, and require manual adjustment
-#    if isInput:
-#        for i in range(0,2**memModule.bxbitwidth):
-#            wirelist += "reg[7:0] "+memModule.inst+"_nentreg_"+str(i)
-#            wirelist += " = 8'b00001001; // FIX\n"
-#        for i in range(0,2**memModule.bxbitwidth):
-#            wirelist += "assign "+memModule.inst+"_nentries_"+str(i)+"_V_din = "
-#            wirelist += memModule.inst+"_nentreg_"+str(i)+";\n"
-
     # Write parameters
     parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
     parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
     parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
     parameterlist += "  .HEX(1),\n"
     parameterlist += "  .INIT_FILE(\"\"),\n"
-#    if isInput:
-#        parameterlist += "  .INIT_FILE(\"FIXME\"),\n"
-#        parameterlist += "  .INIT_FILE(\"/mnt/scratch/djc448/firmware-hls/IntegrationTests/PR_Test/emData/TrackletProjections_TPROJ_L1L2G_L3PHIC_04_mod.dat\"),\n"
-#        parameterlist += "  .INIT_FILE(\""+memModule.inst+".dat\"),\n"
-#    else:
-#        parameterlist += "  .INIT_FILE(\"\"),\n"
 
     # Write ports
     portlist += "  .clka(clk),\n"
@@ -451,12 +441,124 @@ def writeMemoryInstance(memModule, interface=0):
 
     mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
     mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
+
     return mem_str,memclass
-    
+
+def writeControlSignals_interface(initial_proc, final_proc):
+    string_ctrl_signals = ""
+    string_ctrl_signals += "  input clk,\n"
+    string_ctrl_signals += "  input reset,\n"
+    string_ctrl_signals += "  input en_proc,\n"
+    string_ctrl_signals += "  input [2:0] bx_in_"+initial_proc+",\n"
+    string_ctrl_signals += "  output [2:0] bx_out_"+final_proc+",\n"
+    string_ctrl_signals += "  output "+final_proc+"_done,\n"
+    return string_ctrl_signals
+
+def writeMemoryLHSPorts_interface(memModule):
+    string_input_mems = ""
+    string_input_mems += "  input "+memModule.inst+"_dataarray_data_V_wea,\n"
+    string_input_mems += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+    string_input_mems += memModule.inst+"_dataarray_data_V_writeaddr,\n"
+    string_input_mems += "  input ["+str(memModule.bitwidth-1)+":0] "
+    string_input_mems += memModule.inst+"_dataarray_data_V_din,\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        string_input_mems += "  input "+memModule.inst+"_nentries_"+str(i)+"_V_we,\n"
+        string_input_mems += "  input [6:0] "+memModule.inst
+        string_input_mems += "_nentries_"+str(i)+"_V_din,\n"
+    return string_input_mems
+
+def writeMemoryRHSPorts_interface(memModule):
+    string_output_mems = ""
+    string_output_mems += "  input "+memModule.inst+"_dataarray_data_V_enb,\n"
+    string_output_mems += "  input ["+str(6+memModule.bxbitwidth)+":0] "
+    string_output_mems += memModule.inst+"_dataarray_data_V_readaddr,\n"
+    string_output_mems += "  output ["+str(memModule.bitwidth-1)+":0] "
+    string_output_mems += memModule.inst+"_dataarray_data_V_dout,\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        string_output_mems += "  output [6:0] "+memModule.inst
+        string_output_mems += "_nentries_"+str(i)+"_V_dout,\n"
+    return string_output_mems
+
+def writeTBControlSignals(topfunc, first_proc, last_proc):
+    string_header = ""
+    string_header += "reg clk;\n"
+    string_header += "reg reset;\n\n"
+
+    string_header += "initial begin\n"
+    string_header += "  reset = 1'b1;\n"
+    string_header += "  clk   = 1'b1;\n"
+    string_header += "end\n\n"
+
+    string_header += "initial begin\n"
+    string_header += "  #5400\n"
+    string_header += "  reset = 1'b0;\n"
+    string_header += "end\n\n"
+
+    string_header += "reg en_proc = 1'b0;\n"
+    string_header += "always @(posedge clk) begin\n"
+    string_header += "  if (reset) en_proc = 1'b0;\n"
+    string_header += "  else       en_proc = 1'b1;\n"
+    string_header += "end\n\n"
+
+    string_header += "always begin\n"
+    string_header += "  #2.5 clk = ~clk;\n"
+    string_header += "end\n\n"
+
+    string_header += "reg[2:0] bx_in_"+first_proc+";\n"
+    string_header += "initial bx_in_"+first_proc+" = 3'b110;\n"
+    string_header += "always begin\n"
+    string_header += "  #540 bx_in_"+first_proc+" <= bx_in_"
+    string_header += first_proc+" + 1'b1;\n"
+    string_header += "end\n"
+    string_header += "wire[2:0] bx_out_"+last_proc+";\n\n"
+    return string_header
+
+def writeFWBlockControlSignals(first_proc, last_proc):
+    string_fwblock_ctrl = ""
+    string_fwblock_ctrl += "  .clk(clk),\n"
+    string_fwblock_ctrl += "  .reset(reset),\n"
+    string_fwblock_ctrl += "  .en_proc(en_proc),\n"
+    string_fwblock_ctrl += "  .bx_in_"+first_proc
+    string_fwblock_ctrl += "(bx_in_"+first_proc+"),\n"
+    string_fwblock_ctrl += "  .bx_out_"+last_proc
+    string_fwblock_ctrl += "(bx_out_"+last_proc+"),\n"
+    return string_fwblock_ctrl
+
+def writeFWBlockMemoryLHSPorts(memModule):
+    string_input_mems = ""
+    string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_wea(1'b1),\n"
+    string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("
+    string_input_mems += memModule.inst+"_dataarray_data_V_writeaddr),\n"
+    string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_din("
+    string_input_mems += memModule.inst+"_dataarray_data_V_dout),\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        string_input_mems += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_we(1'b1),\n"
+        string_input_mems += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_din("
+        string_input_mems += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
+    return string_input_mems
+
+def writeFWBlockMemoryRHSPorts(memModule):
+    string_output_mems = ""
+    string_output_mems += "  ."+memModule.inst+"_dataarray_data_V_enb("
+    string_output_mems += memModule.inst+"_dataarray_data_V_enb),\n"
+    string_output_mems += "  ."+memModule.inst+"_dataarray_data_V_readaddr("
+    string_output_mems += memModule.inst+"_dataarray_data_V_readaddr),\n"
+    string_output_mems += "  ."+memModule.inst+"_dataarray_data_V_dout("
+    string_output_mems += memModule.inst+"_dataarray_data_V_dout),\n"
+    for i in range(0,2**memModule.bxbitwidth):
+        string_output_mems += "  ."+memModule.inst+"_nentries_"+str(i)+"_V_dout("
+        string_output_mems += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
+    return string_output_mems
     
 ########################################
 # Processing functions
 ########################################
+# writeTemplatePars: Write the template parameters for the HLS top level as part of the name
+#                    of the HLS IP. Once these scripts also generate the top-level HLS
+#                    blocks, these functions might not be needed
+# matchArgPortNames: Match the HLS argument names to the python-generated port names from
+#                    the wires file. Once these scripts also generate the top-level HLS
+#                    blocks, these functions might not be needed
 ################################
 # VMRouter
 ################################
@@ -682,11 +784,11 @@ def writeTemplatePars_ME(aMEModule):
 # Define rules to match the argument and the port names for MatchEngine
 def matchArgPortNames_ME(argname, portname):
 
-    if argname == 'instubdata':
+    if argname == 'inputStubData':
         return portname == 'vmstubin'
-    elif argname == 'inprojdata':
+    elif argname == 'inputProjectionData':
         return portname == 'vmprojin'
-    elif argname == 'outcandmatch':
+    elif argname == 'outputCandidateMatch':
         return portname == 'matchout'
     else:
         print "matchArgPortNames_ME: Unknown argument name", argname
@@ -765,7 +867,7 @@ def matchArgPortNames_PD(argname, portname):
 
 ################################
 def parseProcFunction(proc_name, fname_def):
-    # Parse the definition of the processing function in the header file
+    # Parse the definition of the processing function in the HLS header file
     # Assume all processing functions are templatized
     # Return a list of function argument types, argument names,
     # and template parameters
@@ -861,26 +963,7 @@ def parseProcFunction(proc_name, fname_def):
 
     return arg_types_list, arg_names_list, templ_pars_list
 
-########################################
-def writeModuleInst_BX(aProcModule, argtype, first_of_type):
-    # FIXME
-    bx_str = ""
-    # bunch crossing
-    if argtype == "BXType":
-        for mem in aProcModule.upstreams:
-            if mem.bxbitwidth != 1: continue
-            if mem.is_initial:
-                bx_str += "  .bx_V(bx_in_"+aProcModule.mtype+"),\n"
-                break
-            else:
-                bx_str += "  .bx_V(bx_out_"+mem.upstreams[0].mtype+"),\n"
-                break
-    elif argtype == "BXType&" and first_of_type:
-        bx_str += "  .bx_o_V(bx_out_"+aProcModule.mtype+"),\n" # output bx
-
-    return bx_str
-
-def writePorts(aProcModule, argTypeList, argNameList,
+def writeModulePorts(aProcModule, argTypeList, argNameList,
                  ArgName_Match_PortName=None, first_of_type=False):
     ports_str = ""
 
@@ -892,64 +975,82 @@ def writePorts(aProcModule, argTypeList, argNameList,
         startport += "en_proc),\n"
     else:
         startport += aProcModule.mtype+"_start),\n"
-    ports_str += "  .ap_clk(clk),\n"
-    ports_str += "  .ap_rst(reset),\n"
-    ports_str += "  .ap_start("+startport
+    string_ctrl_ports = ""
+    string_ctrl_ports += "  .ap_clk(clk),\n"
+    string_ctrl_ports += "  .ap_rst(reset),\n"
+    string_ctrl_ports += "  .ap_start("+startport
     if first_of_type:
-        ports_str += "  .ap_done("+aProcModule.mtype+"_done),\n"
+        string_ctrl_ports += "  .ap_done("+aProcModule.mtype+"_done),\n"
 
+    # Bunch crossing
+    string_bx_in = ""
+    string_bx_out = ""
+    # memory ports
+    string_mem_ports = ""
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argTypeList, argNameList):
+        # bunch crossing
+        if argtype == "BXType":
+            for mem in aProcModule.upstreams:
+                if mem.bxbitwidth != 1: continue
+                if mem.is_initial:
+                    string_bx_in += "  .bx_V(bx_in_"+aProcModule.mtype+"),\n"
+                    break
+                else:
+                    string_bx_in += "  .bx_V(bx_out_"+mem.upstreams[0].mtype+"),\n"
+                    break
+        elif argtype == "BXType&":
+            if first_of_type:
+                string_bx_out += "  .bx_o_V(bx_out_"+aProcModule.mtype+"),\n" # output bx
+        else:
+            # Given argument name, search for the matched port name in the mem lists
+            foundMatch = False
+            for memory, portname in zip(memModuleList, portNameList):
+                # Check if the portname matches the argument name from function def
+                if ArgName_Match_PortName is None:
+                    # No matching rule provided, just check if the names are the same
+                    foundMatch = (argname==portname)
+                else:
+                    # Use the provided matching rules
+                    foundMatch = ArgName_Match_PortName(argname, portname)
 
-        # Bunch crossing
-        if "BXType" in argtype:
-            ports_str += writeModuleInst_BX(aProcModule, argtype, first_of_type)
-            continue
-        
-        # Given argument name, search for the matched port name in the mem lists
-        foundMatch = False
-        for memory, portname in zip(memModuleList, portNameList):
-            # Check if the portname matches the argument name from function def
-            if ArgName_Match_PortName is None:
-                # No matching rule provided, just check if the names are the same
-                foundMatch = (argname==portname)
-            else:
-                # Use the provided matching rules
-                foundMatch = ArgName_Match_PortName(argname, portname)
-
-            if foundMatch:
-                # Add the memory instance to the port string
-                if portname.find("in") != -1:
-                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
-                    ports_str += memory.inst+"_dataarray_data_V_enb),\n"
-                    ports_str += "  ."+argname+"_dataarray_data_V_address0("
-                    ports_str += memory.inst+"_dataarray_data_V_readaddr),\n"
-                    ports_str += "  ."+argname+"_dataarray_data_V_q0("
-                    ports_str += memory.inst+"_dataarray_data_V_dout),\n"
-                    for i in range(0,2**memory.bxbitwidth):
-                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
-                        ports_str += memory.inst+"_nentries_"+str(i)+"_V_dout),\n"
-                if portname.find("out") != -1:
-#                    ports_str += "  ."+argname+"_dataarray_data_V_ce0("
-#                    ports_str += memory.inst+"_dataarray_data_V_ena),\n"
-                    ports_str += "  ."+argname+"_dataarray_data_V_we0("
-                    ports_str += memory.inst+"_dataarray_data_V_wea),\n"
-                    ports_str += "  ."+argname+"_dataarray_data_V_address0("
-                    ports_str += memory.inst+"_dataarray_data_V_writeaddr),\n"
-                    ports_str += "  ."+argname+"_dataarray_data_V_d0("
-                    ports_str += memory.inst+"_dataarray_data_V_din),\n"
-                    for i in range(0,2**memory.bxbitwidth):
-                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V_ap_vld("
-                        ports_str += memory.inst+"_nentries_"+str(i)+"_V_we),\n"
-                        ports_str += "  ."+argname+"_nentries_"+str(i)+"_V("
-                        ports_str += memory.inst+"_nentries_"+str(i)+"_V_din),\n"
-                # Remove the already added module and name from the lists
-                memModuleList.remove(memory)
-                portNameList.remove(portname)
-                break
+                if foundMatch:
+                    # Add the memory instance to the port string
+                    if portname.find("in") != -1:
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_ce0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_enb),\n"
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_address0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_readaddr),\n"
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_q0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_dout),\n"
+                        for i in range(0,2**memory.bxbitwidth):
+                            string_mem_ports += "  ."+argname+"_nentries_"+str(i)+"_V("
+                            string_mem_ports += memory.inst+"_nentries_"+str(i)+"_V_dout),\n"
+                    if portname.find("out") != -1:
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_we0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_wea),\n"
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_address0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_writeaddr),\n"
+                        string_mem_ports += "  ."+argname+"_dataarray_data_V_d0("
+                        string_mem_ports += memory.inst+"_dataarray_data_V_din),\n"
+                        for i in range(0,2**memory.bxbitwidth):
+                            string_mem_ports += "  ."+argname+"_nentries_"+str(i)+"_V_ap_vld("
+                            string_mem_ports += memory.inst+"_nentries_"+str(i)+"_V_we),\n"
+                            string_mem_ports += "  ."+argname+"_nentries_"+str(i)+"_V("
+                            string_mem_ports += memory.inst+"_nentries_"+str(i)+"_V_din),\n"
+                    # Remove the already added module and name from the lists
+                    memModuleList.remove(memory)
+                    portNameList.remove(portname)
+                    break
     # end of loop
 
-    return ports_str.rstrip(",\n")
+    string_ports = ""
+    string_ports += string_ctrl_ports
+    string_ports += string_bx_in
+    string_ports += string_bx_out
+    string_ports += string_mem_ports
+    string_ports.rstrip(",\n")
+    return string_ports
 
 
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
@@ -959,7 +1060,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
-#    # Add internal BX wire
+    # Add internal BX wire
     internal_bx_str = ""
     if first_of_type and not module.is_last:
         internal_bx_str += "wire[2:0] bx_out_"+module.mtype+";\n\n"
@@ -974,31 +1075,26 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 int_ctrl_sig += "reg "+mem.downstreams[0].mtype+"_start;\n"
                 int_ctrl_sig += "initial "+mem.downstreams[0].mtype+"_start = 1'b0;\n\n"
                 int_ctrl_sig += "always @("+module.mtype+"_done) begin\n"
-                int_ctrl_sig += "  if ("+module.mtype+"_done) "+mem.downstreams[0].mtype+"_start = 1'b1;\n"
-                int_ctrl_sig += "end\n\n"
+                int_ctrl_sig += "  if ("+module.mtype+"_done) "+mem.downstreams[0].mtype
+                int_ctrl_sig += "_start = 1'b1;\nend\n\n"
                 break
         
-    module_str = internal_bx_str+int_ctrl_sig+module.mtype
     # Update here if the function name is not exactly the same as the module type
 
     # TrackletCalculator
+    special_TC = ""
     if module.mtype == 'TrackletCalculator':
         # 'TrackletCalculator_<seeding>'
         # extract seeding from instance name: TC_L3L4C
-        module_str += '_'+module.inst.split('_')[1][0:4]
+        special_TC += '_'+module.inst.split('_')[1][0:4]
 
     ####
     # Header file when the processing function is defined
-    fname_def = module.mtype + '.hh'
-    # Special cases (probably should make the naming consistent...)
-    if module.mtype in ['TrackletEngine','MatchEngine']:
-        fname_def = module.mtype + '.h'
-    # DiskMatchCalculator?
-
+    fname_def = module.mtype + '.h'
     fname_def = hls_src_dir.rstrip('/')+'/'+fname_def
 
     ####
-    # Get the list of argument typesm names, and template parameters
+    # Get the list of argument types, names, and template parameters
     # WARNING, MAY NOT WORK FOR TC
     argtypes,argnames,templpars = parseProcFunction(module.mtype,fname_def)
 
@@ -1009,17 +1105,22 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Determine function arguments
-    ports_str = writePorts(module, argtypes, argnames, f_matchArgPortNames, first_of_type)
+    ports_str = writeModulePorts(module, argtypes, argnames, f_matchArgPortNames, first_of_type)
 
     ####
     # Put ingredients togther
+    module_str = ""
+    module_str += internal_bx_str
+    module_str += int_ctrl_sig
+    module_str += module.mtype
+    module_str += special_TC
     module_str += "_"+templpars_str
     module_str += " "+module.inst+ "(\n"
     module_str += ports_str+"\n);\n"
 
     return module_str
 
-def writeModuleInst(module, hls_src_dir, first_of_type):
+def writeModuleInstance(module, hls_src_dir, first_of_type):
     if module.mtype == 'VMRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMR,
@@ -1062,4 +1163,3 @@ def writeModuleInst(module, hls_src_dir, first_of_type):
                                          first_of_type)
     else:
         raise ValueError(module.mtype + " is unknown.")
-    

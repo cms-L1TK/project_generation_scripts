@@ -481,7 +481,7 @@ for mem in inputmemorymodules :
             n="n1"
     found=False
     # Hard-wired [36] etc. indicate required memory bit width. Should match https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat but doesn't!? FIX! Should also match args of printsum() below.
-    if "IL" in mem:
+    if "IL_" in mem:
         fp3.write("InputLink: "+mem+n+" [36]\n") # a.k.a. InputStub
         IL_mem+=1
         found=True

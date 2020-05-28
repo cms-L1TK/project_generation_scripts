@@ -3,7 +3,7 @@
 ########################################
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
-from WriteVLOGSyntax import writeInternalBXString, writeStartSwitch, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination
 
 ########################################
 # Memory objects
@@ -749,15 +749,16 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
 
     # Add internal BX wire and start registers
-    int_bx_str = ""
-    int_ctrl_sig = ""
+    str_ctrl_wire = ""
+    str_ctrl_func = ""
     if first_of_type and not module.is_last:
         for mem in module.downstreams:
             if mem.bxbitwidth != 1: continue
             oneProcDownMem = mem
             break
-        int_bx_str += writeInternalBXString(module)
-        int_ctrl_sig += writeStartSwitch(module,oneProcDownMem)
+        ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem)
+        str_ctrl_wire += ctrl_wire_inst
+        str_ctrl_func += ctrl_func_inst
         
     # Update here if the function name is not exactly the same as the module type
 
@@ -843,16 +844,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str = ""
-    module_str += int_bx_str
-    module_str += int_ctrl_sig
-    module_str += module.mtype
-    module_str += special_TC
-    module_str += "_"+templpars_str
-    module_str += " "+module.inst+ "(\n"
-    module_str += string_ports+"\n);\n"
+    module_str = writeProcCombination(module, str_ctrl_func, 
+                                      special_TC, templpars_str, string_ports)
 
-    return module_str
+    return str_ctrl_wire,module_str
 
 ################################
 def writeModuleInstance(module, hls_src_dir, first_of_type):

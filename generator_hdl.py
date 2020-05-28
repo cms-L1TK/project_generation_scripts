@@ -2,7 +2,11 @@
 
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
-from WriteVLOGSyntax import writeTopModuleOpener, writeTBOpener, writeModuleCloser, writeTimescale, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, writeTopLevelMemoryInstance, writeControlSignals_interface, writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
+from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
+                            writeTopPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
+                            writeFunctionsAndComponents, writeTopLevelMemoryInstance, writeControlSignals_interface, \
+                            writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
+                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
 import os, subprocess
 
 ########################################
@@ -23,13 +27,15 @@ def writeMemoryModules(mem_list, interface=0):
 
     # the element cound be a list if the memories are grouped in an array
 
+    string_wires = ""
     string_mem = ""
     # Loop over memories in the list
     for memModule in sorted(mem_list,key=lambda x: x.index):
-        amem_str = writeTopLevelMemoryInstance(memModule,interface)
-        string_mem += amem_str
-        
-    return string_mem
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
+        string_wires += string_wires_inst+ "\n\nTEST1\n\n"
+        string_mem += string_mem_inst
+    
+    return string_wires, string_mem
 
 ########################################
 # Processing modules
@@ -40,7 +46,8 @@ def writeProcModules(proc_list, hls_src_dir):
     #              from HLS constants files, and reading/writing bit widths by accessing HLS
     #              <MemoryType>Memory.h files (Not yet implemented)
 
-    string_proc = ""
+    string_proc_func = ""
+    string_proc_wire = ""
     # List to keep track of whether current instance of modules is first of its type
     # (needed for things like routing bx ports, done signals, etc.)
     proc_type_list = []
@@ -50,12 +57,14 @@ def writeProcModules(proc_list, hls_src_dir):
 
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
-            string_proc += writeModuleInstance(aProcMod, hls_src_dir, True)+"\n"
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True)
             proc_type_list.append(aProcMod.mtype)
         else:
-            string_proc += writeModuleInstance(aProcMod, hls_src_dir, False)+"\n"
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False)
+        string_proc_wire += proc_wire_inst+"\n"
+        string_proc_func += proc_func_inst+"\n"
         
-    return string_proc
+    return string_proc_wire,string_proc_func
 
 ########################################
 # Top function interface
@@ -125,10 +134,17 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
     # output memories at top function interface
     
     # Write memories
+    string_memWires = ""
     string_memModules = ""
-    string_memModules += writeMemoryModules(memList_topin,-1)
-    string_memModules += writeMemoryModules(memList_inside,0)
-    string_memModules += writeMemoryModules(memList_topout,1)
+    memWires_inst,memModules_inst = writeMemoryModules(memList_topin,-1)
+    string_memWires   += memWires_inst
+    string_memModules += memModules_inst
+    memWires_inst,memModules_inst = writeMemoryModules(memList_inside,0)
+    string_memWires   += memWires_inst
+    string_memModules += memModules_inst
+    memWires_inst,memModules_inst = writeMemoryModules(memList_topout,1)
+    string_memWires   += memWires_inst
+    string_memModules += memModules_inst
 
     # Write processing modules
     # First check if the HLS project directory exists
@@ -137,18 +153,22 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
 
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
-    string_procModules = writeProcModules(process_list, source_dir)
+    string_procWires, string_procModules = writeProcModules(process_list, source_dir)
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
                               memList_topin, memList_topout)
 
     string_src = ""
-    string_src += writeTimescale()
+    string_src += writeTopPreamble()
     string_src += string_topmod_interface
-    string_src += string_memModules
+    string_src += writeTopModuleEntityCloser(topfunc)
+    string_src += writeFunctionsAndComponents()
+    string_src += string_memWires
+    string_src += string_procWires
+    string_src += string_memModules 
     string_src += string_procModules
-    string_src += writeModuleCloser()
+    string_src += writeTopModuleCloser(topfunc)
 
     return string_src
 
@@ -220,7 +240,7 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
 
     # Write test bench header
     string_header = ""
-    string_header += writeTimescale()
+    string_header += writeTBPreamble()
     string_header += writeTBOpener(topfunc)
 
     string_ctrl_signals = writeTBControlSignals(topfunc, first_proc, last_proc)
@@ -236,7 +256,7 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += string_memin
     string_tb += string_memout
     string_tb += string_fwblock_inst
-    string_tb += writeModuleCloser()
+    string_tb += writeTBModuleCloser(topfunc)
     
     return string_tb,""
 
@@ -371,8 +391,8 @@ if __name__ == "__main__":
     string_tcl = writeTcl(args.projname, args.topfunc, args.emData_dir)
     
     # Write to disk
-    fname_top = args.topfunc+".v"
-    fname_tb = args.topfunc+"_test.v"
+    fname_top = args.topfunc+".vhd"
+    fname_tb = args.topfunc+"_test.vhd"
     fname_tcl = "script_"+args.projname+".tcl"
     
     fout_top = open(fname_top,"w")

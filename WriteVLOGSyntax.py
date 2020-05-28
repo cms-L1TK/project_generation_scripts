@@ -1,18 +1,29 @@
+def writeTopPreamble():
+    string_preamble = "`timescale 1ns / 1ps\n\n"
+    return string_preamble
+
+def writeTBPreamble():
+    string_preamble = "`timescale 1ns / 1ps\n\n"
+    return string_preamble
+
 def writeTopModuleOpener(topmodule_name):
-  string_topmod_opener = "module "+topmodule_name+"(\n"
-  return string_topmod_opener
+    string_topmod_opener = "module "+topmodule_name+"(\n"
+    return string_topmod_opener
 
 def writeTBOpener(topfunc):
-  string_tb_opener = "module " + topfunc + "_test();\n\n"
-  return string_tb_opener
+    string_tb_opener = "module " + topfunc + "_test();\n\n"
+    return string_tb_opener
 
-def writeModuleCloser():
-  string_closer = "\n\nendmodule"
-  return string_closer
+def writeTopModuleEntityCloser(topfunc):
+    return ""
 
-def writeTimescale():
-  string_timescale = "`timescale 1ns / 1ps\n\n"
-  return string_timescale
+def writeTopModuleCloser(topmodule_name):
+    string_closer = "\n\nendmodule"
+    return string_closer
+
+def writeTBModuleCloser(topmodule_name):
+    string_closer = "\n\nendmodule"
+    return string_closer
 
 def writeTBMemoryStimulusInstance(memModule):
     # this will have to change, once Robert has a more sensible method for
@@ -75,11 +86,16 @@ def writeTBMemoryReadInstance(memModule):
         wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
     return wirelist
 
-def writeTopLevelMemoryInstance(memModule, interface=0):
+def writeFunctionsAndComponents():
+    string_component = ""
+    return string_component
+
+def writeTopLevelMemoryInstance(memModule):
     wirelist = ""
     parameterlist = ""
     portlist = ""
     mem_str = ""
+
     # Write wires
     if interface != -1:
         wirelist += "wire "+memModule.inst+"_dataarray_data_V_wea;\n"
@@ -123,10 +139,10 @@ def writeTopLevelMemoryInstance(memModule, interface=0):
         portlist += "_nentries_"+str(i)+"_V_dout),\n"
     portlist += "  .regceb(1'b1),\n"
 
-    mem_str += wirelist + "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
+    mem_str += "\nMemory #(\n"+parameterlist.rstrip("\n,")+"\n) "
     mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
 
-    return mem_str
+    return wirelist,mem_str
 
 def writeControlSignals_interface(initial_proc, final_proc):
     string_ctrl_signals = ""
@@ -136,6 +152,7 @@ def writeControlSignals_interface(initial_proc, final_proc):
     string_ctrl_signals += "  input [2:0] bx_in_"+initial_proc+",\n"
     string_ctrl_signals += "  output [2:0] bx_out_"+final_proc+",\n"
     string_ctrl_signals += "  output "+final_proc+"_done,\n"
+    # Add bx-out-valid signal
     return string_ctrl_signals
 
 def writeMemoryLHSPorts_interface(memModule):
@@ -234,30 +251,40 @@ def writeFWBlockMemoryRHSPorts(memModule):
         string_output_mems += memModule.inst+"_nentries_"+str(i)+"_V_dout),\n"
     return string_output_mems
 
-def writeInternalBXString(module):
-    int_bx_str = "wire[2:0] bx_out_"+module.mtype+";\n\n"
-    return int_bx_str
+def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_ports):
+    module_str = ""
+    module_str += str_ctrl_func
+    module_str += module.mtype
+    module_str += special_TC
+    module_str += "_"+templpars_str
+    module_str += " "+module.inst+ "(\n"
+    module_str += str_ports+"\n);\n"
 
-def writeStartSwitch(module,mem):
-    int_ctrl_sig = ""
-    int_ctrl_sig += "wire "+module.mtype+"_done;\n"
-    int_ctrl_sig += "reg "+mem.downstreams[0].mtype+"_start;\n"
-    int_ctrl_sig += "initial "+mem.downstreams[0].mtype+"_start = 1'b0;\n\n"
-    int_ctrl_sig += "always @("+module.mtype+"_done) begin\n"
-    int_ctrl_sig += "  if ("+module.mtype+"_done) "+mem.downstreams[0].mtype
-    int_ctrl_sig += "_start = 1'b1;\nend\n\n"
-    return int_ctrl_sig
+    return module_str
+
+def writeStartSwitchAndInternalBX(module,mem):
+    int_ctrl_wire = ""
+    int_ctrl_wire += "wire "+module.mtype+"_done;\n"
+    int_ctrl_wire += "reg "+mem.downstreams[0].mtype+"_start;\n"
+    int_ctrl_wire += "initial "+mem.downstreams[0].mtype+"_start = 1'b0;\n\n"
+
+    int_ctrl_func = ""
+    int_ctrl_func += "always @("+module.mtype+"_done) begin\n"
+    int_ctrl_func += "  if ("+module.mtype+"_done) "
+    int_ctrl_func += mem.downstreams[0].mtype+"_start = 1'b1;\nend\n\n"
+
+    return int_ctrl_wire,int_ctrl_func
 
 def writeProcControlSignalPorts(module,first_of_type):
     startport = ""
     if module.is_first:
-        startport += "en_proc),\n"
+        startport += "en_proc"
     else:
-        startport += module.mtype+"_start),\n"
+        startport += module.mtype+"_start"
     string_ctrl_ports = ""
     string_ctrl_ports += "  .ap_clk(clk),\n"
     string_ctrl_ports += "  .ap_rst(reset),\n"
-    string_ctrl_ports += "  .ap_start("+startport
+    string_ctrl_ports += "  .ap_start("+startport+"),\n"
     if first_of_type:
         string_ctrl_ports += "  .ap_done("+module.mtype+"_done),\n"
     return string_ctrl_ports

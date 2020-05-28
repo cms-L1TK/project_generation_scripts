@@ -620,6 +620,9 @@ def phiproj5stdisk_to_layer(idisk,projlayer, ivminner, ivmouter) :
 def rinv(ilayer,phiinner,phiouter) :
     return 2*math.sin(phiinner-phiouter)/(rlayers[ilayer-1]-rlayers[ilayer])
 
+def rinvoverlap(ilayer,phiinner,phiouter) :
+    return 2*math.sin(phiinner-phiouter)/(1.5*(rlayers[ilayer-1]-rlayers[ilayer]))
+
 def rinvdisk(idisk,phiinner,phiouter) :
     return 2*math.sin(phiinner-phiouter)/(rpsmax*(zdisks[idisk-1]-zdisks[idisk])/zdisks[idisk-1])
 
@@ -634,11 +637,11 @@ def validtepair(ilayer,ivminner,ivmouter) :
     dphiinner=phirange/nallstubslayers[ilayer-1]/nvmtelayers[ilayer-1]
     dphiouter=phirange/nallstubslayers[ilayer]/nvmtelayers[ilayer]
 
-    phiinner1=dphiinner*ivminner # Phi range of stubs in these two VMs.
-    phiinner2=phiinner1+dphiinner
+    phiinner2=dphiinner*ivminner # Phi range of stubs in these two VMs.
+    phiinner1=phiinner2-dphiinner
     
-    phiouter1=dphiouter*ivmouter
-    phiouter2=phiouter1+dphiouter
+    phiouter2=dphiouter*ivmouter
+    phiouter1=phiouter2-dphiouter
 
     rinv11=rinv(ilayer,phiinner1,phiouter1) # 1/R range of particle crossing these two VMs.
     rinv12=rinv(ilayer,phiinner1,phiouter2)
@@ -660,11 +663,11 @@ def validtepairextra(ilayer,ivminner,ivmouter) :
     dphiinner=phirange/nallstubslayers[ilayer-1]/nvmteextralayers[ilayer-1]
     dphiouter=phirange/nallstubslayers[ilayer]/nvmteextralayers[ilayer]
 
-    phiinner1=dphiinner*ivminner
-    phiinner2=phiinner1+dphiinner
+    phiinner2=dphiinner*ivminner
+    phiinner1=phiinner2-dphiinner
     
-    phiouter1=dphiouter*ivmouter
-    phiouter2=phiouter1+dphiouter
+    phiouter2=dphiouter*ivmouter
+    phiouter1=phiouter2-dphiouter
 
     rinv11=rinv(ilayer,phiinner1,phiouter1)
     rinv12=rinv(ilayer,phiinner1,phiouter2)
@@ -687,11 +690,11 @@ def validtepairdisk(idisk,ivminner,ivmouter) :
     dphiinner=phirange/nallstubsdisks[idisk-1]/nvmtedisks[idisk-1]
     dphiouter=phirange/nallstubsdisks[idisk]/nvmtedisks[idisk]
 
-    phiinner1=dphiinner*ivminner
-    phiinner2=phiinner1+dphiinner
+    phiinner2=dphiinner*ivminner
+    phiinner1=phiinner2-dphiinner
     
-    phiouter1=dphiouter*ivmouter
-    phiouter2=phiouter1+dphiouter
+    phiouter2=dphiouter*ivmouter
+    phiouter1=phiouter2-dphiouter
 
     rinv11=rinvdisk(idisk,phiinner1,phiouter1)
     rinv12=rinvdisk(idisk,phiinner1,phiouter2)
@@ -714,16 +717,16 @@ def validtepairoverlap(ilayer,ivminner,ivmouter) :
     dphiinner=phirange/nallstubsoverlaplayers[ilayer-1]/nvmteoverlaplayers[ilayer-1]
     dphiouter=phirange/nallstubsoverlapdisks[0]/nvmteoverlapdisks[0]
 
-    phiinner1=dphiinner*ivminner
-    phiinner2=phiinner1+dphiinner
+    phiinner2=dphiinner*ivminner
+    phiinner1=phiinner2-dphiinner
     
-    phiouter1=dphiouter*ivmouter
-    phiouter2=phiouter1+dphiouter
+    phiouter2=dphiouter*ivmouter
+    phiouter1=phiouter2-dphiouter
 
-    rinv11=rinv(ilayer,phiinner1,phiouter1)
-    rinv12=rinv(ilayer,phiinner1,phiouter2)
-    rinv21=rinv(ilayer,phiinner2,phiouter1)
-    rinv22=rinv(ilayer,phiinner2,phiouter2)
+    rinv11=rinvoverlap(ilayer,phiinner1,phiouter1)
+    rinv12=rinvoverlap(ilayer,phiinner1,phiouter2)
+    rinv21=rinvoverlap(ilayer,phiinner2,phiouter1)
+    rinv22=rinvoverlap(ilayer,phiinner2,phiouter2)
     
     #print rinv11,rinv12,rinv21,rinv22
 
@@ -732,7 +735,7 @@ def validtepairoverlap(ilayer,ivminner,ivmouter) :
 
     if rinv11<-rinvmax and rinv12<-rinvmax and rinv21<-rinvmax and rinv22<-rinvmax :
         return False
-    
+
     return True
 
 #------------------------------------------------------------------------------------------------

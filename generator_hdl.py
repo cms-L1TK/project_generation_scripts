@@ -32,7 +32,7 @@ def writeMemoryModules(mem_list, interface=0):
     # Loop over memories in the list
     for memModule in sorted(mem_list,key=lambda x: x.index):
         string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
-        string_wires += string_wires_inst+ "\n\nTEST1\n\n"
+        string_wires += string_wires_inst
         string_mem += string_mem_inst
     
     return string_wires, string_mem
@@ -362,6 +362,7 @@ if __name__ == "__main__":
     # Get widths of all needed memories
     for mem in memory_list:
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
+        TrackletGraph.populate_is_binned(mem,args.hls_dir)
 
     # Get whether processing modules are first or last in chain
     for proc in process_list:

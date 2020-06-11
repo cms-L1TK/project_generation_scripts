@@ -68,6 +68,7 @@ class MemModule(Node):
         self.is_final = False # True if it is the final step
         self.bitwidth = 0
         self.bxbitwidth = 0
+        self.is_binned = False
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -163,6 +164,12 @@ class TrackletGraph(object):
             if not mem.is_final: is_last = False
         proc.is_first = is_first
         proc.is_last = is_last
+
+    @staticmethod
+    def populate_is_binned(mem,hls_dir):
+        # Populate fields saying whether mem module is binned
+        if (mem.mType == "VMStubsTEOuter" or mem.mType == "VMStubsME"):
+            mem.is_binned = True
 
     @staticmethod
     def get_proc_dict_from_config(fname_pconfig):

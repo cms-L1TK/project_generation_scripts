@@ -120,7 +120,7 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
     string_topmod_interface += string_output_mems
-    string_topmod_interface = string_topmod_interface.rstrip(",\n")+"\n);\n\n"
+    string_topmod_interface = string_topmod_interface.rstrip(";\n")+"\n);\n\n"
     
     return string_topmod_interface
 

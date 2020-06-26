@@ -606,7 +606,7 @@ class TrackletGraph(object):
         # Merge inmem_list and outmem_list
         # There could be loops in the tracklet graph(?), so inmem_list and
         # outmem_list can potentially have duplicated modules
-        mem_list = list(set(inmem_list).union(outmem_list))
+        mem_list = sorted(list(set(inmem_list).union(outmem_list)))
 
         # The duplicated memory modules should have both is_initial and is_final
         # flags set to True during the growing process. Correct them now.

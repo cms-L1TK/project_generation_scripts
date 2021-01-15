@@ -109,7 +109,7 @@ class TrackletGraph(object):
         return cls(procDict, memDict)      
 
     @staticmethod
-    def populate_bitwidths(mem,hls_dir):
+    def populate_bitwidths(mem,hls_dir): # FIXME this information should be parsed from the <memorytype>Memory.h HLS files, not hard-coded here
         # Populate data bit width
         barrelPSList = ["L1P","L2P","L3P"]
         barrelPS = -1
@@ -123,8 +123,14 @@ class TrackletGraph(object):
         disk = -1
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
-        if mem.mtype == "AllStubs":
+        if mem.mtype == "VMStubsTE":
+            mem.bitwidth = 22 if mem.inst.find("L1") else 16 # FIXME
+        elif mem.mtype == "AllStubs":
             mem.bitwidth = 36
+        elif mem.mtype == "StubPairs":
+            mem.bitwidth = 14
+        elif mem.mtype == "TrackletParameters":
+            mem.bitwidth = 70
         elif mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
             if barrelPS>-1: mem.bitwidth = 60
             if barrel2S>-1: mem.bitwidth = 58
@@ -145,10 +151,11 @@ class TrackletGraph(object):
 
         # Populate bx bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
-               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"):
+               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
+               or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTE"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
-               or mem.mtype == "AllStubs"):
+               or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)

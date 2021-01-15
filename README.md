@@ -206,3 +206,8 @@ e) Writes file wires.dat.
 VMSTE_L1PHIA4n2 input=> VMR_L1PHIA.vmstuboutPHIA4n2  output=> TE_L1PHIA4_L2PHIA3.innervmstubin
 
 e.g. The VM memory "4" in coarse phi region "A" VMSTE_L1PHIA4 is written by VM router algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts). The I/O pins of the proc blocks are ".vmstuboutphiA4n2" & ".innervmstubin", whose names include "in" or "out" to distinguish read or write, and also include parts of the names of the memories they connect to, so make clear what sort of data the internal logic of the proc block must read/write to the pin. (These pin names appear in the HLS code interface).
+
+## Python version and other dependencies
+This code is currently not compatible with python 3. Some of the code also depends on ROOT and its python inerface (last tested with version 6.10.00).
+
+There are no other dependencies.

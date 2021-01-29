@@ -4,6 +4,7 @@
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
 from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination
+import re
 
 ########################################
 # Memory objects
@@ -707,8 +708,11 @@ def parseProcFunction(proc_name, fname_def):
     
     # get the argument lists
     arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
-    
-    for args in arguments_str.split(","):
+
+    # Split by comma, ignoring commas inside template brackets <...>.
+    #args_list = arguments_str.split(",")
+    args_list = re.split(', *(?![^<]*>)', arguments_str)
+    for args in args_list:
         # get rid of 'const' 
         args = args.replace("const","").strip()
         # get rid of '*'

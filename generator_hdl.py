@@ -374,8 +374,9 @@ if __name__ == "__main__":
     ########################################
     #  Plot graph
     ########################################
-    width, height, dy, textsize = tracklet.draw_graph(process_list)
-    os.system("root -b <<EOF \"DrawTrackletProject.C+("+str(width)+","+str(height)+","+str(dy)+","+str(textsize)+")\"")
+    pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
+    cmd = "root -b -q -n -l 'DrawTrackletProject.C(%s,%s,%s,%s)'" % (str(pageWidth),str(pageHeight),str(dyBox),str(textSize))
+    os.system(cmd)
 
     ###############
     #  Top File

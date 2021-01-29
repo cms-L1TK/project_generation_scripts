@@ -10,7 +10,7 @@ Basic instructions to run the project generation for the Vivado HLS project with
 		
       ./HourGlassConfig.py
     
-  The default output file is *wires.input.hourglassExtended*.
+  The default output file is *wires.input.hourglass*.
 
   **DATA FORMAT**: Each line in the output file contains a instance of a processing module as well as all its input and output memories. The input memories, the processing module, and the output memories are separated by ">":
 
@@ -49,9 +49,9 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
       ./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
 
-  "dirHLS" is the location of the HLS code, which defaults to "../firmware-hls".
+  *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
-  P.S. Script generator_vhls.py is abandoned attempt at using HLS for top-level).
+  (Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).
 
   Optional arguments include:
   
@@ -71,14 +71,14 @@ Basic instructions to run the project generation for the Vivado HLS project with
       -u, --nupstream     The number of processing steps to be generated upstream of the UUT 
       -d, --ndownstream   The number of processing steps to be generated downstream of the UUT
 
-  This script parses the three .dat files from the previous step and instantiates a TrackletGraph object (defined in TrackletGraph.py). The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
+  This script parses the three .dat files from the previous step and instantiates a *TrackletGraph* object (defined in TrackletGraph.py). The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
 
   The other part of this script takes the TrackletGraph object as input and writes out relevant files for the top level project.
-  In order to generate correct and up-to-date functions for relevant processing steps, the script looks for and parses the function definitions in the corresponding header files in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
+  In order to generate correct and up-to-date functions for requested processing steps, the script parses the function definition of each step in the corresponding header file in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
 
-  The final product of this script includes a top-level VHDL module which instantiates all the relevant HLS processing blocks and VHDL memory modules, as well as an VHDL test bench (which should ultimately read the memory printout files made by the C++ emulation). In the future, the script will generate a tcl script needed to generate the project.
+  The final product of this script includes a top-level VHDL module which instantiates all the relevant HLS IP cores and HDL memory modules, as well as an VHDL test bench, (which should ultimately read the memory printout files made by the C++ emulation). In the future, the script will generate a tcl script needed to generate the project.
 
- The script also makes a wiring diagram TrackletProject.pdf of the mem/proc modules in the VHDL.
+ The script also makes a wiring diagram *TrackletProject.pdf* of the mem/proc modules in the VHDL.
 
 -----------------------------------------------------------------
 
@@ -90,11 +90,11 @@ To (re)make the wiring diagram in root:
       root[0] .L DrawTrackletProject.C++
       root[1] DrawTrackletProject()
 
-This processes file diagram.dat, which you can obtain in two ways:
+This processes file *diagram.dat*, which you can obtain in two ways:
 
-1) From generate_hdl.py -- corresponds to subset of wiring pertaining to generated VHDL.
+1) From *generate_hdl.py* -- corresponds to subset of wiring pertaining to generated VHDL.
 
-2) From ./Graph.py (after running Wires.py) -- corresponds to entire L1 track chain.
+2) From *Graph.py* (after running Wires.py) -- corresponds to entire L1 track chain.
 
 You can make other 'zoomed in' views of all the processing modules
 after running the Wires.py script by doing

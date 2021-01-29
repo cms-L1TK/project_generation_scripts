@@ -27,11 +27,11 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
   These three .dat files contain more or less the same information as the master config file but are reformated for more convenient access in emulation software and later steps. However, if the script detects that a memory is read by > 1 proc module, it clones it to avoid conflicts. Furthermore, as each proc module connects to several memories, it names the input/output pins of the proc module used for each connection.
 
-  **DATA FORMAT**: The key output is wires.dat, where each line contains a single instance of a memory modules and the proc modules that read/write to it, together with the I/O pins used. Clones are distinguished by "n1", "n2" etc. in the name. Pin names include "in" or "out" to distinguish read or write.
+  **DATA FORMAT**: The key output is *wires.dat*, where each line contains a single instance of a memory modules and the proc modules that read/write to it, together with the I/O pins used. Clones are distinguished by "n1", "n2" etc. in the name. Pin names include "in" or "out" to distinguish read or write.
 
       Mem  input=> ProcModuleWrite.pinX  output=>ProcModuleRead.pinY
 
-  In *memorymodules.dat* and *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
+  In *memorymodules.dat* & *processingmodules.dat* list all memories/proc modules, with each line containing a module instance name and its corresponding type, following the format
 
       ModuleType: ModuleInstance
 

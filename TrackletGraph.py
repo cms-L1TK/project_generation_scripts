@@ -739,18 +739,18 @@ class TrackletGraph(object):
 
         # FIXME
         # Return canvas size in pixels along X and Y
-        height = (maxnum+1)*40
+        pageHeight = (maxnum+1)*40
         #width = sum(columns_width)*85
-        width =  height * 2
-        dy = 0.5/(maxnum+1)
-        textsize = 0.5/(maxnum+1)
+        pageWidth =  pageHeight * 2
+        dyBox = 0.5/(maxnum+1)
+        textSize = 0.5/(maxnum+1)
         
-        print  width, height, dy, textsize
+        #print  width, height, dy, textsize
         
-        # Work In Progress
-        width = 10000
-        height = 5000
-        dy = 0.005
-        textsize = 0.006
+        # Work In Progress - adjusts sizes in TrackletProject.pdf
+        pageWidth = 10000
+        pageHeight = 5000
+        dyBox = 0.025
+        textSize = 0.015
         
-        return int(width), int(height), dy, textsize
+        return int(pageWidth), int(pageHeight), dyBox, textSize

@@ -7,6 +7,7 @@ from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleC
                             writeFunctionsAndComponents, writeTopLevelMemoryInstance, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
+import ROOT
 import os, subprocess
 
 ########################################
@@ -375,9 +376,9 @@ if __name__ == "__main__":
     #  Plot graph
     ########################################
     pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
-    cmd = "root -b -q -n -l 'DrawTrackletProject.C(%s,%s,%s,%s)'" % (str(pageWidth),str(pageHeight),str(dyBox),str(textSize))
-    os.system(cmd)
-
+    ROOT.gROOT.SetBatch(True)
+    ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
+    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
     ###############
     #  Top File
     string_topfile = writeTopFile(args.topfunc, process_list, memList_topin, 

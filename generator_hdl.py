@@ -4,7 +4,7 @@ from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
                             writeTopPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
-                            writeFunctionsAndComponents, writeTopLevelMemoryInstance, writeControlSignals_interface, \
+                            writeTopLevelMemoryInstance, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
 import ROOT
@@ -164,7 +164,6 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
     string_src += writeTopPreamble()
     string_src += string_topmod_interface
     string_src += writeTopModuleEntityCloser(topfunc)
-    string_src += writeFunctionsAndComponents()
     string_src += string_memWires
     string_src += string_procWires
     string_src += string_memModules 

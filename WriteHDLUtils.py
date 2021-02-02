@@ -33,16 +33,16 @@ def getMemoryClassName_VMStubsTE(instance_name):
 
     memoryclass = ''
     bitformat = ''
-    
+
     if position == 'L1':
-        memoryclass = 'VMStubTEInnerMemory'  
+        memoryclass = 'VMStubTEInnerMemory'
         if philabel in ['Q','R','S','T','W','X','Y','Z']: # L1D1 seeding
             bitformat = 'BARRELOL'
         elif philabel in ['A','B','C','D','E','F','G','H']: # L1L2 seeding
             bitformat = 'BARRELPS'
         else:
             raise ValueError("Unknown PHI label "+philabel)
-        
+
     elif position == 'L2':
         if philabel in ['I','J','K','L','W','X','Y','Z']: # L2L3 or L2D1 seeding
             memoryclass = 'VMStubTEInnerMemory'
@@ -52,7 +52,7 @@ def getMemoryClassName_VMStubsTE(instance_name):
             bitformat = 'BARRELPS'
         else:
             raise ValueError("Unknown PHI label "+philabel)
-        
+
     elif position == 'L3':
         if philabel in ['A','B','C','D']: # L3L4
             memoryclass = 'VMStubTEInnerMemory'
@@ -62,17 +62,17 @@ def getMemoryClassName_VMStubsTE(instance_name):
             bitformat = 'BARRELPS'
         else:
             raise ValueError("Unknown PHI label "+philabel)
-        
+
     elif position == 'L4' or position == 'L6':
         assert(philabel in ['A','B','C','D']) # L3L4, L5L6 seeding
         memoryclass = 'VMStubTEOuterMemory'
         bitformat = 'BARREL2S'
-        
+
     elif position == 'L5':
         assert(philabel in ['A','B','C','D']) # L5L6 seeding
         memoryclass = 'VMStubTEInnerMemory'
         bitformat = 'BARREL2S'
-        
+
     elif position == 'D1':
         if philabel in ['A','B','C','D']: # D1D2 seeding
             memoryclass = 'VMStubTEInnerMemory'
@@ -82,8 +82,8 @@ def getMemoryClassName_VMStubsTE(instance_name):
             bitformat = 'DISK'
         else:
             raise ValueError("Unknown PHI label "+philabel)
-            
-    elif position == 'D2' or position == 'D4': 
+
+    elif position == 'D2' or position == 'D4':
         assert(philabel in ['A','B','C','D']) # D1D2 or D3D4 seeding
         memoryclass = 'VMStubTEOuterMemory'
         bitformat = 'DISK'
@@ -92,7 +92,7 @@ def getMemoryClassName_VMStubsTE(instance_name):
         assert(philabel in ['A','B','C','D']) # D3D4 seeding
         memoryclass = 'VMStubTEInnerMemory'
         bitformat = 'DISK'
-        
+
     assert(bitformat != '')
     return memoryclass+'<'+bitformat+'>'
 
@@ -100,7 +100,7 @@ def getMemoryClassName_VMStubsME(instance_name):
     # An example of instance name: VMSME_D3PHIB8n1
     position = instance_name.split('_')[1][:2] # layer/disk
     bitformat = ''
-    
+
     if position in ['L1','L2','L3']:
         bitformat = 'BARRELPS'
     elif position in ['L4','L5','L6']:
@@ -116,7 +116,7 @@ def getMemoryClassName_AllStubs(instance_name):
     # FIXME: separate Disk PS and 2S AllStub memories for MatchCalculator
     # when config files are updated
     ######################
-    
+
     # An example of instance name: AS_D1PHIAn5
     position = instance_name.split('_')[1][:2]
     if position in ['L1','L2','L3']:
@@ -127,7 +127,7 @@ def getMemoryClassName_AllStubs(instance_name):
         return 'AllStubMemory<DISK>'
     else:
         raise ValueError("Unknown Layer/Disk "+position)
-    
+
 def getMemoryClassName_StubPairs(instance_name):
     # e.g. SP_L1PHIA2_L2PHIA3
     assert('SP_' in instance_name)
@@ -261,7 +261,6 @@ def getListsOfGroupedMemories(aProcModule):
 
     # add array name to 'userlabel' of the connected memory module
     labelConnectedMemoryArrays([aProcModule])
-
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
     # sort?
@@ -326,7 +325,7 @@ def groupAllConnectedMemories(proc_list, mem_list):
             memories_inside.append(arraycontainer_dict[arrayname])
 
     return memories_topin, memories_inside, memories_topout
- 
+
 ########################################
 # Processing functions
 ########################################
@@ -406,7 +405,7 @@ def writeTemplatePars_TC(aTCModule):
             outerindex = PhiLabelASOuter.index(outerphilabel)
 
             NSPMem[innerindex][outerindex] += 1
-            
+
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
 
     # Count connected TProj memories and compute the TPROJMask parameter
@@ -421,7 +420,7 @@ def writeTemplatePars_TC(aTCModule):
     ProjLayers_List.remove(seed2)
 
     TPROJMask = 0
-    
+
     for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
         if 'projout' in portname: # portname example: projoutL6PHID
             layer = portname[7:9] # L6
@@ -442,9 +441,9 @@ def writeTemplatePars_TC(aTCModule):
             assert(mask > 0)
 
             TPROJMask += mask << (index * 4)
-            
+
     template_str += hex(TPROJMask)+','
-    
+
     # truncation parameter
     template_str += 'kMaxProc'
 
@@ -500,37 +499,19 @@ def writeTemplatePars_PR(aPRModule):
 ####
 # Define rules to match the argument and the port names for ProjectionRouter
 def matchArgPortNames_PR(argname, portname):
-    
-    if 'proj' in argname and 'in' in argname:
+
+    if 'projin' in argname:
         # projXXin for input TrackletProjection memories
-        return argname==portname
+        return 'proj' in portname and 'in' in portname
     elif 'allprojout' in argname:
         # output AllProjection memory
         return argname==portname
     elif 'vmprojout' in argname:
-        if 'vmprojout' not in portname:
-            return False
-        # output VMProjection memories
-        # port name format: vmprojoutPHIA13
-        # get the last digits
-        vmphi_port = int(portname[13:]) # 1 - 32
-        # covert allproj phi region A, B, C, D, ... to 1, 2, 3, 4, ...
-        projphi_port = ord(portname[12].lower()) - 96
-        # The number of vmme bins per allproj phi is either 8 or 4
-        nvmme = 8 # if this is true, expect (vmphi-1)/nvmme + 1 == projphi
-        # if not, try nvmme = 4
-        if (vmphi_port-1)/nvmme + 1 != projphi_port:
-            nvmme = 4
-            assert((vmphi_port-1)/nvmme + 1 == projphi_port)
-            
-        # vmprojoutX for output VMProjection memories
-        X_port = vmphi_port%nvmme if vmphi_port%nvmme != 0 else nvmme
-        X_arg = int(argname[9:])
-        return X_arg == X_port
+        return 'vmprojout' in portname
     else:
         print "matchArgPortNames_PR: Unknown argument", argname
         return False
-    
+
 ################################
 # MatchEngine
 ################################
@@ -600,22 +581,20 @@ def writeTemplatePars_MC(aMCModule):
         # FIXME here after the allstubs are seperated for disk ps and 2s in the configs
         ASTYPE = 'DISKPS' # all ps for now
 
-    # FIXME 
+    # FIXME
     PHISEC = '2'  # PHISEC??
-        
+
     templpars_str = ASTYPE+','+APTYPE+','+FMTYPE+','+LAYER+','+DISK+','+PHISEC
-        
+
     return templpars_str
 
 def matchArgPortNames_MC(argname, portname):
-    if argname in ['match1','match2','match3','match4',
-                   'match5','match6','match7','match8',
-                   'allstub','allproj']:
+    if argname in ['allstub','allproj']:
         return portname == argname+'in'
-    elif argname == 'fullmatch1':
-        return portname == 'matchout1'
-    elif argname == 'fullmatch2':
-        return portname == 'matchout2'
+    elif 'fullmatch' in argname:
+        return 'matchout' in portname
+    elif 'match' in argname:
+        return 'match' in portname and 'out' not in portname
     else:
         print "matchArgPortNames_MC: Unknow argument name", argname
         return False
@@ -648,7 +627,7 @@ def parseProcFunction(proc_name, fname_def):
     # Assume all processing functions are templatized
     # Return a list of function argument types, argument names,
     # and template parameters
-    
+
     # Open the header file
     file_proc_hh = open(fname_def)
 
@@ -659,7 +638,7 @@ def parseProcFunction(proc_name, fname_def):
 
     # string to store the function arguments
     procfunc_str = ""
-    
+
     # Read the file
     for line in file_proc_hh:
         #######
@@ -667,7 +646,7 @@ def parseProcFunction(proc_name, fname_def):
         if 'template' in line:
             is_template = True
             # empty the buffer and get ready for the new template parameters
-            template_buffer = "" 
+            template_buffer = ""
         # store the template string into the buffer
         if is_template:
             # get rid of comments and the new line character
@@ -680,13 +659,13 @@ def parseProcFunction(proc_name, fname_def):
         # Search for "proc_name("
         if proc_name+"(" in line: # found the processing function
             # get rid of comments and the new line character
-            procfunc_str += line.split("//",1)[0].strip("\n") 
+            procfunc_str += line.split("//",1)[0].strip("\n")
 
             # keep reading the next lines
             nextline = next(file_proc_hh)
             while nextline:
                 # get rid of comments and the new line character
-                procfunc_str += nextline.split("//",1)[0].strip("\n") 
+                procfunc_str += nextline.split("//",1)[0].strip("\n")
                 # If detect ")", we are done. Stop reading the following lines
                 if ")" in nextline:
                     nextline = ""
@@ -701,11 +680,11 @@ def parseProcFunction(proc_name, fname_def):
     arg_types_list = []
     arg_names_list = []
     templ_pars_list = []
-    
+
     if procfunc_str == "":
         print "Cannot find processing function", proc_name, "in", fname_def
         return arg_types_list, arg_names_list, templ_pars_list
-    
+
     # get the argument lists
     arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
 
@@ -713,14 +692,14 @@ def parseProcFunction(proc_name, fname_def):
     #args_list = arguments_str.split(",")
     args_list = re.split(', *(?![^<]*>)', arguments_str)
     for args in args_list:
-        # get rid of 'const' 
+        # get rid of 'const'
         args = args.replace("const","").strip()
         # get rid of '*'
         args = args.replace("*","").strip()
         # get rid of '&' ?
 
         # get rid of '[...]' in case it is an array
-        args = args.split('[')[0]
+        #args = args.split('[')[0]
 
         # argument type
         atype = ' '.join(args.split()[:-1]) # combine all strings except the last
@@ -734,9 +713,9 @@ def parseProcFunction(proc_name, fname_def):
         print "No template parameters are found."
         print "Please make sure the processing function", proc_name, "is templatized in", fname_def
         return arg_types_list, arg_names_list, templ_pars_list
-    
+
     templPars_str = template_buffer.split("<")[1].split(">")[0]
-    
+
     for par in templPars_str.split(","):
         par = par.strip()
         templ_pars_list.append(par.split()[-1]) # the last entry in the list
@@ -763,7 +742,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem)
         str_ctrl_wire += ctrl_wire_inst
         str_ctrl_func += ctrl_func_inst
-        
+
     # Update here if the function name is not exactly the same as the module type
 
     # TrackletCalculator
@@ -794,6 +773,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # clock, reset, start
     string_ctrl_ports = writeProcControlSignalPorts(module, first_of_type)
+
+    # Dictionary of array names and its size (minus one)
+    array_dict = {}
 
     # Bunch crossing
     string_bx_in = ""
@@ -826,17 +808,34 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
-
                 if foundMatch:
+                    # Create temporary argument name as argname can be an array and have several matches
+                    tmp_argname = argname
+                    argname_is_array = (tmp_argname.find('[') != -1)
+
+                    # Check if array
+                    if argname_is_array:
+                        tmp_argname = tmp_argname.split('[')[0] # Remove "[]"
+                        # Keep track of the arrays and the number of array elements
+                        if tmp_argname in array_dict:
+                            array_dict[tmp_argname] += 1
+                        else:
+                            array_dict[tmp_argname] = 0
+                        # Add array index for the portname as HLS implements one port for each array element
+                        tmp_argname += "_" + str(array_dict[tmp_argname])
+
                     # Add the memory instance to the port string
+                    # Assumes a sorted memModuleList due to arrays?
                     if portname.find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(argname,memory)
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.find("out") != -1:
-                        string_mem_ports += writeProcMemoryLHSPorts(argname,memory)
-                    # Remove the already added module and name from the lists
-                    memModuleList.remove(memory)
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+
+                    # Remove the already added module and name from the list
                     portNameList.remove(portname)
-                    break
+                    if not argname_is_array:
+                        memModuleList.remove(memory)
+                        break
     # end of loop
 
     string_ports = ""
@@ -848,7 +847,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str = writeProcCombination(module, str_ctrl_func, 
+    module_str = writeProcCombination(module, str_ctrl_func,
                                       special_TC, templpars_str, string_ports)
 
     return str_ctrl_wire,module_str

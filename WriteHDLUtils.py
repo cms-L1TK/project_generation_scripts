@@ -818,13 +818,13 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     # Special case if argname is an array
                     if argname_is_array:
-                        tmp_argname = tmp_argname.split('[')[0] # Remove "[]"
-                        # Keep track of the arrays and the number of array elements
+                        tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
+                        # Keep track of the array names and the number of array elements
                         if tmp_argname in array_dict:
                             array_dict[tmp_argname] += 1
                         else:
                             array_dict[tmp_argname] = 0
-                        # Add array index for the portname as HLS implements one port for each array element
+                        # Add array index to the name as HLS implements one port for each array element
                         tmp_argname += "_" + str(array_dict[tmp_argname])
 
                     # Add the memory instance to the port string

@@ -2,7 +2,7 @@ def writeTopPreamble():
     string_preamble = "--! Standard libraries\n"
     string_preamble += "library IEEE;\n"+"use IEEE.STD_LOGIC_1164.ALL;\n"
     string_preamble += "--! User packages\n"
-    string_preamble += "use work.tf_pkg.all\n\n"
+    string_preamble += "use work.tf_pkg.all;\n\n"
     return string_preamble
 
 def writeTBPreamble():

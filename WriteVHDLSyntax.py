@@ -163,7 +163,10 @@ def writeTopLevelMemoryInstance(memModule, interface):
         else:
             portlist += "      nent_o"+str(i)+"  => open,\n"
 
-    mem_str += "\n  "+memModule.inst+" : entity work.tf_mem"
+    if memModule.is_binned:
+        mem_str += "\n  "+memModule.inst+" : entity work.tf_mem_bin"
+    else:
+        mem_str += "\n  "+memModule.inst+" : entity work.tf_mem"        
     mem_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
     mem_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
     return wirelist,mem_str

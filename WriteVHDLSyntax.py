@@ -5,6 +5,10 @@ def writeTopPreamble():
     string_preamble += "use work.tf_pkg.all;\n\n"
     return string_preamble
 
+def writeModulesPreamble():
+    string_preamble = "\n begin \n"
+    return string_preamble
+
 def writeTBPreamble():
     return ""
 
@@ -68,6 +72,7 @@ def writeTBMemoryStimulusInstance(memModule):
     portlist += "  .regceb(1'b1),\n"  
     portlist += "  .addrb("+memModule.inst+"_dataarray_data_V_readaddr),\n"
     portlist += "  .doutb("+memModule.inst+"_dataarray_data_V_dout),\n"
+    portlist += "  .sync_nent(1'b0),\n"
   
     mem_str += wirelist + "\n"+"tf_mem #(\n"+parameterlist.rstrip("\n,")+"\n) "
     mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
@@ -94,6 +99,15 @@ def writeTopLevelMemoryInstance(memModule, interface):
     parameterlist = ""
     portlist = ""
     mem_str = ""
+
+    if interface == 1:
+        assert len(memModule.upstreams)==1
+        prevProcMod = memModule.upstreams[0]
+        sync_signal = prevProcMod.mtype+"_done"
+    else:
+        assert len(memModule.downstreams)==1
+        nextProcMod = memModule.downstreams[0]
+        sync_signal = nextProcMod.mtype+"_start"
 
     # Write wires
     if interface != -1:
@@ -135,6 +149,7 @@ def writeTopLevelMemoryInstance(memModule, interface):
     portlist += "      regceb    => '1',\n"
     portlist += "      addrb     => "+memModule.inst+"_dataarray_data_V_readaddr,\n"
     portlist += "      doutb     => "+memModule.inst+"_dataarray_data_V_dout,\n"
+    portlist += "      sync_nent => "+sync_signal+",\n"
     for i in range(0,2**memModule.bxbitwidth):
         if memModule.is_binned:
             for j in range(0,8):
@@ -157,7 +172,7 @@ def writeControlSignals_interface(initial_proc, final_proc):
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
-    string_ctrl_signals += "    en_proc    : in std_logic;\n"
+    string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    bx_in_"+initial_proc+" : in std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    bx_out_"+final_proc+" : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    bx_out_"+final_proc+"_vld : out std_logic;\n"
@@ -206,10 +221,10 @@ def writeTBControlSignals(topfunc, first_proc, last_proc):
     string_header += "  reset = 1'b0;\n"
     string_header += "end\n\n"
 
-    string_header += "reg en_proc = 1'b0;\n"
+    string_header += "reg "+first_proc+"_start = 1'b0;\n"
     string_header += "always @(posedge clk) begin\n"
-    string_header += "  if (reset) en_proc = 1'b0;\n"
-    string_header += "  else       en_proc = 1'b1;\n"
+    string_header += "  if (reset) "+first_proc+"_start = 1'b0;\n"
+    string_header += "  else       "+first_proc+"_start = 1'b1;\n"
     string_header += "end\n\n"
 
     string_header += "always begin\n"
@@ -229,7 +244,7 @@ def writeFWBlockControlSignalPorts(first_proc, last_proc):
     string_fwblock_ctrl = ""
     string_fwblock_ctrl += "  .clk(clk),\n"
     string_fwblock_ctrl += "  .reset(reset),\n"
-    string_fwblock_ctrl += "  .en_proc(en_proc),\n"
+    string_fwblock_ctrl += "  ."+first_proc+"_start("+first_proc+"_start),\n"
     string_fwblock_ctrl += "  .bx_in_"+first_proc
     string_fwblock_ctrl += "(bx_in_"+first_proc+"),\n"
     string_fwblock_ctrl += "  .bx_out_"+last_proc
@@ -293,15 +308,10 @@ def writeStartSwitchAndInternalBX(module,mem):
     return int_ctrl_wire,int_ctrl_func
 
 def writeProcControlSignalPorts(module,first_of_type):
-    startport = ""
-    if module.is_first:
-        startport += "en_proc"
-    else:
-        startport += module.mtype+"_start"
     string_ctrl_ports = ""
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
-    string_ctrl_ports += "      ap_start => "+startport+",\n"
+    string_ctrl_ports += "      ap_start => "+module.mtype+"_start,\n"
     string_ctrl_ports += "      ap_idle  => open,\n"
     string_ctrl_ports += "      ap_ready => open,\n"
     if first_of_type:

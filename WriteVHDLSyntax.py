@@ -287,8 +287,7 @@ def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_p
     module_str += str_ctrl_func
     module_str += special_TC
     module_str += "  "+module.inst+" : entity work."+module.inst+"\n"
-    module_str += "    port map (\n"
-    module_str += str_ports+"\n);\n"
+    module_str += "    port map (\n"+str_ports.rstrip(",\n")+"\n  );\n\n"
 
     return module_str
 

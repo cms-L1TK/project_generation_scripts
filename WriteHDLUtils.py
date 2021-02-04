@@ -836,9 +836,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
-                    if not argname_is_array: # We only need one match for non-arrays
-                        memModuleList.remove(memory)
-                        break
+                    memModuleList.remove(memory)
     # end of loop
 
     string_ports = ""

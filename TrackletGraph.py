@@ -14,7 +14,6 @@ import re
 #    'PurgeDuplicate':8
 #}
 # TODO: Should be able to generate this from the wiring
-
 #######################################
 # Drawing parameters
 ModuleDrawWidth_dict = {'InputLink':3.0,
@@ -69,6 +68,7 @@ class MemModule(Node):
         self.bitwidth = 0
         self.bxbitwidth = 0
         self.is_binned = False
+        self.has_numEntries_out = True # True if has numEntries out port.
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -107,6 +107,17 @@ class TrackletGraph(object):
         cls.wire_modules_from_config(fname_wire, procDict, memDict)
         
         return cls(procDict, memDict)      
+
+    @staticmethod
+    def populate_has_numEntries_out(mem,hls_dir):
+        # Some memories need no numEntries out port, as no processing module wants to read it.
+        # (Check which by searching for GetEntries() in HLS code).
+        if mem.mtype == "AllStubs":
+            mem.has_numEntries_out = False
+        elif mem.mtype == "AllProj":
+            mem.has_numEntries_out = False
+        else:
+            mem.has_numEntries_out = True
 
     @staticmethod
     def populate_bitwidths(mem,hls_dir): # FIXME this information should be parsed from the <memorytype>Memory.h HLS files, not hard-coded here

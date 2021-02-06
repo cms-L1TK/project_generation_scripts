@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+################################################
+# Scripts to write top-level VHDL
+#
+# N.B. Check hard-wired constants in TrackletGraph::populate_bitwidths()
+################################################
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
@@ -360,10 +365,13 @@ if __name__ == "__main__":
         process_list, memory_list = TrackletGraph.get_slice_around_proc(
             uutProcModule, args.nupstream, args.ndownstream) 
 
-    # Get widths of all needed memories
     for mem in memory_list:
+        # Get widths of all needed memories
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
         TrackletGraph.populate_is_binned(mem,args.hls_dir)
+
+        # Determine which memories need numEntries output ports
+        TrackletGraph.populate_has_numEntries_out(mem,args.hls_dir)
 
     # Get whether processing modules are first or last in chain
     for proc in process_list:

@@ -376,6 +376,7 @@ if __name__ == "__main__":
     # Get whether processing modules are first or last in chain
     for proc in process_list:
         TrackletGraph.populate_firstlast(proc)
+        TrackletGraph.populate_IPname(proc)
 
     memList_topin, memList_inside, memList_topout = groupAllConnectedMemories(
         process_list, memory_list)

@@ -128,7 +128,7 @@ def writeTopLevelMemoryInstance(memModule, interface):
                     wirelist += "std_logic_vector(3 downto 0);\n"
             else:
                 wirelist += "  signal "+memModule.inst+"_nentries_"+str(i)+"_V_dout : "
-                wirelist += "std_logic_vector(7 downto 0);\n"
+                wirelist += "std_logic_vector(6 downto 0);\n"
 
     # Write parameters
     parameterlist += "      RAM_WIDTH       => "+str(memModule.bitwidth)+",\n"
@@ -227,7 +227,7 @@ def writeMemoryRHSPorts_interface(memModule):
                 string_output_mems += "out std_logic_vector(3 downto 0);\n"
         else:
             string_output_mems += "    "+memModule.inst+"_nentries_"+str(i)+"_V_dout : "
-            string_output_mems += "out std_logic_vector(7 downto 0);\n"
+            string_output_mems += "out std_logic_vector(6 downto 0);\n"
 
     return string_output_mems
 

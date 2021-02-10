@@ -597,7 +597,29 @@ def matchArgPortNames_MC(argname, portname):
     elif 'match' in argname:
         return 'match' in portname and 'out' not in portname
     else:
-        print "matchArgPortNames_MC: Unknow argument name", argname
+        print "matchArgPortNames_MC: Unknown argument name", argname
+        return False
+
+# Temporary bodge to get the correct argname index for the fullmatch memories
+def decodeSeedIndex_MC(memoryname):
+    if 'L1L2' in memoryname:
+        return 0
+    elif 'L2L3' in memoryname:
+        return 1
+    elif 'L3L4' in memoryname:
+        return 2
+    elif 'L5L6' in memoryname:
+        return 3
+    elif 'D1D2' in memoryname:
+        return 4
+    elif 'D3D4' in memoryname:
+        return 5
+    elif 'L1D1' in memoryname:
+        return 6
+    elif 'L2D1' in memoryname:
+        return 7
+    else:
+        print "decodeSeedIndex_MC: Unknown memory name", memoryname
         return False
 
 ################################
@@ -825,7 +847,11 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         else:
                             array_dict[tmp_argname] = 0
                         # Add array index to the name as HLS implements one port for each array element
-                        tmp_argname += "_" + str(array_dict[tmp_argname])
+                        # Temporary bodge to account for encoded index in fullmatch memories
+                        if tmp_argname == 'fullmatch':
+                            tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                        else:
+                            tmp_argname += "_" + str(array_dict[tmp_argname])
 
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?

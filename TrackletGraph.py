@@ -361,6 +361,19 @@ class TrackletGraph(object):
                 print "WARNING!! Cannot find module", instance_name,"!!"
             return None
 
+    def get_all_module_units(self, module, verbose=True):
+        "Return all the ProcModule objects of a given type"
+        modules = {}
+        for instance_name in self.__proc_dict:
+            if instance_name.startswith(module+"_"):
+                modules[instance_name]=self.__proc_dict[instance_name]
+        if not modules:
+           if verbose:
+               print "WARNING!! Cannot find any modules", instance_name,"!!"
+           return None
+        else:
+            return modules
+
     def get_mem_module(self, instance_name, verbose=True):
         " Return a MemModule object given the instance name "
         if instance_name in self.__mem_dict:

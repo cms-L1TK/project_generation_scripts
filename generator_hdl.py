@@ -323,6 +323,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","IS", "PR"], default="PR", help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -349,7 +350,17 @@ if __name__ == "__main__":
     process_list = []
     memory_list = []
 
-    if args.uut is None:
+    if args.mut is not None:
+        mutModules = tracklet.get_all_module_units(args.mut)
+        process_list = []
+        memory_list = []
+        for mutModule in mutModules.values():
+            process, memory = TrackletGraph.get_slice_around_proc(
+                mutModule, args.nupstream, args.ndownstream)
+            process_list.extend(process)
+            memory_list.extend(memory)
+
+    elif args.uut is None:
         # Get all modules in the configurations
         process_list = tracklet.get_all_proc_modules()
         memory_list = tracklet.get_all_memory_modules()

@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
+################################################
+# Scripts to write top-level VHDL
+#
+# N.B. Check hard-wired constants in TrackletGraph::populate_bitwidths()
+################################################
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
-                            writeTopPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
-                            writeFunctionsAndComponents, writeTopLevelMemoryInstance, writeControlSignals_interface, \
+                            writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
+                            writeTopLevelMemoryInstance, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
+import ROOT
 import os, subprocess
 
 ########################################
@@ -163,9 +169,9 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
     string_src += writeTopPreamble()
     string_src += string_topmod_interface
     string_src += writeTopModuleEntityCloser(topfunc)
-    string_src += writeFunctionsAndComponents()
     string_src += string_memWires
     string_src += string_procWires
+    string_src += writeModulesPreamble()
     string_src += string_memModules 
     string_src += string_procModules
     string_src += writeTopModuleCloser(topfunc)
@@ -359,14 +365,18 @@ if __name__ == "__main__":
         process_list, memory_list = TrackletGraph.get_slice_around_proc(
             uutProcModule, args.nupstream, args.ndownstream) 
 
-    # Get widths of all needed memories
     for mem in memory_list:
+        # Get widths of all needed memories
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
         TrackletGraph.populate_is_binned(mem,args.hls_dir)
+
+        # Determine which memories need numEntries output ports
+        TrackletGraph.populate_has_numEntries_out(mem,args.hls_dir)
 
     # Get whether processing modules are first or last in chain
     for proc in process_list:
         TrackletGraph.populate_firstlast(proc)
+        TrackletGraph.populate_IPname(proc)
 
     memList_topin, memList_inside, memList_topout = groupAllConnectedMemories(
         process_list, memory_list)
@@ -375,9 +385,9 @@ if __name__ == "__main__":
     #  Plot graph
     ########################################
     pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
-    cmd = "root -b -q -n -l 'DrawTrackletProject.C(%s,%s,%s,%s)'" % (str(pageWidth),str(pageHeight),str(dyBox),str(textSize))
-    os.system(cmd)
-
+    ROOT.gROOT.SetBatch(True)
+    ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
+    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
     ###############
     #  Top File
     string_topfile = writeTopFile(args.topfunc, process_list, memList_topin, 

@@ -14,7 +14,6 @@ import re
 #    'PurgeDuplicate':8
 #}
 # TODO: Should be able to generate this from the wiring
-
 #######################################
 # Drawing parameters
 ModuleDrawWidth_dict = {'InputLink':3.0,
@@ -69,6 +68,7 @@ class MemModule(Node):
         self.bitwidth = 0
         self.bxbitwidth = 0
         self.is_binned = False
+        self.has_numEntries_out = True # True if has numEntries out port.
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -79,6 +79,7 @@ class ProcModule(Node):
         self.output_port_names = []
         self.is_first = False
         self.is_last = False
+        self.IPname = instance_name
 
 #######################################
 # Tracklet Graph
@@ -149,7 +150,7 @@ class TrackletGraph(object):
         else:
             raise ValueError("Bitwidth undefined for "+mem.mtype)
 
-        # Populate bx bit width
+        # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
                or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTE"):
@@ -159,6 +160,23 @@ class TrackletGraph(object):
             mem.bxbitwidth = 3
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)
+
+    @staticmethod
+    def populate_is_binned(mem,hls_dir):
+        # Populate fields saying whether mem module is binned
+        if (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"):
+            mem.is_binned = True
+
+    @staticmethod
+    def populate_has_numEntries_out(mem,hls_dir):
+        # Some memories need no numEntries out port, as no processing module wants to read it.
+        # (Check which by searching for GetEntries() in HLS code).
+        if mem.mtype == "AllStubs":
+            mem.has_numEntries_out = False
+        elif mem.mtype == "AllProj":
+            mem.has_numEntries_out = False
+        else:
+            mem.has_numEntries_out = True
 
     @staticmethod
     def populate_firstlast(proc):
@@ -173,10 +191,18 @@ class TrackletGraph(object):
         proc.is_last = is_last
 
     @staticmethod
-    def populate_is_binned(mem,hls_dir):
-        # Populate fields saying whether mem module is binned
-        if (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"):
-            mem.is_binned = True
+    def populate_IPname(proc):
+    # Set name of HLS IP core.
+    # (If several instance names assigned to same IP core name, then
+    #  they share a single IP core).
+
+        if proc.mtype == 'MatchEngine':
+            # Final number unimportant in typical name "ME_D5PHIC11" 
+            # (Can probably drop phi region too).
+            proc.IPname = proc.inst[:9]
+        else:
+            # FIX: check for other processing modules steps.
+            proc.IPname = proc.inst
 
     @staticmethod
     def get_proc_dict_from_config(fname_pconfig):

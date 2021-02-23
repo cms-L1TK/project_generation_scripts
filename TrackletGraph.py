@@ -140,8 +140,8 @@ class TrackletGraph(object):
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
             if disk>-1: mem.bitwidth = 21
         elif mem.mtype == "VMStubsME":
-            if barrelPS>-1: mem.bitwidth = 14
-            if barrel2S>-1 or disk>-1: mem.bitwidth = 15
+            if barrelPS>-1: mem.bitwidth = 13
+            if barrel2S>-1 or disk>-1: mem.bitwidth = 14
         elif mem.mtype == "CandidateMatch":
             mem.bitwidth = 14
         elif mem.mtype == "FullMatch":

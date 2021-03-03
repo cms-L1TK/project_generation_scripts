@@ -323,7 +323,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC"], default="PR", help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -351,7 +351,10 @@ if __name__ == "__main__":
     memory_list = []
 
     if args.mut is not None:
+        # Get all module units of a given type
         mutModules = tracklet.get_all_module_units(args.mut)
+
+        # Get the slices around each of the modules
         process_list = []
         memory_list = []
         for mutModule in mutModules.values():
@@ -359,6 +362,13 @@ if __name__ == "__main__":
                 mutModule, args.nupstream, args.ndownstream)
             process_list.extend(process)
             memory_list.extend(memory)
+
+        # Remove duplicates from the process and module list
+        process_list = list(set(process_list))
+        memory_list = list(set(memory_list))
+        
+        # Select memory modules only in the given region
+        memory_list = tracklet.get_modules_in_region(memory_list, args.memconfig, args.region)
 
     elif args.uut is None:
         # Get all modules in the configurations

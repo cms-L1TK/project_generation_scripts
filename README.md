@@ -68,8 +68,9 @@ Basic instructions to run the project generation for the Vivado HLS project with
       -r, --region        Detector region of the generated project.
       		              Choose from A(all), L(barrel), D(disk).
       --uut               Specify a unit under test, e.g. TC_L1L2E
-      -u, --nupstream     The number of processing steps to be generated upstream of the UUT 
-      -d, --ndownstream   The number of processing steps to be generated downstream of the UUT
+      --mut		  Specify a module under test, e.g PR (Projection Routers)
+      -u, --nupstream     The number of processing steps to be generated upstream of the UUT or MUT 
+      -d, --ndownstream   The number of processing steps to be generated downstream of the UUT or MUT
 
   This script parses the three .dat files from the previous step and instantiates a *TrackletGraph* object (defined in TrackletGraph.py). The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
 

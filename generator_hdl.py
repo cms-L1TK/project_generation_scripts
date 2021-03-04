@@ -372,8 +372,8 @@ if __name__ == "__main__":
             memory_list.extend(memory)
 
         # Remove duplicates from the process and module list
-        process_list = sort(list(set(process_list)))
-        memory_list = sort(list(set(memory_list)))
+        process_list = list(set(process_list))
+        memory_list = list(set(memory_list))
         
     elif args.uut is None:
         # Get all modules in the configurations

@@ -372,12 +372,9 @@ if __name__ == "__main__":
             memory_list.extend(memory)
 
         # Remove duplicates from the process and module list
-        process_list = list(set(process_list))
-        memory_list = list(set(memory_list))
+        process_list = sort(list(set(process_list)))
+        memory_list = sort(list(set(memory_list)))
         
-        # Select memory modules only in the given region
-        memory_list = tracklet.get_modules_in_region(memory_list, args.memconfig, args.region)
-
     elif args.uut is None:
         # Get all modules in the configurations
         process_list = tracklet.get_all_proc_modules()

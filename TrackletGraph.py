@@ -398,58 +398,6 @@ class TrackletGraph(object):
         else:
             return modules
 
-    def get_modules_in_region(self, modules, fname_mconfig, region):
-        " Given a list of modules, return a list of only those belonging to a given region"
-        modules_in_r = []
-        if region not in ['L', 'D', 'A']:
-            return "Valid regions are: L (barrel), D (disk), and A (all)"
-        
-        barrelstr = re.compile('L[1-6]PHI')
-        diskstr = re.compile('D[1-5]PHI')
-        barrelseed = re.compile('L[1235]L[2346]')
-        diskseed = re.compile('D[13]D[24]')
-        hybridseed = re.compile('L[12]D1')
-
-        # Open and read memory configuration file
-        file_mem = open(fname_mconfig, 'r')
-
-        for module in modules:
-            isbarrel = False
-            isdisk = False
-
-            mem_type = module.mtype
-            mem_inst = module.inst
-
-            if mem_type in ['InputLink','VMStubsTE','VMStubsME','StubPairs',
-                            'AllStubs','VMProjections','CandidateMatch','AllProj']:
-                if barrelstr.search(mem_inst):
-                    isbarrel = True
-                if diskstr.search(mem_inst):
-                    isdisk = True
-            elif mem_type in ['TrackletProjections','FullMatch']:
-                if barrelseed.search(mem_inst) and barrelstr.search(mem_inst):
-                    isbarrel = True
-                if diskseed.search(mem_inst) and diskstr.search(mem_inst):
-                    isdisk = True
-            elif mem_type in ['TrackletParameters','TrackFit','CleanTrack']:
-                if barrelseed.search(mem_inst):
-                    isbarrel = True
-                if diskseed.search(mem_inst):
-                    isdisk = True
-            else:
-                raise ValueError("Unknown memory type: "+mem_type)
-
-            if region == 'L': # barrel project
-                if not isbarrel or isdisk:
-                    continue
-            elif region == 'D': # disk project
-                if not isdisk or isbarrel:
-                    continue
-
-            modules_in_r.append(module)
-            
-        return modules_in_r
-
     def get_mem_module(self, instance_name, verbose=True):
         " Return a MemModule object given the instance name "
         if instance_name in self.__mem_dict:

@@ -500,37 +500,19 @@ def writeTemplatePars_PR(aPRModule):
 ####
 # Define rules to match the argument and the port names for ProjectionRouter
 def matchArgPortNames_PR(argname, portname):
-    
-    if 'proj' in argname and 'in' in argname:
+
+    if 'projin' in argname:
         # projXXin for input TrackletProjection memories
-        return argname==portname
+        return 'proj' in portname and 'in' in portname
     elif 'allprojout' in argname:
         # output AllProjection memory
         return argname==portname
     elif 'vmprojout' in argname:
-        if 'vmprojout' not in portname:
-            return False
-        # output VMProjection memories
-        # port name format: vmprojoutPHIA13
-        # get the last digits
-        vmphi_port = int(portname[13:]) # 1 - 32
-        # covert allproj phi region A, B, C, D, ... to 1, 2, 3, 4, ...
-        projphi_port = ord(portname[12].lower()) - 96
-        # The number of vmme bins per allproj phi is either 8 or 4
-        nvmme = 8 # if this is true, expect (vmphi-1)/nvmme + 1 == projphi
-        # if not, try nvmme = 4
-        if (vmphi_port-1)/nvmme + 1 != projphi_port:
-            nvmme = 4
-            assert((vmphi_port-1)/nvmme + 1 == projphi_port)
-            
-        # vmprojoutX for output VMProjection memories
-        X_port = vmphi_port%nvmme if vmphi_port%nvmme != 0 else nvmme
-        X_arg = int(argname[9:])
-        return X_arg == X_port
+        return 'vmprojout' in portname
     else:
         print "matchArgPortNames_PR: Unknown argument", argname
         return False
-    
+
 ################################
 # MatchEngine
 ################################
@@ -608,16 +590,36 @@ def writeTemplatePars_MC(aMCModule):
     return templpars_str
 
 def matchArgPortNames_MC(argname, portname):
-    if argname in ['match1','match2','match3','match4',
-                   'match5','match6','match7','match8',
-                   'allstub','allproj']:
+    if argname in ['allstub','allproj']:
         return portname == argname+'in'
-    elif argname == 'fullmatch1':
-        return portname == 'matchout1'
-    elif argname == 'fullmatch2':
-        return portname == 'matchout2'
+    elif 'fullmatch' in argname:
+        return 'matchout' in portname
+    elif 'match' in argname:
+        return 'match' in portname and 'out' not in portname
     else:
-        print "matchArgPortNames_MC: Unknow argument name", argname
+        print "matchArgPortNames_MC: Unknown argument name", argname
+        return False
+
+# Temporary bodge to get the correct argname index for the fullmatch memories
+def decodeSeedIndex_MC(memoryname):
+    if 'L1L2' in memoryname:
+        return 0
+    elif 'L2L3' in memoryname:
+        return 1
+    elif 'L3L4' in memoryname:
+        return 2
+    elif 'L5L6' in memoryname:
+        return 3
+    elif 'D1D2' in memoryname:
+        return 4
+    elif 'D3D4' in memoryname:
+        return 5
+    elif 'L1D1' in memoryname:
+        return 6
+    elif 'L2D1' in memoryname:
+        return 7
+    else:
+        print "decodeSeedIndex_MC: Unknown memory name", memoryname
         return False
 
 ################################
@@ -720,7 +722,7 @@ def parseProcFunction(proc_name, fname_def):
         # get rid of '&' ?
 
         # get rid of '[...]' in case it is an array
-        args = args.split('[')[0]
+        #args = args.split('[')[0]
 
         # argument type
         atype = ' '.join(args.split()[:-1]) # combine all strings except the last
@@ -800,6 +802,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     string_bx_out = ""
     # memory ports
     string_mem_ports = ""
+
+    # Dictionary of array names and the number of elements (minus one)
+    array_dict = {}
+
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -828,15 +834,37 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     foundMatch = f_matchArgPortNames(argname, portname)
 
                 if foundMatch:
+                    # Create temporary argument name as argname can be an array and have several matches
+                    tmp_argname = argname
+                    argname_is_array = (tmp_argname.find('[') != -1) # Check if array
+
+                    # Special case if argname is an array
+                    if argname_is_array:
+                        tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
+                        # Keep track of the array names and the number of array elements
+                        if tmp_argname in array_dict:
+                            array_dict[tmp_argname] += 1
+                        else:
+                            array_dict[tmp_argname] = 0
+                        # Add array index to the name as HLS implements one port for each array element
+                        # Temporary bodge to account for encoded index in fullmatch memories
+                        if tmp_argname == 'fullmatch':
+                            tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                        else:
+                            tmp_argname += "_" + str(array_dict[tmp_argname])
+
                     # Add the memory instance to the port string
+                    # Assumes a sorted memModuleList due to arrays?
                     if portname.find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(argname,memory)
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.find("out") != -1:
-                        string_mem_ports += writeProcMemoryLHSPorts(argname,memory)
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+
                     # Remove the already added module and name from the lists
-                    memModuleList.remove(memory)
                     portNameList.remove(portname)
-                    break
+                    memModuleList.remove(memory)
+
+                    if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
 
     string_ports = ""

@@ -37,6 +37,12 @@ def writeMemoryModules(mem_list, interface=0):
     string_mem = ""
     # Loop over memories in the list
     for memModule in sorted(mem_list,key=lambda x: x.index):
+        if isinstance(memModule, list):
+            for module in memModule:
+                string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(module,interface)
+                string_wires += string_wires_inst
+                string_mem += string_mem_inst
+            continue
         string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
         string_wires += string_wires_inst
         string_mem += string_mem_inst

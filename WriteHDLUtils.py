@@ -532,7 +532,6 @@ def writeTemplatePars_ME(aMEModule):
         else:
             VMSTYPE = 'BARRELPS'
     else:  # Disk
-        print "WARNING! Disk MatchEngine is not supported yet!"
         DISK = pos[1]
         VMSTYPE = 'DISK'
 

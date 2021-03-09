@@ -357,6 +357,8 @@ if __name__ == "__main__":
     memory_list = []
 
     if args.mut is not None:
+        print("WARNING: This feature \"--mut\" has only been tested extensively with the PRMEMC chain.")
+
         # Get all module units of a given type
         mutModules = tracklet.get_all_module_units(args.mut)
 

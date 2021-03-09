@@ -357,8 +357,6 @@ if __name__ == "__main__":
     memory_list = []
 
     if args.mut is not None:
-        print("WARNING: This feature \"--mut\" is not guaranteed to produce a consistent top-level")
-
         # Get all module units of a given type
         mutModules = tracklet.get_all_module_units(args.mut)
 
@@ -374,6 +372,21 @@ if __name__ == "__main__":
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
         memory_list = list(set(memory_list))
+        
+        # Correct mem.is_initial & mem.is_final, as loop over mutModules overwrites them incorrectly. 
+        for mem in memory_list:
+            if mem.is_initial:
+                for proc in mem.upstreams:
+                    for p in process_list:
+                        if proc.inst == p.inst:
+                            mem.is_initial = False
+                            break
+            if mem.is_final:
+                for proc in mem.downstreams:
+                    for p in process_list:
+                        if proc.inst == p.inst:
+                            mem.is_final = False
+                            break
         
     elif args.uut is None:
         # Get all modules in the configurations

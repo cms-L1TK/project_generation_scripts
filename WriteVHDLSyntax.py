@@ -33,10 +33,11 @@ def writeTBModuleCloser(topmodule_name):
     return ""
 
 def writeTBMemoryStimulusInstance(memModule):
+    """
     # Verilog test-bench
     # this will have to change, once Robert has a more sensible method for
     # stimulating the initial memories. But this does work for now
-
+    """
     wirelist = ""
     parameterlist = ""
     portlist = ""
@@ -81,10 +82,11 @@ def writeTBMemoryStimulusInstance(memModule):
     return mem_str
 
 def writeTBMemoryReadInstance(memModule):
+    """
     # Verilog test-bench
     # this will have to change, once Robert has a more sensible method for
     # stimulating the initial memories. But this does work for now
-
+    """
     wirelist = ""
     # Write wires
     wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
@@ -97,7 +99,9 @@ def writeTBMemoryReadInstance(memModule):
     return wirelist
 
 def writeTopLevelMemoryInstance(memModule, interface):
+    """
     # Declaration of memories & associated wires
+    """
     wirelist = ""
     parameterlist = ""
     portlist = ""
@@ -171,6 +175,9 @@ def writeTopLevelMemoryInstance(memModule, interface):
     return wirelist,mem_str
 
 def writeControlSignals_interface(initial_proc, final_proc):
+    """
+    # Top-level interface: control signals
+    """
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
@@ -182,7 +189,9 @@ def writeControlSignals_interface(initial_proc, final_proc):
     return string_ctrl_signals
 
 def writeMemoryLHSPorts_interface(memModule):
+    """
     # Top-level interface: input memories' ports.
+    """
     string_input_mems = ""
     string_input_mems += "    "+memModule.inst+"_dataarray_data_V_wea       : in std_logic;\n"
     string_input_mems += "    "+memModule.inst+"_dataarray_data_V_writeaddr : in std_logic_vector("
@@ -192,7 +201,9 @@ def writeMemoryLHSPorts_interface(memModule):
     return string_input_mems
 
 def writeMemoryRHSPorts_interface(memModule):
+    """
     # Top-level interface: output memories' ports.
+    """
     string_output_mems = ""
     string_output_mems += "    "+memModule.inst+"_dataarray_data_V_enb      : in std_logic;\n"
     string_output_mems += "    "+memModule.inst+"_dataarray_data_V_readaddr : in std_logic_vector("
@@ -212,6 +223,9 @@ def writeMemoryRHSPorts_interface(memModule):
     return string_output_mems
 
 def writeTBControlSignals(topfunc, first_proc, last_proc):
+    """
+    # Verilog test bench: control signals
+    """
     string_header = ""
     string_header += "reg clk;\n"
     string_header += "reg reset;\n\n"
@@ -246,6 +260,9 @@ def writeTBControlSignals(topfunc, first_proc, last_proc):
     return string_header
 
 def writeFWBlockControlSignalPorts(first_proc, last_proc):
+    """
+    # Verilog test bench: send control signals to top-level
+    """
     string_fwblock_ctrl = ""
     string_fwblock_ctrl += "  .clk(clk),\n"
     string_fwblock_ctrl += "  .reset(reset),\n"
@@ -258,7 +275,9 @@ def writeFWBlockControlSignalPorts(first_proc, last_proc):
     return string_fwblock_ctrl
 
 def writeFWBlockMemoryLHSPorts(memModule):
-    # Verilog test bench: sent memories to top-level.
+    """
+    # Verilog test bench: send memories to top-level.
+    """
     string_input_mems = ""
     string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_wea(1'b1),\n"
     string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("
@@ -269,7 +288,9 @@ def writeFWBlockMemoryLHSPorts(memModule):
     return string_input_mems
 
 def writeFWBlockMemoryRHSPorts(memModule):
+    """
     # Verilog test bench: returned memories from top-level.
+    """
     string_output_mems = ""
     string_output_mems += "  ."+memModule.inst+"_dataarray_data_V_enb("
     string_output_mems += memModule.inst+"_dataarray_data_V_enb),\n"
@@ -289,7 +310,10 @@ def writeFWBlockMemoryRHSPorts(memModule):
     return string_output_mems
 
 def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_ports):
-# FIXME needs fixing to include template parameters for generic proc module writing
+    """
+    # Instantiation of processing module within top-level.
+    # FIXME needs fixing to include template parameters for generic proc module writing
+    """
     module_str = ""
     module_str += str_ctrl_func
     module_str += special_TC
@@ -299,6 +323,9 @@ def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_p
     return module_str
 
 def writeStartSwitchAndInternalBX(module,mem):
+    """
+    # Top-level: control (start/done) & Bx signals for use by given module
+    """
     int_ctrl_wire = ""
     int_ctrl_wire += "  signal "+module.mtype+"_done : std_logic := '0';\n"
     int_ctrl_wire += "  signal "+mem.downstreams[0].mtype+"_start : std_logic := '0';\n"
@@ -314,6 +341,9 @@ def writeStartSwitchAndInternalBX(module,mem):
     return int_ctrl_wire,int_ctrl_func
 
 def writeProcControlSignalPorts(module,first_of_type):
+    """
+    # Processing module port assignment: control signals
+    """
     string_ctrl_ports = ""
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
@@ -328,7 +358,9 @@ def writeProcControlSignalPorts(module,first_of_type):
     return string_ctrl_ports
 
 def writeProcBXPort(modName,isInput,isInitial):
-    # BX ports of processing module
+    """
+    # Processing module port assignment: BX ports
+    """
     bx_str = ""
     if isInput and isInitial:
         bx_str += "      bx_V          => bx_in_"+modName+",\n"
@@ -340,7 +372,9 @@ def writeProcBXPort(modName,isInput,isInitial):
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,memory):
-    # Output interface of processing module
+    """
+    # Processing module port assignment: outputs to memories
+    """
     string_mem_ports = ""
     string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
     string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
@@ -353,7 +387,9 @@ def writeProcMemoryLHSPorts(argname,memory):
     return string_mem_ports
 
 def writeProcMemoryRHSPorts(argname,memory):
-    # Input interface of processing module.
+    """
+    # Processing module port assignment: inputs from memories
+    """
     string_mem_ports = ""
     string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => "
     string_mem_ports += memory.inst+"_dataarray_data_V_enb,\n"

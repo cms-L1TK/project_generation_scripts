@@ -24,6 +24,7 @@ import os, subprocess
 ########################################
 
 def writeMemoryModules(mem_list, interface=0):
+    """
     # mem_list: a list memory module(s)
     # inteface: specifies whether mem_list is on the interface of the firmware block
     #           being generated
@@ -32,6 +33,7 @@ def writeMemoryModules(mem_list, interface=0):
     #              1: Final memories, ready by test bench
 
     # the element cound be a list if the memories are grouped in an array
+    """
 
     string_wires = ""
     string_mem = ""
@@ -47,10 +49,12 @@ def writeMemoryModules(mem_list, interface=0):
 # Processing modules
 ########################################
 def writeProcModules(proc_list, hls_src_dir):
+    """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
     #              from HLS constants files, and reading/writing bit widths by accessing HLS
     #              <MemoryType>Memory.h files (Not yet implemented)
+    """
 
     string_proc_func = ""
     string_proc_wire = ""
@@ -77,6 +81,7 @@ def writeProcModules(proc_list, hls_src_dir):
 ########################################
 def writeTopModule_interface(topmodule_name, process_list, memories_topin, memories_topout,
                      streamIO=False):
+    """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
     #                  only used to get the first and last processes in the block in order to
@@ -87,6 +92,7 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     # streamIO:        controls whether the input to this firmware block is an hls::stream, rather
     #                  than a BRAM interface. This will be needed when the first processing block in the
     #                  chain is input router, and might be needed for the KF. Not yet implemented.
+    """
     
     if streamIO:
         raise ValueError("hls::stream IO is not supported yet.")
@@ -135,9 +141,11 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
 ########################################
 def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_topout,
                  hls_dir):
+    """
     # List of (memory module(s), portname)
     # memories inside the top function, input memories at top function interface,
     # output memories at top function interface
+    """
     
     # Write memories
     string_memWires = ""
@@ -182,9 +190,11 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
 # Test bench
 ########################################
 def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
+    """
     # memories_list: list of input memories that the test bench has to initialize
     # emData_dir:    directory where data for input memories is stored
     # sector:        which sector nonant the emData is taken from
+    """
 
     string_mem = ""
     for memModule in memories_list:
@@ -228,10 +238,12 @@ def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_pr
     return string_fwblock_inst
 
 def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
+    """
     # memories_in:   list of input memories that the test bench has to initialize
     # memories_out:  list of output memories that the test bench will have to read
     # emData_dir:    directory where data for input memories is stored
     # sector:        which sector nonant the emData is taken from
+    """
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
@@ -274,8 +286,10 @@ def writeTcl(projname, topfunc, emData_dir):
     return string_tcl
 
 def getMemPrintDirectory(fname):
+    """
     # return directory name under fpga_emulation_longVM/MemPrints/
     # for a given memory printout file
+    """
     if "InputStubs" in fname:
         return "InputStubs"
     elif "StubPairs" in fname:

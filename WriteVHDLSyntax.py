@@ -33,9 +33,11 @@ def writeTBModuleCloser(topmodule_name):
     return ""
 
 def writeTBMemoryStimulusInstance(memModule):
+    """
+    # Verilog test-bench
     # this will have to change, once Robert has a more sensible method for
     # stimulating the initial memories. But this does work for now
-
+    """
     wirelist = ""
     parameterlist = ""
     portlist = ""
@@ -60,7 +62,7 @@ def writeTBMemoryStimulusInstance(memModule):
 
     # Write parameters
     parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
-    parameterlist += "  .RAM_DEPTH("+str(128*2**memModule.bxbitwidth)+"),\n"
+    parameterlist += "  .NUM_PAGES("+str(2**memModule.bxbitwidth)+"),\n"
     parameterlist += "  .INIT_FILE(\"\"),\n"
     parameterlist += "  .INIT_HEX(1),\n"
     parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
@@ -80,9 +82,11 @@ def writeTBMemoryStimulusInstance(memModule):
     return mem_str
 
 def writeTBMemoryReadInstance(memModule):
+    """
+    # Verilog test-bench
     # this will have to change, once Robert has a more sensible method for
     # stimulating the initial memories. But this does work for now
-
+    """
     wirelist = ""
     # Write wires
     wirelist += "wire "+memModule.inst+"_dataarray_data_V_enb;\n"
@@ -95,6 +99,9 @@ def writeTBMemoryReadInstance(memModule):
     return wirelist
 
 def writeTopLevelMemoryInstance(memModule, interface):
+    """
+    # Declaration of memories & associated wires
+    """
     wirelist = ""
     parameterlist = ""
     portlist = ""
@@ -123,17 +130,17 @@ def writeTopLevelMemoryInstance(memModule, interface):
         wirelist += "  signal "+memModule.inst+"_dataarray_data_V_dout     : "
         wirelist += "std_logic_vector("+str(memModule.bitwidth-1)+" downto 0);\n"
         if memModule.has_numEntries_out:
-            for i in range(0,2**memModule.bxbitwidth):
-                if memModule.is_binned:
-                    wirelist += "  signal "+memModule.inst+"_nentries_"+str(i)+"_VV_dout : "
-                    wirelist += "t_arr8_5b; -- (#bin)\n"
-                else:
-                    wirelist += "  signal "+memModule.inst+"_nentries_"+str(i)+"_V_dout : "
-                    wirelist += "std_logic_vector(6 downto 0);\n"
+            num_pages = 2**memModule.bxbitwidth
+            if memModule.is_binned:
+                wirelist += "  signal "+memModule.inst+"_nentries_VVV_dout : "
+                wirelist += "t_arr"+str(num_pages)+"_8_5b; -- (#page)(#bin)\n"
+            else:
+                wirelist += "  signal "+memModule.inst+"_nentries_VV_dout : "
+                wirelist += "t_arr"+str(num_pages)+"_7b; -- (#page)\n"
 
     # Write parameters
     parameterlist += "      RAM_WIDTH       => "+str(memModule.bitwidth)+",\n"
-    parameterlist += "      RAM_DEPTH       => "+str(128*2**memModule.bxbitwidth)+",\n"
+    parameterlist += "      NUM_PAGES       => "+str(2**memModule.bxbitwidth)+",\n"
     parameterlist += "      INIT_FILE       => \"\",\n"
     parameterlist += "      INIT_HEX        => true,\n"
     parameterlist += "      RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
@@ -152,22 +159,12 @@ def writeTopLevelMemoryInstance(memModule, interface):
     portlist += "      sync_nent => "+sync_signal+",\n"
 
     if memModule.has_numEntries_out:
-        for i in range(0,2**memModule.bxbitwidth):
-            if memModule.is_binned:
-                portlist += "      nent_o"+str(i)+"  => "+memModule.inst+"_nentries_"+str(i)+"_VV_dout,\n"
-            else:
-                portlist += "      nent_o"+str(i)+"  => "+memModule.inst+"_nentries_"+str(i)+"_V_dout,\n"
-        for i in range(2**memModule.bxbitwidth,8):
-            if memModule.is_binned:
-                portlist += "      nent_o"+str(i)+"  => open,\n"
-            else:
-                portlist += "      nent_o"+str(i)+"  => open,\n"
+        if memModule.is_binned:
+            portlist += "      nent_o    => "+memModule.inst+"_nentries_VVV_dout,\n"
+        else:
+            portlist += "      nent_o    => "+memModule.inst+"_nentries_VV_dout,\n"
     else:
-        for i in range(0,8):
-            if memModule.is_binned:
-                portlist += "      nent_o"+str(i)+"  => open,\n"
-            else:
-                portlist += "      nent_o"+str(i)+"  => open,\n"
+        portlist += "      nent_o    => open,\n"
 
     if memModule.is_binned:
         mem_str += "\n  "+memModule.inst+" : entity work.tf_mem_bin"
@@ -178,6 +175,9 @@ def writeTopLevelMemoryInstance(memModule, interface):
     return wirelist,mem_str
 
 def writeControlSignals_interface(initial_proc, final_proc):
+    """
+    # Top-level interface: control signals
+    """
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
@@ -189,7 +189,9 @@ def writeControlSignals_interface(initial_proc, final_proc):
     return string_ctrl_signals
 
 def writeMemoryLHSPorts_interface(memModule):
+    """
     # Top-level interface: input memories' ports.
+    """
     string_input_mems = ""
     string_input_mems += "    "+memModule.inst+"_dataarray_data_V_wea       : in std_logic;\n"
     string_input_mems += "    "+memModule.inst+"_dataarray_data_V_writeaddr : in std_logic_vector("
@@ -199,7 +201,9 @@ def writeMemoryLHSPorts_interface(memModule):
     return string_input_mems
 
 def writeMemoryRHSPorts_interface(memModule):
+    """
     # Top-level interface: output memories' ports.
+    """
     string_output_mems = ""
     string_output_mems += "    "+memModule.inst+"_dataarray_data_V_enb      : in std_logic;\n"
     string_output_mems += "    "+memModule.inst+"_dataarray_data_V_readaddr : in std_logic_vector("
@@ -208,17 +212,20 @@ def writeMemoryRHSPorts_interface(memModule):
     string_output_mems += str(memModule.bitwidth-1)+" downto 0);\n"
 
     if memModule.has_numEntries_out:
-        for i in range(0,2**memModule.bxbitwidth):
-            if memModule.is_binned:
-                string_output_mems += "    "+memModule.inst+"_nentries_"+str(i)+"_VV_dout : "
-                string_output_mems += "out t_arr8_5b;\n"
-            else:
-                string_output_mems += "    "+memModule.inst+"_nentries_"+str(i)+"_V_dout : "
-                string_output_mems += "out std_logic_vector(6 downto 0);\n"
+        num_pages = 2**memModule.bxbitwidth
+        if memModule.is_binned:
+            string_output_mems += "    "+memModule.inst+"_nentries_VVV_dout : "
+            string_output_mems += "out t_arr"+str(num_pages)+"_8_5b;\n"
+        else:
+            string_output_mems += "    "+memModule.inst+"_nentries_VV_dout : "
+            string_output_mems += "out t_arr"+str(num_pages)+"_7b;\n"
 
     return string_output_mems
 
 def writeTBControlSignals(topfunc, first_proc, last_proc):
+    """
+    # Verilog test bench: control signals
+    """
     string_header = ""
     string_header += "reg clk;\n"
     string_header += "reg reset;\n\n"
@@ -253,6 +260,9 @@ def writeTBControlSignals(topfunc, first_proc, last_proc):
     return string_header
 
 def writeFWBlockControlSignalPorts(first_proc, last_proc):
+    """
+    # Verilog test bench: send control signals to top-level
+    """
     string_fwblock_ctrl = ""
     string_fwblock_ctrl += "  .clk(clk),\n"
     string_fwblock_ctrl += "  .reset(reset),\n"
@@ -265,7 +275,9 @@ def writeFWBlockControlSignalPorts(first_proc, last_proc):
     return string_fwblock_ctrl
 
 def writeFWBlockMemoryLHSPorts(memModule):
-    # Test bench: sent memories to top-level.
+    """
+    # Verilog test bench: send memories to top-level.
+    """
     string_input_mems = ""
     string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_wea(1'b1),\n"
     string_input_mems += "  ."+memModule.inst+"_dataarray_data_V_writeaddr("
@@ -276,7 +288,9 @@ def writeFWBlockMemoryLHSPorts(memModule):
     return string_input_mems
 
 def writeFWBlockMemoryRHSPorts(memModule):
-    # Test bench: returned memories from top-level.
+    """
+    # Verilog test bench: returned memories from top-level.
+    """
     string_output_mems = ""
     string_output_mems += "  ."+memModule.inst+"_dataarray_data_V_enb("
     string_output_mems += memModule.inst+"_dataarray_data_V_enb),\n"
@@ -296,7 +310,10 @@ def writeFWBlockMemoryRHSPorts(memModule):
     return string_output_mems
 
 def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_ports):
-# FIXME needs fixing to include template parameters for generic proc module writing
+    """
+    # Instantiation of processing module within top-level.
+    # FIXME needs fixing to include template parameters for generic proc module writing
+    """
     module_str = ""
     module_str += str_ctrl_func
     module_str += special_TC
@@ -306,6 +323,9 @@ def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_p
     return module_str
 
 def writeStartSwitchAndInternalBX(module,mem):
+    """
+    # Top-level: control (start/done) & Bx signals for use by given module
+    """
     int_ctrl_wire = ""
     int_ctrl_wire += "  signal "+module.mtype+"_done : std_logic := '0';\n"
     int_ctrl_wire += "  signal "+mem.downstreams[0].mtype+"_start : std_logic := '0';\n"
@@ -321,6 +341,9 @@ def writeStartSwitchAndInternalBX(module,mem):
     return int_ctrl_wire,int_ctrl_func
 
 def writeProcControlSignalPorts(module,first_of_type):
+    """
+    # Processing module port assignment: control signals
+    """
     string_ctrl_ports = ""
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
@@ -335,6 +358,9 @@ def writeProcControlSignalPorts(module,first_of_type):
     return string_ctrl_ports
 
 def writeProcBXPort(modName,isInput,isInitial):
+    """
+    # Processing module port assignment: BX ports
+    """
     bx_str = ""
     if isInput and isInitial:
         bx_str += "      bx_V          => bx_in_"+modName+",\n"
@@ -346,36 +372,40 @@ def writeProcBXPort(modName,isInput,isInitial):
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,memory):
-    # Output interface of processing module
+    """
+    # Processing module port assignment: outputs to memories
+    """
     string_mem_ports = ""
-    string_mem_ports += "      "+argname+"_dataarray_data_V_ce0         => open,\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_we0         => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+    string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
     string_mem_ports += memory.inst+"_dataarray_data_V_wea,\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_address0    => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
     string_mem_ports += memory.inst+"_dataarray_data_V_writeaddr,\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_d0          => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
     string_mem_ports += memory.inst+"_dataarray_data_V_din,\n"
 
     return string_mem_ports
 
 def writeProcMemoryRHSPorts(argname,memory):
-    # Input interface of processing module.
+    """
+    # Processing module port assignment: inputs from memories
+    """
     string_mem_ports = ""
-    string_mem_ports += "      "+argname+"_dataarray_data_V_ce0         => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => "
     string_mem_ports += memory.inst+"_dataarray_data_V_enb,\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_address0    => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
     string_mem_ports += memory.inst+"_dataarray_data_V_readaddr,\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_q0            => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_q0        => "
     string_mem_ports += memory.inst+"_dataarray_data_V_dout,\n"
 
     if memory.has_numEntries_out:
         for i in range(0,2**memory.bxbitwidth):
             if memory.is_binned:
                 for j in range(0,8):
-                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V_"+str(j)+"        => "
-                    string_mem_ports += memory.inst+"_nentries_"+str(i)+"_VV_dout("+str(j)+"),\n"
+                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V_"+str(j)+"     => "
+                    string_mem_ports += memory.inst+"_nentries_VVV_dout("+str(i)+")("+str(j)+"),\n"
             else:
-                string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V        => "
-                string_mem_ports += memory.inst+"_nentries_"+str(i)+"_V_dout,\n"
+                string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                string_mem_ports += memory.inst+"_nentries_VV_dout("+str(i)+"),\n"
 
     return string_mem_ports

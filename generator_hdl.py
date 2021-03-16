@@ -38,7 +38,7 @@ def writeMemoryModules(mem_list, interface=0):
     string_wires = ""
     string_mem = ""
     # Loop over memories in the list
-    for memModule in sorted(mem_list,key=lambda x: x.index):
+    for memModule in mem_list:
         string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
@@ -61,9 +61,6 @@ def writeProcModules(proc_list, hls_src_dir):
     # List to keep track of whether current instance of modules is first of its type
     # (needed for things like routing bx ports, done signals, etc.)
     proc_type_list = []
-
-    # Sort the processing module list
-    proc_list.sort(key=lambda x: x.index)
 
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
@@ -413,6 +410,10 @@ if __name__ == "__main__":
         uutProcModule = tracklet.get_proc_module(args.uut)
         process_list, memory_list = TrackletGraph.get_slice_around_proc(
             uutProcModule, args.nupstream, args.ndownstream) 
+
+    # Sort the module lists by order in which they appear in chain.
+    process_list.sort(key=lambda x: x.index)
+    memory_list.sort(key=lambda x: x.index)
 
     for mem in memory_list:
         # Get widths of all needed memories

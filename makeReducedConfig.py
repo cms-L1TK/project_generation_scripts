@@ -61,6 +61,22 @@ class project:
         self.tcs = []
         self.l1phis = []
         self.lxphis = []
+        self.ref_modules = {}
+        self.ref_memories = {}
+
+    def addRefModules(self, fname):
+        with open(fname, "r") as f:
+            for line in f:
+                modname = line.split(":")[1].strip().strip("\n")
+                if modname not in self.ref_modules:
+                    self.ref_modules[modname] = line
+
+    def addRefMemories(self, fname):
+        with open(fname, "r") as f:
+            for line in f:
+                memname = line.split()[1].strip()
+                if memname not in self.ref_memories:
+                    self.ref_memories[memname] = line
 
     def addNode(self, n):
         if n.name not in self.nodes:
@@ -103,6 +119,16 @@ class project:
         with open(fname, "w") as f:
             for c in self.connections:
                 f.write(c.printConnection()+"\n")
+
+    def saveModules(self, fname):
+        with open(fname, "w") as f:
+            for n in self.nodes:
+                f.write(self.ref_modules[n])
+
+    def saveMemories(self, fname):
+        with open(fname, "w") as f:
+            for c in self.connections:
+                f.write(self.ref_memories[c.memory])
 
     def addTC(self, tc, ref_p):
         tcs = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
@@ -189,6 +215,7 @@ class project:
                     if "L%sPHI%s"%(x,lx) in n.name: return True
             return False
         if n.name in ["FT_L1L2", "PD", ""]: return True
+        if n.name.startswith("IR_"): return True
         return False
 
 # ----------------------------------------------------
@@ -199,11 +226,16 @@ class project:
 print "Loading full wire project..."
 full_wires = project()
 full_wires.loadProject("wires.dat")
-full_wires.saveProject("test.dat")
+#full_wires.saveProject("test.dat")
 
 # Set up reduced project and give it a phi sector in L1
 print "Finding reduced configuration..."
 reduced_wires = project()
+reduced_wires.addRefModules("modules.dat")
+reduced_wires.addRefMemories("memories.dat")
 reduced_wires.addTC("F", full_wires)
 reduced_wires.saveProject("reduced_wires.dat")
+reduced_wires.saveModules("reduced_modules.dat")
+reduced_wires.saveMemories("reduced_memories.dat")
+
 

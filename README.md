@@ -92,6 +92,25 @@ Basic instructions to run the project generation for the Vivado HLS project with
 
  The script also makes a wiring diagram *TrackletProject.pdf* of the mem/proc modules in the VHDL.
 
+### makeReducedConfig.py
+
+This script takes an input wires.dat, modules.dat, and memories.dat file, and allows you to make a reduced configuration centered around one module (currently explicitly set to be one TC). The script takes the phi sector of the TC, and chooses phi sectors for the layers that line up with it, then recursively searches for TC inputs and outputs within those phi regions. It outputs a new set of wires, modules, and memories files including only these files.
+
+By default the script will run starting with *TC_L1L2F*, and produced files called *reduced_wires.dat*, etc., but it can be modified with these options:
+  
+  -w WIRES, --wires WIRES
+                        Reference wires.dat file (from full config)
+  -o MODULES, --modules MODULES
+                        Reference modules.dat file (from full config)
+  -e MEMORIES, --memories MEMORIES
+                        Reference memories.dat file (from full config)
+  -s SECTOR, --sector SECTOR
+                        TC phi sector from which to create the reduced config
+  -p PREFIX, --prefix PREFIX
+                        Prefix to add to all output files
+  -l LAYERS, --layers LAYERS
+                        Select the layer pair to create seeds with
+
 -----------------------------------------------------------------
 
 ## Scripts for plotting wiring diagram:

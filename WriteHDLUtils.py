@@ -382,12 +382,41 @@ def matchArgPortNames_VMR(argname, portname):
 # TrackletEngine
 ################################
 def writeTemplatePars_TE(aTEModule):
-    raise ValueError("TrackletEngine is not implemented yet!")
-    return ""
+    instance_name = aTEModule.inst
+    # e.g. TE_L3PHIC12_L4PHIC22                                                                                                                                                           
+    pos = instance_name.split('_')[1][0:2]
+    PROJTYPE = ''
+    VMPTYPE = ''
+    LAYER = '0'
+    DISK = '0'
+    if pos in ['L1','L2','L3','L4','L5','L6']:
+        VMPTYPE = 'BARREL'
+        LAYER = pos[1]
+        if int(LAYER) > 3:
+            PROJTYPE = 'BARREL2S'
+        else:
+            PROJTYPE = 'BARRELPS'
+    else:
+        VMPTYPE = 'DISK'
+        PROJTYPE = 'DISK'
+        DISK = pos[1]
+
+    nInMemory = len(aTEModule.upstreams)
+
+    templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
+    return templpars_str
 
 def matchArgPortNames_TE(argname, portname):
-    raise ValueError("TrackletEngine is not implemented yet!")
-    return False
+    """
+    # Define rules to match the argument and the port names for MatchEngine
+    """
+    if argname == 'instubinnerdata':
+        return portname == 'innervmstubin'
+    elif argname == 'instubouterdata':
+        return portname == 'outervmstubin'
+    else:
+        print "matchArgPortNames_TE: Unknown argument name", argname
+        return False
 
 ################################
 # TrackletCalculator

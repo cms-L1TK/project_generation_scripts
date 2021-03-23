@@ -98,18 +98,12 @@ This script takes an input wires.dat, modules.dat, and memories.dat file, and al
 
 By default the script will run starting with *TC_L1L2F*, and produced files called *reduced_wires.dat*, etc., but it can be modified with these options:
   
-  -w WIRES, --wires WIRES
-                        Reference wires.dat file (from full config)
-  -o MODULES, --modules MODULES
-                        Reference modules.dat file (from full config)
-  -e MEMORIES, --memories MEMORIES
-                        Reference memories.dat file (from full config)
-  -s SECTOR, --sector SECTOR
-                        TC phi sector from which to create the reduced config
-  -p PREFIX, --prefix PREFIX
-                        Prefix to add to all output files
-  -l LAYERS, --layers LAYERS
-                        Select the layer pair to create seeds with
+    -w, --wires         Reference wires.dat file (from full config)
+    -o, --modules       Reference modules.dat file (from full config)
+    -e, --memories      Reference memories.dat file (from full config)
+    -s, --sector        TC phi sector from which to create the reduced config
+    -p, --prefix        Prefix to add to all output files
+    -l, --layers        Select the layer pair to create seeds with
 
 -----------------------------------------------------------------
 

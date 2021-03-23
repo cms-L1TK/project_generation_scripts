@@ -132,7 +132,7 @@ class project:
             for c in self.connections:
                 f.write(self.ref_memories[c.memory])
 
-    def addTC(self, tc, ref_p):
+    def addTC(self, tc, layers, ref_p):
         tcs = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
         l1phis = ["A", "B", "C", "D", "E", "F", "G", "H"]
         lxphis = ["A", "B", "C", "D"]
@@ -145,16 +145,17 @@ class project:
         phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
         phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
 
-        print "Adding regions to project: TC_L1l2%s, L1PHI%s, LxPHI%s"%(tcs[tc_i], l1phis[phi1_i], lxphis[phix_i])
-        self.tcs.append(tcs[tc_i])
+        print "Adding regions to project: TC_%s%s, L1PHI%s, LxPHI%s"%(tcs[tc_i], layers, l1phis[phi1_i], lxphis[phix_i])
+        self.tcs.append("TC_%s%s"%(layers,tcs[tc_i]))
         self.l1phis.append(l1phis[phi1_i])
         self.lxphis.append(lxphis[phix_i])
 
         # Add nodes and connections to the project
-        # Starting with TC_L1L2x and moving up and down the chain
+        # Starting with e.g. TC_L1L2F and moving up and down the chain
+        # Will only look for inputs of inputs and outputs of outputs
 
-        print "Starting with node TC_L1L2%s"%tcs[tc_i]
-        n = node("TC_L1L2%s"%tcs[tc_i])
+        print "Starting with node TC_%s%s"%(layers,tcs[tc_i])
+        n = node("TC_%s%s"%(layers,tcs[tc_i]))
         self.addNode(n)
         print "Finding inputs..."
         self.findInputConnections(n, ref_p)
@@ -198,9 +199,9 @@ class project:
                     self.findOutputConnections(out_n, ref_p)
 
     def isIncluded(self, n):
-        if n.name.startswith("TC_L1L2"):
+        if n.name.startswith("TC_"):
             for tc in self.tcs:
-                if n.name == "TC_L1L2%s"%tc: return True
+                if n.name == tc: return True
             return False
         if n.name.startswith("TE_L1PHI"):
             for l1 in self.l1phis:
@@ -216,7 +217,11 @@ class project:
                 for x in [2,3,4,5,6]:
                     if "L%sPHI%s"%(x,lx) in n.name: return True
             return False
-        if n.name in ["FT_L1L2", "PD", ""]: return True
+        if n.name.startswith("FT_"):
+            for tc in self.tcs:
+                layers = tc[3:-1]
+                if n.name == "FT_%s"%layers: return True
+        if n.name in ["PD", ""]: return True
         if n.name.startswith("IR_"): return True
         return False
 
@@ -231,6 +236,7 @@ parser.add_argument("-o", "--modules", type=str, default="modules.dat", help="Re
 parser.add_argument("-e", "--memories", type=str, default="memories.dat", help="Reference memories.dat file (from full config)")
 parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector from which to create the reduced config")
 parser.add_argument("-p", "--prefix", type=str, default="reduced_", help="Prefix to add to all output files")
+parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 args = parser.parse_args()
 
 # Load in full project
@@ -244,7 +250,7 @@ print "Finding reduced configuration..."
 reduced_wires = project()
 reduced_wires.addRefModules(args.modules)
 reduced_wires.addRefMemories(args.memories)
-reduced_wires.addTC(args.sector, full_wires)
+reduced_wires.addTC(args.sector, args.layers, full_wires)
 reduced_wires.saveProject("%swires.dat"%args.prefix)
 reduced_wires.saveModules("%smodules.dat"%args.prefix)
 reduced_wires.saveMemories("%smemories.dat"%args.prefix)

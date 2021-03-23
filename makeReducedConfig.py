@@ -1,3 +1,5 @@
+import argparse
+
 # Creates a reduced configuration when given a TC phi region
 # Takes a full configuration as input
 
@@ -222,20 +224,29 @@ class project:
 # Main function
 # ----------------------------------------------------
 
+# Parse options
+parser = argparse.ArgumentParser(description="Make a reduced configuration to run a slice of the track finder.")
+parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
+parser.add_argument("-o", "--modules", type=str, default="modules.dat", help="Reference modules.dat file (from full config)")
+parser.add_argument("-e", "--memories", type=str, default="memories.dat", help="Reference memories.dat file (from full config)")
+parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector from which to create the reduced config")
+parser.add_argument("-p", "--prefix", type=str, default="reduced_", help="Prefix to add to all output files")
+args = parser.parse_args()
+
 # Load in full project
 print "Loading full wire project..."
 full_wires = project()
-full_wires.loadProject("wires.dat")
+full_wires.loadProject(args.wires)
 #full_wires.saveProject("test.dat")
 
 # Set up reduced project and give it a phi sector in L1
 print "Finding reduced configuration..."
 reduced_wires = project()
-reduced_wires.addRefModules("modules.dat")
-reduced_wires.addRefMemories("memories.dat")
-reduced_wires.addTC("F", full_wires)
-reduced_wires.saveProject("reduced_wires.dat")
-reduced_wires.saveModules("reduced_modules.dat")
-reduced_wires.saveMemories("reduced_memories.dat")
+reduced_wires.addRefModules(args.modules)
+reduced_wires.addRefMemories(args.memories)
+reduced_wires.addTC(args.sector, full_wires)
+reduced_wires.saveProject("%swires.dat"%args.prefix)
+reduced_wires.saveModules("%smodules.dat"%args.prefix)
+reduced_wires.saveMemories("%smemories.dat"%args.prefix)
 
 

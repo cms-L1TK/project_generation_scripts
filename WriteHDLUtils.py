@@ -351,29 +351,7 @@ def matchArgPortNames_VMR(argname, portname):
 # TrackletEngine
 ################################
 def writeTemplatePars_TE(aTEModule):
-    instance_name = aTEModule.inst
-    # e.g. TE_L3PHIC12_L4PHIC22                                                                                                                                                           
-    pos = instance_name.split('_')[1][0:2]
-    PROJTYPE = ''
-    VMPTYPE = ''
-    LAYER = '0'
-    DISK = '0'
-    if pos in ['L1','L2','L3','L4','L5','L6']:
-        VMPTYPE = 'BARREL'
-        LAYER = pos[1]
-        if int(LAYER) > 3:
-            PROJTYPE = 'BARREL2S'
-        else:
-            PROJTYPE = 'BARRELPS'
-    else:
-        VMPTYPE = 'DISK'
-        PROJTYPE = 'DISK'
-        DISK = pos[1]
-
-    nInMemory = len(aTEModule.upstreams)
-
-    templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
-    return templpars_str
+    return ""
 
 def matchArgPortNames_TE(argname, portname):
     """
@@ -453,6 +431,7 @@ def writeTemplatePars_TC(aTCModule):
     
     for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
         if 'projout' in portname: # portname example: projoutL6PHID
+            print(portname)
             layer = portname[7:9] # L6
             phi = portname[-1] # D
 
@@ -460,6 +439,7 @@ def writeTemplatePars_TC(aTCModule):
             index = ProjLayers_List.index(layer)
 
             mask = 0
+            print(phi)
             if phi == 'A':
                 mask = 1
             elif phi == 'B':

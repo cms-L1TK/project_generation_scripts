@@ -234,10 +234,10 @@ class project:
 # Parse options
 parser = argparse.ArgumentParser(description="Make a reduced configuration to run a slice of the track finder.")
 parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
-parser.add_argument("-o", "--modules", type=str, default="modules.dat", help="Reference modules.dat file (from full config)")
-parser.add_argument("-e", "--memories", type=str, default="memories.dat", help="Reference memories.dat file (from full config)")
+parser.add_argument("-p", "--process", type=str, default="processingmodules.dat", help="Reference processingmodules.dat file (from full config)")
+parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", help="Reference memorymodules.dat file (from full config)")
 parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector from which to create the reduced config")
-parser.add_argument("-p", "--prefix", type=str, default="reduced_", help="Prefix to add to all output files")
+parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 args = parser.parse_args()
 
@@ -250,11 +250,11 @@ full_wires.loadProject(args.wires)
 # Set up reduced project and give it a phi sector in L1
 print "Finding reduced configuration..."
 reduced_wires = project()
-reduced_wires.addRefModules(args.modules)
+reduced_wires.addRefModules(args.process)
 reduced_wires.addRefMemories(args.memories)
 reduced_wires.addTC(args.sector, args.layers, full_wires)
-reduced_wires.saveProject("%swires.dat"%args.prefix)
-reduced_wires.saveModules("%smodules.dat"%args.prefix)
-reduced_wires.saveMemories("%smemories.dat"%args.prefix)
+reduced_wires.saveProject("%swires.dat"%args.output)
+reduced_wires.saveModules("%sprocessingmodules.dat"%args.output)
+reduced_wires.saveMemories("%smemorymodules.dat"%args.output)
 
 

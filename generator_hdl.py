@@ -5,11 +5,12 @@
 #
 # N.B. Check hard-wired constants in TrackletGraph::populate_bitwidths()
 ################################################
-from TrackletGraph import MemModule, ProcModule, TrackletGraph
-from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
+from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey, TrackletGraph
+from WriteHDLUtils import arrangeMemoriesByKey, \
+                            writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
                             writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
-                            writeTopLevelMemoryInstance, writeControlSignals_interface, \
+                            writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
 import ROOT
@@ -23,23 +24,20 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(mem_list, interface=0):
+def writeMemoryModules(memDict, memInfoDict, extraports):
     """
-    # mem_list: a list memory module(s)
-    # inteface: specifies whether mem_list is on the interface of the firmware block
-    #           being generated
-    #             -1: Initial memories, populated from test-bench
-    #              0: Internal memories
-    #              1: Final memories, ready by test bench
-
-    # the element cound be a list if the memories are grouped in an array
+    # Inputs:
+    #   memDict = dictionary of memories organised by type 
+    #             & no. of bits (TPROJ_58b etc.)
+    #   memInfoDict = dictionary of info about each memory type.
     """
-
     string_wires = ""
     string_mem = ""
-    # Loop over memories in the list
-    for memModule in mem_list:
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
+    # Loop over memory type
+    for mtypeB in memDict:
+        memList = memDict[mtypeB]
+        memInfo = memInfoDict[mtypeB]
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -48,12 +46,13 @@ def writeMemoryModules(mem_list, interface=0):
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir):
+def writeProcModules(proc_list, hls_src_dir, extraports):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
     #              from HLS constants files, and reading/writing bit widths by accessing HLS
     #              <MemoryType>Memory.h files (Not yet implemented)
+    # extraports: Top-level outputting debug info via ports to test-bench.
     """
 
     string_proc_func = ""
@@ -64,28 +63,27 @@ def writeProcModules(proc_list, hls_src_dir):
 
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports)
             proc_type_list.append(aProcMod.mtype)
         else:
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False)
-        string_proc_wire += proc_wire_inst+"\n"
-        string_proc_func += proc_func_inst+"\n"
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports)
+        string_proc_wire += proc_wire_inst
+        string_proc_func += proc_func_inst
         
     return string_proc_wire,string_proc_func
 
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memories_topin, memories_topout,
-                     streamIO=False):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, streamIO=False):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
     #                  only used to get the first and last processes in the block in order to
     #                  generate the bx signals. Seems a bit wasteful to pass the whole list)
-    # memories_topin:  memories at the beginning of the firmware block, which are populated by the
-    #                  test bench
-    # memories_topout: memories are the end of the firmware block, which are read out by the test bench
+    # memDict:         dictionary of memories organised by type 
+    #                  & no. of bits (TPROJ_58b etc.)
+    # memInfoDict:     dictionary of info about each memory type.
     # streamIO:        controls whether the input to this firmware block is an hls::stream, rather
     #                  than a BRAM interface. This will be needed when the first processing block in the
     #                  chain is input router, and might be needed for the KF. Not yet implemented.
@@ -97,63 +95,55 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     # Find names of first & last processing modules in project
     initial_proc = ""
     final_proc = ""
+    notfinal_procs = set()
     for proc in process_list:
-        if proc.is_first: initial_proc = proc.mtype
-        if proc.is_last: final_proc = proc.mtype
+        if proc.is_first: initial_proc = proc.mtype_short()
+        if proc.is_last: final_proc = proc.mtype_short()
+        if extraports and (not proc.is_last):
+            notfinal_procs.add(proc.mtype_short())
 
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs)
     
-    # Input arguments
     string_input_mems = ""
-    for memModule in memories_topin:
-        if isinstance(memModule, list): # memories in an array
-            assert(len(memModule)>0)
-            for memModuleInst in memModule:
-                string_input_mems += writeMemoryLHSPorts_interface(memModuleInst)
-        else:
-            string_input_mems += writeMemoryLHSPorts_interface(memModule)
-
-    # Output arguments
     string_output_mems = ""
-    for memModule in memories_topout:
-        if isinstance(memModule, list): # memories in an array
-            assert(len(memModule)>0)
-            for memModuleInst in memModule:
-                string_output_mems += writeMemoryRHSPorts_interface(memModuleInst)
-        else:
-            string_output_mems += writeMemoryRHSPorts_interface(memModule)
-
+    for mtypeB in memDict:
+        memList = memDict[mtypeB]
+        memInfo = memInfoDict[mtypeB]
+        if memList[0].is_initial:
+            # Input arguments
+            string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
+        elif memList[-1].is_final:
+            # Output arguments
+            string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memList, memInfo)
+        elif extraports:
+            # Debug ports corresponding to BRAM inputs.
+            string_input_mems += writeMemoryLHSPorts_interface(mtypeB, extraports)            
+        
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
     string_topmod_interface += string_output_mems
-    string_topmod_interface = string_topmod_interface.rstrip(";\n")+"\n);\n\n"
+    string_topmod_interface = string_topmod_interface.rstrip(";\n")+"\n  );\n"
     
     return string_topmod_interface
 
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_topout,
-                 hls_dir):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports):
     """
-    # List of (memory module(s), portname)
-    # memories inside the top function, input memories at top function interface,
-    # output memories at top function interface
+    # Inputs:
+    #   memDict = dictionary of memories organised by type 
+    #             & no. of bits (TPROJ_58b etc.)
+    #   memInfoDict = dictionary of info about each memory type.
     """
     
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memList_topin,-1)
-    string_memWires   += memWires_inst
-    string_memModules += memModules_inst
-    memWires_inst,memModules_inst = writeMemoryModules(memList_inside,0)
-    string_memWires   += memWires_inst
-    string_memModules += memModules_inst
-    memWires_inst,memModules_inst = writeMemoryModules(memList_topout,1)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -164,11 +154,11 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
 
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
-    string_procWires, string_procModules = writeProcModules(process_list, source_dir)
+    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports)
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                              memList_topin, memList_topout)
+                                                       memDict, memInfoDict, extraports)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -234,23 +224,28 @@ def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_pr
     string_fwblock_inst += "\n);"
     return string_fwblock_inst
 
-def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
+def writeTestBench(topfunc, memDict, memInfoDict, emData_dir, sector="04"):
     """
-    # memories_in:   list of input memories that the test bench has to initialize
-    # memories_out:  list of output memories that the test bench will have to read
-    # emData_dir:    directory where data for input memories is stored
-    # sector:        which sector nonant the emData is taken from
+    # Inputs:
+    #   memDict = dictionary of memories organised by type 
+    #             & no. of bits (TPROJ_58b etc.)
+    #   memInfoDict = dictionary of info about each memory type.
+    #   emData_dir =   directory where data for input memories is stored
+    #   sector =       which sector nonant the emData is taken from
     """
+
+    """
+    # THIS WAS THE OLD VERILOG CODE
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
         if memModule.downstreams[0].is_first:
-            first_proc = memModule.downstreams[0].mtype
+            first_proc = memModule.downstreams[0].mtype_short()
             break
     
     for memModule in memories_out:
         if memModule.upstreams[0].is_last:
-            last_proc = memModule.upstreams[0].mtype
+            last_proc = memModule.upstreams[0].mtype_short()
             break
 
     # Write test bench header
@@ -274,6 +269,8 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
     string_tb += writeTBModuleCloser(topfunc)
     
     return string_tb,""
+    """
+    return "NOT IMPLEMENTED",""
 
 ########################################
 # Tcl
@@ -345,6 +342,8 @@ if __name__ == "__main__":
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
                         help="Number of downstream processing steps to include")
+    parser.add_argument('-x', '--extraports', action='store_true', 
+                        help="Add debug ports corresponding to all BRAM inputs")
 
     parser.add_argument('--emData_dir', type=str, default="SectorProcessorTest",
                         help="Directory where emulation printouts are stored")
@@ -353,6 +352,11 @@ if __name__ == "__main__":
                         help="Directory of emulation memory printouts")
     
     args = parser.parse_args()
+
+    if args.extraports:
+        topfunc = args.topfunc + "Full"
+    else:
+        topfunc = args.topfunc
 
     ########################################
     # Read configuration files and setup TrackletGraph
@@ -415,6 +419,9 @@ if __name__ == "__main__":
     process_list.sort(key=lambda x: x.index)
     memory_list.sort(key=lambda x: x.index)
 
+    # Sort memory list with input memories first & output ones last.
+    memory_list.sort(key=lambda x: int(x.is_final) - int(x.is_initial))
+
     for mem in memory_list:
         # Get widths of all needed memories
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
@@ -428,8 +435,12 @@ if __name__ == "__main__":
         TrackletGraph.populate_firstlast(proc)
         TrackletGraph.populate_IPname(proc)
 
-    memList_topin, memList_inside, memList_topout = groupAllConnectedMemories(
-        process_list, memory_list)
+    # Arrange memories in dictionaries by key (TPROJ_60 etc.)
+    memDict, memInfoDict = arrangeMemoriesByKey(memory_list)
+
+    ###############
+    # File of memory utilities specific to this chain.
+    string_memUtilFile = writeMemoryUtil(memDict, memInfoDict)
 
     ########################################
     #  Plot graph
@@ -437,25 +448,32 @@ if __name__ == "__main__":
     pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
     ROOT.gROOT.SetBatch(True)
     ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
-    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
+    #IRT
+    #ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
+
+
     ###############
     #  Top File
-    string_topfile = writeTopFile(args.topfunc, process_list, memList_topin, 
-                     memList_inside, memList_topout, args.hls_dir)
+    string_topfile = writeTopFile(topfunc, process_list,
+                                  memDict, memInfoDict, args.hls_dir, args.extraports)
 
     ###############
     # Test bench
     string_testbench, list_memprints = writeTestBench(
-        args.topfunc, memList_topin, memList_topout, args.emData_dir)
+        topfunc, memDict, memInfoDict, args.emData_dir)
                                       
     ###############
     # tcl
-    string_tcl = writeTcl(args.projname, args.topfunc, args.emData_dir)
+    string_tcl = writeTcl(args.projname, topfunc, args.emData_dir)
     
     # Write to disk
-    fname_top = args.topfunc+".vhd"
-    fname_tb = args.topfunc+"_test.vhd"
+    fname_memUtil = "memUtil_pkg.vhd"
+    fname_top = topfunc+".vhd"
+    fname_tb = topfunc+"_test.vhd"
     fname_tcl = "script_"+args.projname+".tcl"
+
+    fout_memUtil = open(fname_memUtil,"w")
+    fout_memUtil.write(string_memUtilFile)
     
     fout_top = open(fname_top,"w")
     fout_top.write(string_topfile)
@@ -469,6 +487,7 @@ if __name__ == "__main__":
     ###############
     print "Output top file:", fname_top
     print "Output test bench file:", fname_tb
+    print "Output HDL package:", fname_memUtil
     print "Output tcl script:", fname_tcl
     
     ###############

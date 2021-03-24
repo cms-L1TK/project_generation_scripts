@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import argparse
 
 # Creates a reduced configuration when given a TC phi region

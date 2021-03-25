@@ -419,9 +419,6 @@ if __name__ == "__main__":
     process_list.sort(key=lambda x: x.index)
     memory_list.sort(key=lambda x: x.index)
 
-    # Sort memory list with input memories first & output ones last.
-    memory_list.sort(key=lambda x: int(x.is_final) - int(x.is_initial))
-
     for mem in memory_list:
         # Get widths of all needed memories
         TrackletGraph.populate_bitwidths(mem,args.hls_dir)
@@ -448,8 +445,7 @@ if __name__ == "__main__":
     pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
     ROOT.gROOT.SetBatch(True)
     ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
-    #IRT
-    #ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
+    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
 
 
     ###############

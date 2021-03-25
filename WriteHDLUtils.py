@@ -1,3 +1,4 @@
+
 ########################################
 # Utilities for writing Verilog code from Vivado HLS blocks
 ########################################
@@ -431,7 +432,6 @@ def writeTemplatePars_TC(aTCModule):
     
     for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
         if 'projout' in portname: # portname example: projoutL6PHID
-            print(portname)
             layer = portname[7:9] # L6
             phi = portname[-1] # D
 
@@ -439,7 +439,6 @@ def writeTemplatePars_TC(aTCModule):
             index = ProjLayers_List.index(layer)
 
             mask = 0
-            print(phi)
             if phi == 'A':
                 mask = 1
             elif phi == 'B':
@@ -448,7 +447,7 @@ def writeTemplatePars_TC(aTCModule):
                 mask = 4
             elif phi == 'D':
                 mask = 8
-            assert(mask > 0)
+            #assert(mask > 0)
 
             TPROJMask += mask << (index * 4)
             
@@ -759,6 +758,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type):
     ####
     # function name
+    print(module)
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
@@ -865,9 +865,17 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?
                     if portname.find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        if isinstance(memory, list):
+                            for module in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,module)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.find("out") != -1:
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                        if isinstance(memory, list):
+                            for module in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,module)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
@@ -885,8 +893,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str = writeProcCombination(module, str_ctrl_func, 
-                                      special_TC, templpars_str, string_ports)
+    module_str=""
+    #module_str = writeProcCombination(module, str_ctrl_func, 
+    #                                  special_TC, templpars_str, string_ports)
 
     return str_ctrl_wire,module_str
 

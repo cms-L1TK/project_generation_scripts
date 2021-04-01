@@ -1,4 +1,3 @@
-
 ########################################
 # Utilities for writing Verilog code from Vivado HLS blocks
 ########################################
@@ -285,7 +284,6 @@ def getListsOfGroupedMemories(aProcModule):
     for arrayname in arraycontainer_dict:
         newmemList.append(arraycontainer_dict[arrayname])
         newportList.append(arrayname)
-
     return newmemList, newportList
 
 def groupAllConnectedMemories(proc_list, mem_list):
@@ -362,6 +360,8 @@ def matchArgPortNames_TE(argname, portname):
         return portname == 'innervmstubin'
     elif argname == 'instubouterdata':
         return portname == 'outervmstubin'
+    elif argname == 'outstubpair':
+        return portname == 'stubpairout'
     else:
         print "matchArgPortNames_TE: Unknown argument name", argname
         return False
@@ -758,7 +758,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type):
     ####
     # function name
-    print(module)
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
@@ -783,7 +782,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         # 'TrackletCalculator_<seeding>'
         # extract seeding from instance name: TC_L3L4C
         special_TC += '_'+module.inst.split('_')[1][0:4]
-
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.h'
@@ -814,7 +812,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
-
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -834,14 +831,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
             for memory, portname in zip(memModuleList, portNameList):
+                print(module," 1")
                 # Check if the portname matches the argument name from function def
                 if f_matchArgPortNames is None:
                     # No matching rule provided, just check if the names are the same
                     foundMatch = (argname==portname)
                 else:
                     # Use the provided matching rules
-                    foundMatch = f_matchArgPortNames(argname, portname)
-
+                    if "table" not in argname:
+                        foundMatch = f_matchArgPortNames(argname, portname)
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
@@ -866,24 +864,24 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Assumes a sorted memModuleList due to arrays?
                     if portname.find("in") != -1:
                         if isinstance(memory, list):
-                            for module in memory:
-                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,module)
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                    print(module, "3")
                     if portname.find("out") != -1:
                         if isinstance(memory, list):
-                            for module in memory:
-                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,module)
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
-
+                    print(module," 2")
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
                     memModuleList.remove(memory)
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
-
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
@@ -893,9 +891,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str=""
-    #module_str = writeProcCombination(module, str_ctrl_func, 
-    #                                  special_TC, templpars_str, string_ports)
+    module_str = writeProcCombination(module, str_ctrl_func, 
+                                      special_TC, templpars_str, string_ports)
 
     return str_ctrl_wire,module_str
 

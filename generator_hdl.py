@@ -210,7 +210,6 @@ def writeTBMemoryReads(memories_list, emData_dir="", sector="04"):
     # sector:        which sector nonant the emData is taken from
 
     string_mem = ""
-    print(memories_list)
     for memModule in memories_list:
         amem_str = writeTBMemoryReadInstance(memModule)
         string_mem += amem_str
@@ -251,12 +250,22 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
-        if memModule.downstreams[0].is_first:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_first:
+                    first_proc = module.downstreams[0].mtype
+                    break
+        elif memModule.downstreams[0].is_first:
             first_proc = memModule.downstreams[0].mtype
             break
     
     for memModule in memories_out:
-        if memModule.upstreams[0].is_last:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_last:
+                    last_proc = module.upstreams[0].mtype
+                    break
+        elif memModule.upstreams[0].is_last:
             last_proc = memModule.upstreams[0].mtype
             break
 

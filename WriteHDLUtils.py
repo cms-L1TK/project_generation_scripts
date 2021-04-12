@@ -1,16 +1,17 @@
-########################################
+"""
 # Utilities for writing Verilog code from Vivado HLS blocks
-########################################
+"""
+
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
 from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination
 import re
 
-########################################
-# Memory objects
-########################################
 def getMemoryClassName_InputStub(instance_name):
+    """
+    # Memory objects
     # Two examples of instance name: IL_L1PHIB_neg_PS10G_1_A, IL_L1PHIH_PS10G_2_B
+    """
     position = instance_name.split('_')[1][:2] # layer/disk
     ptmodule = instance_name.replace('_neg','').split('_')[2][:2] # PS or 2S
 
@@ -27,7 +28,9 @@ def getMemoryClassName_InputStub(instance_name):
     return 'InputStubMemory<'+bitformat+'>'
 
 def getMemoryClassName_VMStubsTE(instance_name):
+    """
     # An example of instance name: VMSTE_L6PHIB15n3
+    """
     position = instance_name.split('_')[1][:2] # layer/disk
     philabel = instance_name.split('_')[1][5] # PHI
 
@@ -97,7 +100,9 @@ def getMemoryClassName_VMStubsTE(instance_name):
     return memoryclass+'<'+bitformat+'>'
 
 def getMemoryClassName_VMStubsME(instance_name):
+    """
     # An example of instance name: VMSME_D3PHIB8n1
+    """
     position = instance_name.split('_')[1][:2] # layer/disk
     bitformat = ''
     
@@ -112,10 +117,10 @@ def getMemoryClassName_VMStubsME(instance_name):
     return 'VMStubMEMemory<'+bitformat+'>'
 
 def getMemoryClassName_AllStubs(instance_name):
-    ######################
+    """
     # FIXME: separate Disk PS and 2S AllStub memories for MatchCalculator
     # when config files are updated
-    ######################
+    """
     
     # An example of instance name: AS_D1PHIAn5
     position = instance_name.split('_')[1][:2]
@@ -129,17 +134,23 @@ def getMemoryClassName_AllStubs(instance_name):
         raise ValueError("Unknown Layer/Disk "+position)
     
 def getMemoryClassName_StubPairs(instance_name):
+    """
     # e.g. SP_L1PHIA2_L2PHIA3
+    """
     assert('SP_' in instance_name)
     return 'StubPairMemory'
 
 def getMemoryClassName_TrackletParameters(instance_name):
+    """
     # e.g. TPAR_L1L2L
+    """
     assert('TPAR_' in instance_name)
     return 'TrackletParameterMemory'
 
 def getMemoryClassName_TrackletProjections(instance_name):
+    """
     # e.g. TPROJ_L5L6A_L1PHIB
+    """
     position = instance_name.split('_')[2][:2] # layer/disk
     bitformat = ''
 
@@ -154,7 +165,9 @@ def getMemoryClassName_TrackletProjections(instance_name):
     return 'TrackletProjectionMemory<'+bitformat+'>'
 
 def getMemoryClassName_AllProj(instance_name):
+    """
     # e.g. AP_L4PHIB
+    """
     position = instance_name.split('_')[1][:2] # layer/disk
     bitformat = ''
 
@@ -169,7 +182,9 @@ def getMemoryClassName_AllProj(instance_name):
     return 'AllProjectionMemory<'+bitformat+'>'
 
 def getMemoryClassName_VMProjections(instance_name):
+    """
     # e.g. VMPROJ_D3PHIA2
+    """
     position = instance_name.split('_')[1][:2] # layer/disk
     if position in ['L1','L2','L3','L4','L5','L6']:
         return 'VMProjectionMemory<BARREL>'
@@ -178,12 +193,16 @@ def getMemoryClassName_VMProjections(instance_name):
         return 'VMProjectionMemory<DISK>'
 
 def getMemoryClassName_CandidateMatch(instance_name):
+    """
     # e.g. CM_L2PHIA8
+    """
     assert('CM_' in instance_name)
     return 'CandidateMatchMemory'
 
 def getMemoryClassName_FullMatch(instance_name):
+    """
     # e.g. FM_L5L6_L3PHIB
+    """
     position = instance_name.split('_')[2][:2]
     if position in ['L1','L2','L3','L4','L5','L6']:
         return 'FullMatchMemory<BARREL>'
@@ -192,12 +211,16 @@ def getMemoryClassName_FullMatch(instance_name):
         return 'FullMatchMemory<DISK>'
 
 def getMemoryClassName_TrackFit(instance_name):
+    """
     # e.g. TF_L3L4
+    """
     assert('TF_' in instance_name)
     return 'TrackFitMemory'
 
 def getMemoryClassName_CleanTrack(instance_name):
+    """
     # e.g. CT_L5L6
+    """
     assert('CT_' in instance_name)
     return 'CleanTrackMemory'
 
@@ -233,11 +256,13 @@ def getHLSMemoryClassName(module):
         raise ValueError(module.mtype + " is unknown.")
 
 def labelConnectedMemoryArrays(proc_list):
+    """
     # label those memories that will be constructed in an array
     # (if these scripts end up generating the HLS top levels, will this function
     # be needed? That is, even if the templated HLS function has arrays on the
     # interface, the top-level could still be individual memories, although you'd
     # still have to pass those individual memories to the templated block as an array
+    """
     for aProcModule in proc_list:
 
         if aProcModule.mtype == 'TrackletCalculator':
@@ -255,11 +280,13 @@ def labelConnectedMemoryArrays(proc_list):
         #elif aProcModule.mtype == '':
 
 def getListsOfGroupedMemories(aProcModule):
+    """
     # Get a list of memories and a list of ports for a given processing module
     # The memories are further grouped in a list if they are expected to be
     # constructed and passed to the processing function as an array
 
     # add array name to 'userlabel' of the connected memory module
+    """
     labelConnectedMemoryArrays([aProcModule])
 
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
@@ -288,10 +315,12 @@ def getListsOfGroupedMemories(aProcModule):
     return newmemList, newportList
 
 def groupAllConnectedMemories(proc_list, mem_list):
+    """
     # Regroup memories into the lists called inside, topin, topout
     #   topin:  memories at the top of the fw block, stimulated by test bench
     #   inside: memories internal to the fw block
     #   topout: memories at the bottom of the fw blcok, read by test bench
+    """
 
     memories_topin = []  # input memories at the top function interface
     memories_inside = []  # memories instantiated inside the top function
@@ -336,6 +365,8 @@ def groupAllConnectedMemories(proc_list, mem_list):
 # matchArgPortNames: Match the HLS argument names to the python-generated port names from
 #                    the wires file. Once these scripts also generate the top-level HLS
 #                    blocks, these functions might not be needed
+########################################
+
 ################################
 # VMRouter
 ################################
@@ -486,9 +517,11 @@ def matchArgPortNames_TC(argname, portname):
 ################################
 # ProjectionRouter
 ################################
-####
-# Write ProjectionRouter template parameters
+
 def writeTemplatePars_PR(aPRModule):
+    """
+    # Write ProjectionRouter template parameters
+    """
     instance_name = aPRModule.inst
     # e.g. PR_L3PHIC
     pos = instance_name.split('_')[1][0:2]
@@ -513,10 +546,10 @@ def writeTemplatePars_PR(aPRModule):
     templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
     return templpars_str
 
-####
-# Define rules to match the argument and the port names for ProjectionRouter
 def matchArgPortNames_PR(argname, portname):
-
+    """
+    # Define rules to match the argument and the port names for ProjectionRouter
+    """
     if 'projin' in argname:
         # projXXin for input TrackletProjection memories
         return 'proj' in portname and 'in' in portname
@@ -532,9 +565,11 @@ def matchArgPortNames_PR(argname, portname):
 ################################
 # MatchEngine
 ################################
-####
-# Write MatchEngine template parameters
+
 def writeTemplatePars_ME(aMEModule):
+    """
+    # Write MatchEngine template parameters
+    """
     instance_name = aMEModule.inst
     # e.g. ME_L4PHIC20
     pos = instance_name.split('_')[1][0:2]
@@ -548,17 +583,16 @@ def writeTemplatePars_ME(aMEModule):
         else:
             VMSTYPE = 'BARRELPS'
     else:  # Disk
-        print "WARNING! Disk MatchEngine is not supported yet!"
         DISK = pos[1]
         VMSTYPE = 'DISK'
 
     templpars_str = LAYER+','+VMSTYPE
     return templpars_str
 
-####
-# Define rules to match the argument and the port names for MatchEngine
 def matchArgPortNames_ME(argname, portname):
-
+    """
+    # Define rules to match the argument and the port names for MatchEngine
+    """
     if argname == 'inputStubData':
         return portname == 'vmstubin'
     elif argname == 'inputProjectionData':
@@ -572,6 +606,7 @@ def matchArgPortNames_ME(argname, portname):
 ################################
 # MatchCalculator
 ################################
+
 def writeTemplatePars_MC(aMCModule):
     instance_name = aMCModule.inst
     # e.g. MC_L2PHID
@@ -641,6 +676,7 @@ def decodeSeedIndex_MC(memoryname):
 ################################
 # FitTrack
 ################################
+
 def writeTemplatePars_FT(aFTModule):
     raise ValueError("FitTrack is not implemented yet!")
     return ""
@@ -652,6 +688,7 @@ def matchArgPortNames_FT(argname, portname):
 ################################
 # PurgeDuplicate
 ################################
+
 def writeTemplatePars_PD(aPDModule):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return ""
@@ -660,12 +697,13 @@ def matchArgPortNames_PD(argname, portname):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return False
 
-################################
 def parseProcFunction(proc_name, fname_def):
+    """
     # Parse the definition of the processing function in the HLS header file
     # Assume all processing functions are templatized
     # Return a list of function argument types, argument names,
     # and template parameters
+    """
     
     # Open the header file
     file_proc_hh = open(fname_def)
@@ -761,7 +799,6 @@ def parseProcFunction(proc_name, fname_def):
 
     return arg_types_list, arg_names_list, templ_pars_list
 
-################################
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type):
     ####

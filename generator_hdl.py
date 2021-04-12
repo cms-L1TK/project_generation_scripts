@@ -24,6 +24,7 @@ import os, subprocess
 ########################################
 
 def writeMemoryModules(mem_list, interface=0):
+    """
     # mem_list: a list memory module(s)
     # inteface: specifies whether mem_list is on the interface of the firmware block
     #           being generated
@@ -32,6 +33,7 @@ def writeMemoryModules(mem_list, interface=0):
     #              1: Final memories, ready by test bench
 
     # the element cound be a list if the memories are grouped in an array
+    """
 
     string_wires = ""
     string_mem = ""
@@ -53,10 +55,12 @@ def writeMemoryModules(mem_list, interface=0):
 # Processing modules
 ########################################
 def writeProcModules(proc_list, hls_src_dir):
+    """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
     #              from HLS constants files, and reading/writing bit widths by accessing HLS
     #              <MemoryType>Memory.h files (Not yet implemented)
+    """
 
     string_proc_func = ""
     string_proc_wire = ""
@@ -83,6 +87,7 @@ def writeProcModules(proc_list, hls_src_dir):
 ########################################
 def writeTopModule_interface(topmodule_name, process_list, memories_topin, memories_topout,
                      streamIO=False):
+    """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
     #                  only used to get the first and last processes in the block in order to
@@ -93,6 +98,7 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
     # streamIO:        controls whether the input to this firmware block is an hls::stream, rather
     #                  than a BRAM interface. This will be needed when the first processing block in the
     #                  chain is input router, and might be needed for the KF. Not yet implemented.
+    """
     
     if streamIO:
         raise ValueError("hls::stream IO is not supported yet.")
@@ -141,9 +147,11 @@ def writeTopModule_interface(topmodule_name, process_list, memories_topin, memor
 ########################################
 def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_topout,
                  hls_dir):
+    """
     # List of (memory module(s), portname)
     # memories inside the top function, input memories at top function interface,
     # output memories at top function interface
+    """
     
     # Write memories
     string_memWires = ""
@@ -187,9 +195,11 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
 # Test bench
 ########################################
 def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
+    """
     # memories_list: list of input memories that the test bench has to initialize
     # emData_dir:    directory where data for input memories is stored
     # sector:        which sector nonant the emData is taken from
+    """
 
     string_mem = ""
     for memModule in memories_list:
@@ -242,10 +252,12 @@ def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_pr
     return string_fwblock_inst
 
 def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
+    """
     # memories_in:   list of input memories that the test bench has to initialize
     # memories_out:  list of output memories that the test bench will have to read
     # emData_dir:    directory where data for input memories is stored
     # sector:        which sector nonant the emData is taken from
+    """
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
@@ -298,8 +310,10 @@ def writeTcl(projname, topfunc, emData_dir):
     return string_tcl
 
 def getMemPrintDirectory(fname):
+    """
     # return directory name under fpga_emulation_longVM/MemPrints/
     # for a given memory printout file
+    """
     if "InputStubs" in fname:
         return "InputStubs"
     elif "StubPairs" in fname:
@@ -353,6 +367,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -379,7 +394,41 @@ if __name__ == "__main__":
     process_list = []
     memory_list = []
 
-    if args.uut is None:
+    if args.mut is not None:
+        print("WARNING: This feature \"--mut\" has only been tested extensively with the PRMEMC chain.")
+
+        # Get all module units of a given type
+        mutModules = tracklet.get_all_module_units(args.mut)
+
+        # Get the slices around each of the modules
+        process_list = []
+        memory_list = []
+        for mutModule in mutModules.values():
+            process, memory = TrackletGraph.get_slice_around_proc(
+                mutModule, args.nupstream, args.ndownstream)
+            process_list.extend(process)
+            memory_list.extend(memory)
+
+        # Remove duplicates from the process and module list
+        process_list = list(set(process_list))
+        memory_list = list(set(memory_list))
+        
+        # Correct mem.is_initial & mem.is_final, as loop over mutModules overwrites them incorrectly. 
+        for mem in memory_list:
+            if mem.is_initial:
+                for proc in mem.upstreams:
+                    for p in process_list:
+                        if proc.inst == p.inst:
+                            mem.is_initial = False
+                            break
+            if mem.is_final:
+                for proc in mem.downstreams:
+                    for p in process_list:
+                        if proc.inst == p.inst:
+                            mem.is_final = False
+                            break
+        
+    elif args.uut is None:
         # Get all modules in the configurations
         process_list = tracklet.get_all_proc_modules()
         memory_list = tracklet.get_all_memory_modules()

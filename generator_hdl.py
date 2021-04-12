@@ -166,7 +166,6 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
     string_procWires, string_procModules = writeProcModules(process_list, source_dir)
-
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
                               memList_topin, memList_topout)

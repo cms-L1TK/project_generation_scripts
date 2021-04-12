@@ -312,6 +312,7 @@ def getListsOfGroupedMemories(aProcModule):
     for arrayname in arraycontainer_dict:
         newmemList.append(arraycontainer_dict[arrayname])
         newportList.append(arrayname)
+
     return newmemList, newportList
 
 def groupAllConnectedMemories(proc_list, mem_list):
@@ -827,6 +828,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         # 'TrackletCalculator_<seeding>'
         # extract seeding from instance name: TC_L3L4C
         special_TC += '_'+module.inst.split('_')[1][0:4]
+
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.h'
@@ -950,8 +952,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
-    #if module.mtype == "TrackletEngine":
-        #print(string_mem_ports)
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in

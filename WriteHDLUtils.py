@@ -426,8 +426,8 @@ def writeTemplatePars_TC(aTCModule):
     PhiLabelASInner.sort()
     PhiLabelASOuter.sort()
 
-    assert(NASMemInner<=2)
-    assert(NASMemOuter<=2)
+    #assert(NASMemInner<=2)
+    #assert(NASMemOuter<=2)
 
     # Count StubPair memories
     NSPMem = [[0,0],[0,0]]
@@ -439,13 +439,13 @@ def writeTemplatePars_TC(aTCModule):
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
 
-            assert(innerphilabel in PhiLabelASInner)
-            innerindex = PhiLabelASInner.index(innerphilabel)
+            #assert(innerphilabel in PhiLabelASInner)
+            #innerindex = PhiLabelASInner.index(innerphilabel)
 
-            assert(outerphilabel in PhiLabelASOuter)
-            outerindex = PhiLabelASOuter.index(outerphilabel)
+            #assert(outerphilabel in PhiLabelASOuter)
+            #outerindex = PhiLabelASOuter.index(outerphilabel)
 
-            NSPMem[innerindex][outerindex] += 1
+            #NSPMem[innerindex][outerindex] += 1
             
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
 

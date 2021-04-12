@@ -393,7 +393,7 @@ def matchArgPortNames_TE(argname, portname):
     elif argname == 'instubouterdata':
         return portname == 'outervmstubin'
     elif argname == 'outstubpair':
-        return portname == 'stubpairout'
+        return portname == 'stubpairout' or 'stubPairs_' in portname
     else:
         print "matchArgPortNames_TE: Unknown argument name", argname
         return False
@@ -500,9 +500,16 @@ def matchArgPortNames_TC(argname, portname):
     elif 'trackletParameters' in argname:
         return 'trackpar' in portname
     elif 'projout' in argname:
-        # e.g. "projout_L6PHIC"
-        destination = argname.strip().split('_')[-1]
-        return destination in portname and 'projout' in portname
+        # e.g. "projout_disk[TC::N_PROJOUT_DISK]"
+        destination = argname.strip().split('_')[-1][:-1]
+        if 'projout' not in portname:
+            return False
+        if destination == "DISK":
+            return "projoutD" in portname
+        elif destination == "BARREL2S":
+            return portname[7:9] in ["L1", "L2", "L3"]
+        elif destination == "BARRELPS":
+            return portname[7:9] in ["L4", "L5", "L6"]
     else:
         print "matchArgPortNames_TC: Unknown argument", argname
         return False
@@ -869,7 +876,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
             for memory, portname in zip(memModuleList, portNameList):
-                print(module," 1")
                 # Check if the portname matches the argument name from function def
                 if f_matchArgPortNames is None:
                     # No matching rule provided, just check if the names are the same
@@ -878,6 +884,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Use the provided matching rules
                     if "table" not in argname:
                         foundMatch = f_matchArgPortNames(argname, portname)
+
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
@@ -906,20 +913,45 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                                 string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
-                    print(module, "3")
                     if portname.find("out") != -1:
                         if isinstance(memory, list):
                             for memmodule in memory:
                                 string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
-                    print(module," 2")
+                    if portname.find("stubPairs_") != -1 and module.mtype == "TrackletEngine":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    elif portname.find("stubPairs_") != -1 and module.mtype == "TrackletCalculator":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                    if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                    elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
                     memModuleList.remove(memory)
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
+    #if module.mtype == "TrackletEngine":
+        #print(string_mem_ports)
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
@@ -931,7 +963,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # Put ingredients togther
     module_str = writeProcCombination(module, str_ctrl_func, 
                                       special_TC, templpars_str, string_ports)
-
     return str_ctrl_wire,module_str
 
 ################################

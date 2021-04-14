@@ -171,7 +171,7 @@ class TrackletGraph(object):
             mem.bitwidth = 22 if mem.inst.find("L1") else 16
         elif mem.mtype == "VMStubsTEOuter":
             mem.bitwidth = 16
-        elif mem.mtype == "AllStubs":
+        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
         elif mem.mtype == "StubPairs":
             mem.bitwidth = 14
@@ -201,7 +201,8 @@ class TrackletGraph(object):
                   or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
-               or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
+               or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"
+               or mem.mtype == "InputLink"):
             mem.bxbitwidth = 3
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)

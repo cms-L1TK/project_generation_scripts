@@ -673,14 +673,15 @@ def decodeSeedIndex_MC(memoryname):
         print "decodeSeedIndex_MC: Unknown memory name", memoryname
         return False
 
-# Temporary bodge to distinguish between the correct ME and TE memories
+# Temporary bodge to distinguish between the correct ME and TE memories, and IL PS/2S
 # as the matchArgPortNames don't have enough information to do that
 def checkIfTrueMatch(memory, argname):
-    phi_region = memory.inst[11]
-    position = memory.inst[6:8]
+    memory_instance = memory.inst
+    phi_region = memory_instance.split("PHI")[1][0]
+    position = memory_instance.split("_")[1][0:2]
 
     if 'memoriesME' in argname:
-        return (memory.inst[3:5] == 'ME')
+        return (memory_instance[3:5] == 'ME')
     elif 'memoriesTEI' in argname:
         if position == 'L1' or position == 'L3' or position == 'D1':
             return (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
@@ -696,7 +697,15 @@ def checkIfTrueMatch(memory, argname):
     elif 'memoriesOL' in argname:
         if position == 'L1' or position == 'L2':
             return (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
-
+    elif 'inputStub' in argname:
+        if 'D' in position:
+            return ('PS' in memory_instance)
+        else:
+            return ('IL' in memory_instance)
+    elif 'inputStubDisk2S' in argname:
+        return ('2S' in memory_instance)
+    else:
+        return False
 
 ################################
 # FitTrack
@@ -910,8 +919,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
-                    # Bodge to distinguish between ME and TE memories
-                    if 'vmstubout' in portname:
+                    # Bodge to distinguish between ME and TE memories, and IL 2S/PS
+                    if 'vmstubout' in portname or 'stubin' in portname:
                         foundMatch = checkIfTrueMatch(memory, argname)
 
                 if foundMatch:

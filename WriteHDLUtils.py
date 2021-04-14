@@ -673,6 +673,31 @@ def decodeSeedIndex_MC(memoryname):
         print "decodeSeedIndex_MC: Unknown memory name", memoryname
         return False
 
+# Temporary bodge to distinguish between the correct ME and TE memories
+# as the matchArgPortNames don't have enough information to do that
+def checkIfTrueMatch(memory, argname):
+    phi_region = memory.inst[11]
+    position = memory.inst[6:8]
+
+    if 'memoriesME' in argname:
+        return (memory.inst[3:5] == 'ME')
+    elif 'memoriesTEI' in argname:
+        if position == 'L1' or position == 'L3' or position == 'D1':
+            return (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
+        elif position == 'L2':
+            return (phi_region in ['I','J','K','L']) # L2L3 seeding
+    elif 'memoriesTEO' in argname:
+        if position == 'L2':
+            return (phi_region in ['A','B','C','D']) # L1L2 seeding
+        elif position == 'L3':
+            return (phi_region in ['I','J','K','L']) # L2L3 seeding
+        elif position == 'D1':
+            return (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
+    elif 'memoriesOL' in argname:
+        if position == 'L1' or position == 'L2':
+            return (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
+
+
 ################################
 # FitTrack
 ################################
@@ -885,29 +910,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
-
                     # Bodge to distinguish between ME and TE memories
                     if 'vmstubout' in portname:
-                        phi_region = memory.inst[11]
-                        position = memory.inst[6:8]
-
-                        if 'memoriesME' in argname:
-                            foundMatch = (memory.inst[3:5] == 'ME')
-                        elif 'memoriesTEI' in argname:
-                            if position == 'L1' or position == 'L3' or position == 'D1':
-                                foundMatch = (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
-                            elif position == 'L2':
-                                foundMatch = (phi_region in ['I','J','K','L']) # L2L3 seeding
-                        elif 'memoriesTEO' in argname:
-                            if position == 'L2':
-                                foundMatch = (phi_region in ['A','B','C','D']) # L1L2 seeding
-                            elif position == 'L3':
-                                foundMatch = (phi_region in ['I','J','K','L']) # L2L3 seeding
-                            elif position == 'D1':
-                                foundMatch = (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
-                        elif 'memoriesOL' in argname:
-                            if position == 'L1' or position == 'L2':
-                                foundMatch = (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
+                        foundMatch = checkIfTrueMatch(memory, argname)
 
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
@@ -940,7 +945,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             tmp_portname = portname[:-2] # portname without the "nX" at the end
                             # Keep track of the array names and the number of array elements
                             # array_dict[tmp_argname] keeps track of the first dimension
-                            # array_dict[tmp_argname] keeps track of the second dimension
+                            # array_dict[tmp_portname] keeps track of the second dimension
                             if tmp_argname not in array_dict:
                                 array_dict[tmp_argname] = 0
                                 array_dict[tmp_portname] = 0

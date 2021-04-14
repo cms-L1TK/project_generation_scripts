@@ -52,9 +52,12 @@ def getMemoryClassName_VMStubsTE(instance_name):
             raise ValueError("Unknown PHI label "+philabel)
         
     elif position == 'L2':
-        if philabel in ['I','J','K','L','W','X','Y','Z']: # L2L3 or L2D1 seeding
+        if philabel in ['W','X','Y','Z']: # L2D1 seeding
             memoryclass = 'VMStubTEInnerMemory'
             bitformat = 'BARRELOL'
+        elif philabel in ['I','J','K','L']: # L2L3 seeding
+            memoryclass = 'VMStubTEInnerMemory'
+            bitformat = 'BARRELPS'
         elif philabel in ['A','B','C','D']: # L1L2 seeding
             memoryclass = 'VMStubTEOuterMemory'
             bitformat = 'BARRELPS'
@@ -268,6 +271,12 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
+    # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2n1"), then alphabetically
+    zipped_list = zip(memList, portList)
+    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p) else int("".join([i for i in p[:-2] if i.isdigit()]))) # sort by number
+    zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
+    memList, portList = zip(*zipped_list) # unzip
+
     return memList, portList
 
 def arrangeMemoriesByKey(memory_list):
@@ -305,12 +314,25 @@ def arrangeMemoriesByKey(memory_list):
 # VMRouter
 ################################
 def writeTemplatePars_VMR(aVMRModule):
-    raise ValueError("VMRouter is not implemented yet!")
+    #raise ValueError("VMRouter is not implemented yet!")
+    print("VMRouter template parameters are not implemented yet! But does it matter?!")
     return ""
 
 def matchArgPortNames_VMR(argname, portname):
-    raise ValueError("VMRouter is not implemented yet!")
-    return False
+
+    if 'inputStubs' in argname: #Doesn't work for disk as it has two types of inputs
+        return 'stubin' in portname
+    elif 'memoriesAS' in argname:
+        return 'allstubout' in portname
+    elif 'memoriesTE' in argname or 'memoriesOL' in argname:
+        return 'vmstubout' in portname
+    elif 'memoriesME'  in argname:
+        return 'vmstubout' in portname
+    elif 'mask' in argname or 'Table' in argname:
+        return False
+    else:
+        print "matchArgPortNames_VMR: Unknown argument", argname
+        return False
 
 ################################
 # TrackletEngine
@@ -830,6 +852,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
+
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -862,7 +885,30 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
-                        
+
+                    # Bodge to distinguish between ME and TE memories
+                    if 'vmstubout' in portname:
+                        phi_region = memory.inst[11]
+                        position = memory.inst[6:8]
+
+                        if 'memoriesME' in argname:
+                            foundMatch = (memory.inst[3:5] == 'ME')
+                        elif 'memoriesTEI' in argname:
+                            if position == 'L1' or position == 'L3' or position == 'D1':
+                                foundMatch = (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
+                            elif position == 'L2':
+                                foundMatch = (phi_region in ['I','J','K','L']) # L2L3 seeding
+                        elif 'memoriesTEO' in argname:
+                            if position == 'L2':
+                                foundMatch = (phi_region in ['A','B','C','D']) # L1L2 seeding
+                            elif position == 'L3':
+                                foundMatch = (phi_region in ['I','J','K','L']) # L2L3 seeding
+                            elif position == 'D1':
+                                foundMatch = (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
+                        elif 'memoriesOL' in argname:
+                            if position == 'L1' or position == 'L2':
+                                foundMatch = (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
+
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
@@ -870,23 +916,43 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     # Special case if argname is an array
                     if argname_is_array:
+                        # Assumes no more than two dimensions
+                        argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
                         tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
-                        # Keep track of the array names and the number of array elements
-                        if tmp_argname in array_dict:
-                            array_dict[tmp_argname] += 1
+
+                        # For one-dimensional arrays
+                        if not argname_is_2d_array:
+                            # Keep track of the array names and the number of array elements
+                            if tmp_argname in array_dict:
+                                array_dict[tmp_argname] += 1
+                            else:
+                                array_dict[tmp_argname] = 0
+                            # Add array index to the name as HLS implements one port for each array element
+                            # Temporary bodge to account for encoded index in fullmatch memories
+                            if tmp_argname == 'fullmatch':
+                                tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                            elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
+                                tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
+                            else:
+                                tmp_argname += "_" + str(array_dict[tmp_argname])
+                        # For two-dimensional arrays
                         else:
-                            array_dict[tmp_argname] = 0
-                        # Add array index to the name as HLS implements one port for each array element
-                        # Temporary bodge to account for encoded index in fullmatch memories
-                        if tmp_argname == 'fullmatch':
-                            tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
-                        elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
-                            tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
-                        else:
-                            tmp_argname += "_" + str(array_dict[tmp_argname])
-                    
+                            tmp_portname = portname[:-2] # portname without the "nX" at the end
+                            # Keep track of the array names and the number of array elements
+                            # array_dict[tmp_argname] keeps track of the first dimension
+                            # array_dict[tmp_argname] keeps track of the second dimension
+                            if tmp_argname not in array_dict:
+                                array_dict[tmp_argname] = 0
+                                array_dict[tmp_portname] = 0
+                            elif tmp_portname not in array_dict:
+                                array_dict[tmp_argname] += 1
+                                array_dict[tmp_portname] = 0
+                            else:
+                                array_dict[tmp_portname] += 1
+                            # Add array index to the name as HLS implements one port for each array element
+                            tmp_argname += "_" + str(array_dict[tmp_argname]) + "_" + str(array_dict[tmp_portname])
                     # Add the memory instance to the port string
-                    # Assumes a sorted memModuleList due to arrays?
+                    # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:
                         string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.replace("outer","").find("out") != -1:

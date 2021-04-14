@@ -679,7 +679,7 @@ def checkIfTrueMatch(memory, argname):
     memory_instance = memory.inst
     phi_region = memory_instance.split("PHI")[1][0]
     position = memory_instance.split("_")[1][0:2]
-
+    print(memory_instance, phi_region, position)
     if 'memoriesME' in argname:
         return (memory_instance[3:5] == 'ME')
     elif 'memoriesTEI' in argname:
@@ -919,10 +919,11 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
+                    print(argname, portname, foundMatch)
                     # Bodge to distinguish between ME and TE memories, and IL 2S/PS
-                    if 'vmstubout' in portname or 'stubin' in portname:
+                    if foundMatch and ('vmstubout' in portname or 'stubin' in portname):
                         foundMatch = checkIfTrueMatch(memory, argname)
-
+                    print(foundMatch)
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname

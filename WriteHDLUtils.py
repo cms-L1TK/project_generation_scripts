@@ -501,14 +501,14 @@ def matchArgPortNames_TC(argname, portname):
         return 'trackpar' in portname
     elif 'projout' in argname:
         # e.g. "projout_disk[TC::N_PROJOUT_DISK]"
-        destination = argname.strip().split('_')[-1][:-1]
+        destination = argname.strip().split('_')[-1][:-2]
         if 'projout' not in portname:
             return False
-        if destination == "DISK":
+        if destination == "disk":
             return "projoutD" in portname
-        elif destination == "BARREL2S":
+        elif destination == "2s":
             return portname[7:9] in ["L1", "L2", "L3"]
-        elif destination == "BARRELPS":
+        elif destination == "ps":
             return portname[7:9] in ["L4", "L5", "L6"]
     else:
         print "matchArgPortNames_TC: Unknown argument", argname
@@ -744,7 +744,7 @@ def parseProcFunction(proc_name, fname_def):
                 # get rid of comments and the new line character
                 procfunc_str += nextline.split("//",1)[0].strip("\n") 
                 # If detect ")", we are done. Stop reading the following lines
-                if ")" in nextline:
+                if nextline.find(")") != -1 and nextline.find("()") == -1:
                     nextline = ""
                 else:
                     nextline = next(file_proc_hh)
@@ -763,10 +763,9 @@ def parseProcFunction(proc_name, fname_def):
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
-    arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
+    arguments_str = procfunc_str.partition("(")[2].rpartition(")")[0].strip()
 
     # Split by comma, ignoring commas inside template brackets <...>.
-    #args_list = arguments_str.split(",")
     args_list = re.split(', *(?![^<]*>)', arguments_str)
     for args in args_list:
         # get rid of 'const' 

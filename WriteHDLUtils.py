@@ -318,16 +318,50 @@ def writeTemplatePars_VMR(aVMRModule):
     print("VMRouter template parameters are not implemented yet! But does it matter?!")
     return ""
 
-def matchArgPortNames_VMR(argname, portname):
+def matchArgPortNames_VMR(argname, portname, memoryname):
+    # argname and portname does not contain enough information to determine matches
+    phi_region = memoryname.split("PHI")[1][0]
+    position = memoryname.split("_")[1][0:2]
 
-    if 'inputStubs' in argname: #Doesn't work for disk as it has two types of inputs
-        return 'stubin' in portname
+    # DISK2S memories has a seperate array
+    if 'inputStubsDisk2S' in argname:
+        return ('stubin' in portname) and ('D' in position) and ('2S' in memoryname)
+    # Non-DISK2S inputs
+    elif 'inputStubs' in argname:
+        if ('L' in position):
+            return 'stubin' in portname
+        else:
+            return ('stubin' in portname) and ('PS' in memoryname)
     elif 'memoriesAS' in argname:
         return 'allstubout' in portname
-    elif 'memoriesTE' in argname or 'memoriesOL' in argname:
-        return 'vmstubout' in portname
+    # ME and TE memories use the same portnames, thereof an extra check
     elif 'memoriesME'  in argname:
-        return 'vmstubout' in portname
+        return ('vmstubout' in portname) and (memoryname[3:5] == 'ME')
+    # TE inner/outer/overlap use the same portnames, thereof extra checks
+    elif 'memoriesTEI' in argname:
+        if position == 'L1' or position == 'L3' or position == 'L5' or position == 'D1' or position == 'D3':
+            return ('vmstubout' in portname) and (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
+        elif position == 'L2':
+            return ('vmstubout' in portname) and (phi_region in ['I','J','K','L']) # L2L3 seeding
+        else:
+            return False
+    # TE inner/outer/overlap use the same portnames, thereof extra checks
+    elif 'memoriesTEO' in argname:
+        if position == 'L2' or position == 'L4' or position == 'L6' or position == 'D2' or position == 'D4':
+            return ('vmstubout' in portname) and (phi_region in ['A','B','C','D']) # L1L2 seeding
+        elif position == 'L3':
+            return ('vmstubout' in portname) and (phi_region in ['I','J','K','L']) # L2L3 seeding
+        elif position == 'D1':
+            return ('vmstubout' in portname) and (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
+        else:
+            return False
+    # TE inner/outer/overlap use the same portnames, thereof extra checks
+    elif 'memoriesOL' in argname:
+        if position == 'L1' or position == 'L2':
+            return ('vmstubout' in portname) and (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
+        else:
+            return False
+    # Known arguments that should not be matched to any ports
     elif 'mask' in argname or 'Table' in argname:
         return False
     else:
@@ -444,7 +478,7 @@ def writeTemplatePars_TC(aTCModule):
 
     return template_str
 
-def matchArgPortNames_TC(argname, portname):
+def matchArgPortNames_TC(argname, portname, memoryname):
     if 'innerStubs' in argname:
         return 'innerallstub' in portname
     elif 'outerStubs' in argname:
@@ -546,7 +580,7 @@ def writeTemplatePars_PR(aPRModule):
     templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
     return templpars_str
 
-def matchArgPortNames_PR(argname, portname):
+def matchArgPortNames_PR(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for ProjectionRouter
     """
@@ -589,7 +623,7 @@ def writeTemplatePars_ME(aMEModule):
     templpars_str = LAYER+','+VMSTYPE
     return templpars_str
 
-def matchArgPortNames_ME(argname, portname):
+def matchArgPortNames_ME(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for MatchEngine
     """
@@ -640,7 +674,7 @@ def writeTemplatePars_MC(aMCModule):
         
     return templpars_str
 
-def matchArgPortNames_MC(argname, portname):
+def matchArgPortNames_MC(argname, portname, memoryname):
     if argname in ['allstub','allproj']:
         return portname == argname+'in'
     elif 'fullmatch' in argname:
@@ -673,40 +707,6 @@ def decodeSeedIndex_MC(memoryname):
         print "decodeSeedIndex_MC: Unknown memory name", memoryname
         return False
 
-# Temporary bodge to distinguish between the correct ME and TE memories, and IL PS/2S
-# as the matchArgPortNames don't have enough information to do that
-def checkIfTrueMatch(memory, argname):
-    memory_instance = memory.inst
-    phi_region = memory_instance.split("PHI")[1][0]
-    position = memory_instance.split("_")[1][0:2]
-    print(memory_instance, phi_region, position)
-    if 'memoriesME' in argname:
-        return (memory_instance[3:5] == 'ME')
-    elif 'memoriesTEI' in argname:
-        if position == 'L1' or position == 'L3' or position == 'D1':
-            return (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
-        elif position == 'L2':
-            return (phi_region in ['I','J','K','L']) # L2L3 seeding
-    elif 'memoriesTEO' in argname:
-        if position == 'L2':
-            return (phi_region in ['A','B','C','D']) # L1L2 seeding
-        elif position == 'L3':
-            return (phi_region in ['I','J','K','L']) # L2L3 seeding
-        elif position == 'D1':
-            return (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
-    elif 'memoriesOL' in argname:
-        if position == 'L1' or position == 'L2':
-            return (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
-    elif 'inputStub' in argname:
-        if 'D' in position:
-            return ('PS' in memory_instance)
-        else:
-            return ('IL' in memory_instance)
-    elif 'inputStubDisk2S' in argname:
-        return ('2S' in memory_instance)
-    else:
-        return False
-
 ################################
 # FitTrack
 ################################
@@ -715,7 +715,7 @@ def writeTemplatePars_FT(aFTModule):
     raise ValueError("FitTrack is not implemented yet!")
     return ""
 
-def matchArgPortNames_FT(argname, portname):
+def matchArgPortNames_FT(argname, portname, memoryname):
     raise ValueError("FitTrack is not implemented yet!")
     return False
 
@@ -727,7 +727,7 @@ def writeTemplatePars_PD(aPDModule):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return ""
 
-def matchArgPortNames_PD(argname, portname):
+def matchArgPortNames_PD(argname, portname, memoryname):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return False
 
@@ -918,12 +918,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     foundMatch = (argname==portname)
                 else:
                     # Use the provided matching rules
-                    foundMatch = f_matchArgPortNames(argname, portname)
-                    print(argname, portname, foundMatch)
-                    # Bodge to distinguish between ME and TE memories, and IL 2S/PS
-                    if foundMatch and ('vmstubout' in portname or 'stubin' in portname):
-                        foundMatch = checkIfTrueMatch(memory, argname)
-                    print(foundMatch)
+                    foundMatch = f_matchArgPortNames(argname, portname, memory.inst)
+
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname

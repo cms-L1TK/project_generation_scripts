@@ -382,12 +382,21 @@ def matchArgPortNames_VMR(argname, portname):
 # TrackletEngine
 ################################
 def writeTemplatePars_TE(aTEModule):
-    raise ValueError("TrackletEngine is not implemented yet!")
     return ""
 
 def matchArgPortNames_TE(argname, portname):
-    raise ValueError("TrackletEngine is not implemented yet!")
-    return False
+    """
+    # Define rules to match the argument and the port names for MatchEngine
+    """
+    if argname == 'instubinnerdata':
+        return portname == 'innervmstubin'
+    elif argname == 'instubouterdata':
+        return portname == 'outervmstubin'
+    elif argname == 'outstubpair':
+        return portname == 'stubpairout' or 'stubPairs_' in portname
+    else:
+        print "matchArgPortNames_TE: Unknown argument name", argname
+        return False
 
 ################################
 # TrackletCalculator
@@ -417,8 +426,8 @@ def writeTemplatePars_TC(aTCModule):
     PhiLabelASInner.sort()
     PhiLabelASOuter.sort()
 
-    assert(NASMemInner<=2)
-    assert(NASMemOuter<=2)
+    #assert(NASMemInner<=2)
+    #assert(NASMemOuter<=2)
 
     # Count StubPair memories
     NSPMem = [[0,0],[0,0]]
@@ -430,13 +439,13 @@ def writeTemplatePars_TC(aTCModule):
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
 
-            assert(innerphilabel in PhiLabelASInner)
-            innerindex = PhiLabelASInner.index(innerphilabel)
+            #assert(innerphilabel in PhiLabelASInner)
+            #innerindex = PhiLabelASInner.index(innerphilabel)
 
-            assert(outerphilabel in PhiLabelASOuter)
-            outerindex = PhiLabelASOuter.index(outerphilabel)
+            #assert(outerphilabel in PhiLabelASOuter)
+            #outerindex = PhiLabelASOuter.index(outerphilabel)
 
-            NSPMem[innerindex][outerindex] += 1
+            #NSPMem[innerindex][outerindex] += 1
             
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
 
@@ -470,7 +479,7 @@ def writeTemplatePars_TC(aTCModule):
                 mask = 4
             elif phi == 'D':
                 mask = 8
-            assert(mask > 0)
+            #assert(mask > 0)
 
             TPROJMask += mask << (index * 4)
             
@@ -491,9 +500,16 @@ def matchArgPortNames_TC(argname, portname):
     elif 'trackletParameters' in argname:
         return 'trackpar' in portname
     elif 'projout' in argname:
-        # e.g. "projout_L6PHIC"
-        destination = argname.strip().split('_')[-1]
-        return destination in portname and 'projout' in portname
+        # e.g. "projout_disk[TC::N_PROJOUT_DISK]"
+        destination = argname.strip().split('_')[-1][:-2]
+        if 'projout' not in portname:
+            return False
+        if destination == "disk":
+            return "projoutD" in portname
+        elif destination == "2s":
+            return portname[7:9] in ["L1", "L2", "L3"]
+        elif destination == "ps":
+            return portname[7:9] in ["L4", "L5", "L6"]
     else:
         print "matchArgPortNames_TC: Unknown argument", argname
         return False
@@ -728,7 +744,7 @@ def parseProcFunction(proc_name, fname_def):
                 # get rid of comments and the new line character
                 procfunc_str += nextline.split("//",1)[0].strip("\n") 
                 # If detect ")", we are done. Stop reading the following lines
-                if ")" in nextline:
+                if nextline.find(")") != -1 and nextline.find("()") == -1:
                     nextline = ""
                 else:
                     nextline = next(file_proc_hh)
@@ -747,10 +763,9 @@ def parseProcFunction(proc_name, fname_def):
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
-    arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
+    arguments_str = procfunc_str.partition("(")[2].rpartition(")")[0].strip()
 
     # Split by comma, ignoring commas inside template brackets <...>.
-    #args_list = arguments_str.split(",")
     args_list = re.split(', *(?![^<]*>)', arguments_str)
     for args in args_list:
         # get rid of 'const' 
@@ -842,7 +857,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
-
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -868,7 +882,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     foundMatch = (argname==portname)
                 else:
                     # Use the provided matching rules
-                    foundMatch = f_matchArgPortNames(argname, portname)
+                    if "table" not in argname:
+                        foundMatch = f_matchArgPortNames(argname, portname)
 
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
@@ -893,9 +908,41 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?
                     if portname.find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.find("out") != -1:
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    if portname.find("stubPairs_") != -1 and module.mtype == "TrackletEngine":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    elif portname.find("stubPairs_") != -1 and module.mtype == "TrackletCalculator":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                    if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                    elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
@@ -903,7 +950,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
-
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
@@ -915,7 +961,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # Put ingredients togther
     module_str = writeProcCombination(module, str_ctrl_func, 
                                       special_TC, templpars_str, string_ports)
-
     return str_ctrl_wire,module_str
 
 ################################

@@ -39,6 +39,12 @@ def writeMemoryModules(mem_list, interface=0):
     string_mem = ""
     # Loop over memories in the list
     for memModule in sorted(mem_list,key=lambda x: x.index):
+        if isinstance(memModule, list):
+            for module in memModule:
+                string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(module,interface)
+                string_wires += string_wires_inst
+                string_mem += string_mem_inst
+            continue
         string_wires_inst, string_mem_inst = writeTopLevelMemoryInstance(memModule,interface)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
@@ -168,7 +174,6 @@ def writeTopFile(topfunc, process_list, memList_topin, memList_inside, memlist_t
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
     string_procWires, string_procModules = writeProcModules(process_list, source_dir)
-
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
                               memList_topin, memList_topout)
@@ -198,7 +203,12 @@ def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
 
     string_mem = ""
     for memModule in memories_list:
-        amem_str = writeTBMemoryStimulusInstance(memModule)
+        amem_str=""
+        if isinstance(memModule, list):
+            for module in memModule:
+                amem_str += writeTBMemoryStimulusInstance(module)
+        else:
+            amem_str = writeTBMemoryStimulusInstance(memModule)
         string_mem += amem_str
     string_mem += "\n"
     return string_mem
@@ -221,7 +231,11 @@ def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_pr
     string_fwblock_ctrl = writeFWBlockControlSignalPorts(first_proc, last_proc)
 
     for memModule in memories_in:
-        string_inmems_ports += writeFWBlockMemoryLHSPorts(memModule)
+        if isinstance(memModule, list):
+            for module in memModule:
+                string_inmems_ports += writeFWBlockMemoryLHSPorts(module)
+        else:
+            string_inmems_ports += writeFWBlockMemoryLHSPorts(memModule)
 
     string_outmems_ports = ""
     for memModule in memories_out:
@@ -247,12 +261,22 @@ def writeTestBench(topfunc, memories_in, memories_out, emData_dir, sector="04"):
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
-        if memModule.downstreams[0].is_first:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_first:
+                    first_proc = module.downstreams[0].mtype
+                    break
+        elif memModule.downstreams[0].is_first:
             first_proc = memModule.downstreams[0].mtype
             break
     
     for memModule in memories_out:
-        if memModule.upstreams[0].is_last:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_last:
+                    last_proc = module.upstreams[0].mtype
+                    break
+        elif memModule.upstreams[0].is_last:
             last_proc = memModule.upstreams[0].mtype
             break
 

@@ -114,9 +114,9 @@ class MemTypeInfoByKey(object):
         keySet = set()
         for m in memList:
             keySet.add(m.keyName())
-            if len(m.upstreams) > 0:
+            if m.upstreams[0] is not None:
                 self.upstream_mtype_short = m.upstreams[0].mtype_short()
-            if len(m.downstreams) > 0:
+            if m.upstreams[0] is not None:
                 self.downstream_mtype_short = m.downstreams[0].mtype_short()
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True

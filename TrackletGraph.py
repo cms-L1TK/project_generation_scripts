@@ -16,7 +16,8 @@ import re
 # TODO: Should be able to generate this from the wiring
 #######################################
 # Drawing parameters
-ModuleDrawWidth_dict = {'InputLink':3.0,
+ModuleDrawWidth_dict = {'DTCLink':3.0,
+                        'InputLink':3.0,
                         'VMStubsTEInner':3.0,
                         'VMStubsTEOuter':3.0,
                         'VMStubsME':3.0,
@@ -31,6 +32,7 @@ ModuleDrawWidth_dict = {'InputLink':3.0,
                         'TrackFit':2.5,
                         'CleanTrack':2.5,
                         ###################
+                        'InputRouter':2.0,
                         'VMRouter':2.0,
                         'TrackletEngine':4.0,
                         'TrackletCalculator':2.5,
@@ -171,7 +173,7 @@ class TrackletGraph(object):
             mem.bitwidth = 22 if mem.inst.find("L1") else 16
         elif mem.mtype == "VMStubsTEOuter":
             mem.bitwidth = 16
-        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
+        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink" or mem.mtype == "DTCLink":
             mem.bitwidth = 36
         elif mem.mtype == "StubPairs":
             mem.bitwidth = 14
@@ -198,11 +200,11 @@ class TrackletGraph(object):
         # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
-                  or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"):
+               or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
+               or mem.mtype == "InputLink" or mem.mtype == "DTCLink"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
-               or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"
-               or mem.mtype == "InputLink"):
+               or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)
@@ -324,6 +326,11 @@ class TrackletGraph(object):
                 if barrelseed.search(mem_inst):
                     isbarrel = True
                 if diskseed.search(mem_inst):
+                    isdisk = True
+            elif mem_type in ['DTCLink']: # WHAT DO I DO WITH THIS
+                if barrelstr.search(mem_inst):
+                    isbarrel = True
+                if diskstr.search(mem_inst):
                     isdisk = True
             else:
                 raise ValueError("Unknown memory type: "+mem_type)

@@ -121,8 +121,10 @@ def writeMemoryUtil(memDict, memInfoDict):
 
         memList = memDict[mtypeB]
         # Sort with memories connected to top-level interface first.
-        # (This is needed so a VHDL enum of this subset can be a VHDL subtype
-        # of the enum of all the memories).
+        # (This required only for special case, where only a subset of
+        # memories of given type are interfaced to top-level function. 
+        # It allows a VHDL enum of this subset to be a VHDL subtype of the 
+        # enum of all memories of this type).
         memList.sort(key=lambda m: int(m.is_initial or m.is_final), reverse=True)
 
         # Define enum type listing all memory instances of this type.
@@ -134,9 +136,10 @@ def writeMemoryUtil(memDict, memInfoDict):
         ss += ");\n\n"
         
         """
-        # FIX: TO FINISH 
-        # For special case where only some memories of this type interface
-        # to top-level function, define enum subtype for them.
+        # FIX IF NEEDED: 
+        # Needed only for special case where only a subset of memories of
+        # given type are interfaced to top-level function. 
+        # Define enum subtype for them.
         if memInfo.mixedIO:
             varListExt = []
             for mem in memList:

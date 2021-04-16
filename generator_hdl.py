@@ -29,7 +29,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
     # Inputs:
     #   memDict = dictionary of memories organised by type 
     #             & no. of bits (TPROJ_58b etc.)
-    #   memInfoDict = dictionary of info about each memory type.
+    #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
     """
     string_wires = ""
     string_mem = ""
@@ -83,7 +83,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     #                  generate the bx signals. Seems a bit wasteful to pass the whole list)
     # memDict:         dictionary of memories organised by type 
     #                  & no. of bits (TPROJ_58b etc.)
-    # memInfoDict:     dictionary of info about each memory type.
+    # memInfoDict:     dictionary of info (MemTypeInfoByKey) about each memory type.
     # streamIO:        controls whether the input to this firmware block is an hls::stream, rather
     #                  than a BRAM interface. This will be needed when the first processing block in the
     #                  chain is input router, and might be needed for the KF. Not yet implemented.
@@ -112,10 +112,10 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     for mtypeB in memDict:
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
-        if memList[0].is_initial:
+        if memInfo.is_initial:
             # Input arguments
             string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
-        elif memList[-1].is_final:
+        elif memInfo.is_final:
             # Output arguments
             string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
         elif extraports:
@@ -137,7 +137,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Inputs:
     #   memDict = dictionary of memories organised by type 
     #             & no. of bits (TPROJ_58b etc.)
-    #   memInfoDict = dictionary of info about each memory type.
+    #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
     """
     
     # Write memories
@@ -229,7 +229,7 @@ def writeTestBench(topfunc, memDict, memInfoDict, emData_dir, sector="04"):
     # Inputs:
     #   memDict = dictionary of memories organised by type 
     #             & no. of bits (TPROJ_58b etc.)
-    #   memInfoDict = dictionary of info about each memory type.
+    #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
     #   emData_dir =   directory where data for input memories is stored
     #   sector =       which sector nonant the emData is taken from
     """

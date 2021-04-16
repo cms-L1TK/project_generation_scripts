@@ -117,7 +117,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
         elif memList[-1].is_final:
             # Output arguments
-            string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memList, memInfo)
+            string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(mtypeB, extraports)            

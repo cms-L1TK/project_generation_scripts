@@ -309,12 +309,11 @@ def writeMemoryLHSPorts_interface(mtypeB, extraports=False):
 
     return string_input_mems
 
-def writeMemoryRHSPorts_interface(mtypeB, memList, memInfo):
+def writeMemoryRHSPorts_interface(mtypeB, memInfo):
     """
     # Top-level interface: output memories' ports.
     # Inputs:
     #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
-    #   memList = list of memories of given type & bit width
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
 

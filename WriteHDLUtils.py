@@ -261,21 +261,11 @@ def getHLSMemoryClassName(module):
 def getListsOfGroupedMemories(aProcModule):
     """
     # Get a list of memories and a list of ports for a given processing module
-    # The memories are further grouped in a list if they are expected to be
-    # constructed and passed to the processing function as an array
     """
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
-    # sort?
 
-    newmemList = []
-    newportList = []
-
-    for memory, portname in zip(memList, portList):
-        newmemList.append(memory)
-        newportList.append(portname)
-
-    return newmemList, newportList
+    return memList, portList
 
 def arrangeMemoriesByKey(memory_list):
     """

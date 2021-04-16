@@ -69,6 +69,9 @@ Basic instructions to run the project generation for the Vivado HLS project with
       		              Choose from A(all), L(barrel), D(disk).
       --uut               Specify a unit under test, e.g. TC_L1L2E
       --mut		  Specify a module under test, e.g PR (Projection Routers)
+      -x                  Give top-level VHDL extra output ports to carry
+      			  debug info to test-bench corresponding to inputs
+			  to all memory modules in chain.
       -u, --nupstream     The number of processing steps to be generated upstream of the UUT or MUT 
       -d, --ndownstream   The number of processing steps to be generated downstream of the UUT or MUT
 

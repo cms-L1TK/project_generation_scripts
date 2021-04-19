@@ -115,7 +115,7 @@ class MemTypeInfoByKey(object):
             keySet.add(m.keyName())
             if m.upstreams[0] is not None:
                 self.upstream_mtype_short = m.upstreams[0].mtype_short()
-            if m.upstreams[0] is not None:
+            if m.downstreams[0] is not None:
                 self.downstream_mtype_short = m.downstreams[0].mtype_short()
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
@@ -169,7 +169,28 @@ class TrackletGraph(object):
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
         if mem.mtype == "VMStubsTE":
-            mem.bitwidth = 22 if mem.inst.find("L1") else 16 # FIXME
+            phi_region = mem.inst.split("PHI")[1][0]
+            position = mem.inst.split("_")[1][:2]        
+            # Determine if TE outer/inner/overlap. MAKE THIS PRETTIER
+            # VMStubTEInner: 22/23 bits
+            if (position == 'L1' or position == 'L3' or position == 'D1' or position == 'D3') and (phi_region in ['A','B','C','D','E','F','G','H']):
+                mem.bitwidth = 22
+            elif position == 'L2' and phi_region in ['I','J','K','L']:
+                mem.bitwidth = 22
+            elif position == 'L5' and phi_region in ['A','B','C','D','E','F','G','H']:
+                mem.bitwidth = 23
+            #VMStubTEInner Overlap: 22 bits
+            elif (position == 'L1' or position == 'L2') and (phi_region in ['Q','R','S','T','W','X','Y','Z']):
+                mem.bitwidth = 22
+            #VMStubTEOuter: 16/17 bits
+            elif (position == 'L2' or position == 'D2' or position == 'D4') and (phi_region in ['A','B','C','D']):
+                mem.bitwidth = 16
+            elif position == 'L3' and phi_region in ['I','J','K','L']:
+                mem.bitwidth = 16
+            elif (position == 'L4' or position == 'L6') and (phi_region in ['A','B','C','D']):
+                mem.bitwidth = 17
+            elif position == 'D1' and phi_region in ['W','X','Y','Z']:
+                mem.bitwidth = 16
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink" or mem.mtype == "DTCLink":
             mem.bitwidth = 36
         elif mem.mtype == "StubPairs":

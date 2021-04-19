@@ -116,7 +116,7 @@ class MemTypeInfoByKey(object):
             keySet.add(m.keyName())
             if m.upstreams[0] is not None:
                 self.upstream_mtype_short = m.upstreams[0].mtype_short()
-            if m.upstreams[0] is not None:
+            if m.downstreams[0] is not None:
                 self.downstream_mtype_short = m.downstreams[0].mtype_short()
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
@@ -169,10 +169,10 @@ class TrackletGraph(object):
         disk = -1
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
-        if mem.mtype == "VMStubsTEInner":  #FIXME
-            mem.bitwidth = 22 if mem.inst.find("L1") else 16
+        if mem.mtype == "VMStubsTEInner":
+            mem.bitwidth = 23 if mem.inst.find("L5") else 22
         elif mem.mtype == "VMStubsTEOuter":
-            mem.bitwidth = 16
+            mem.bitwidth = 16 if (mem.inst.find("L4") or mem.inst.find("L6")) else mem.bitwidth = 17
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink" or mem.mtype == "DTCLink":
             mem.bitwidth = 36
         elif mem.mtype == "StubPairs":

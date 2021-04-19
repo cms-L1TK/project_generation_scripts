@@ -5,8 +5,8 @@
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -273,7 +273,7 @@ def getListsOfGroupedMemories(aProcModule):
 
     # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2n1"), then alphabetically
     zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p[:-2] if i.isdigit()]))) # sort by number. need to use p[:-2] if we have nX
+    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p[:] if i.isdigit()]))) # sort by number. need to use p[:-2] if we have nX
     zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
@@ -967,7 +967,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                                 tmp_argname += "_" + str(array_dict[tmp_argname])
                         # For two-dimensional arrays
                         else:
-                            tmp_portname = portname[:-2] # portname without the "nX" at the end
+                            tmp_portname = portname[:] # portname without the "nX" at the end
                             # Keep track of the array names and the number of array elements
                             # array_dict[tmp_argname] keeps track of the first dimension
                             # array_dict[tmp_portname] keeps track of the second dimension
@@ -984,7 +984,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        if "DL" in memory.inst: # DTCLink
+                            string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.replace("outer","").find("out") != -1:
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
                     if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":

@@ -159,22 +159,32 @@ def writeMemoryUtil(memDict, memInfoDict):
         mtype = mtypeB.split("_")[0]
         bitwidth = int(mtypeB.split("_")[1]);
         num_pages = 2**memInfo.bxbitwidth
-        
-        arrName = "t_arr_"+mtypeB+"_1b"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
 
-        arrName = "t_arr_"+mtypeB+"_ADDR"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+        if "DL" in mtypeB: # DTCLinks
+            arrName = "t_arr_"+mtypeB+"_SOMETHING_IN"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
 
-        arrName = "t_arr_"+mtypeB+"_DATA"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
+            arrName = "t_arr_"+mtypeB+"_SOMETHING_OUT"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
 
-        if memInfo.is_binned:
-            varStr = "_8_5b"
+            arrName = "t_arr_"+mtypeB+"_DATA"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
         else:
-            varStr = "_7b"
-        arrName = "t_arr_"+mtypeB+"_NENT"
-        ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
+            arrName = "t_arr_"+mtypeB+"_1b"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
+
+            arrName = "t_arr_"+mtypeB+"_ADDR"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+
+            arrName = "t_arr_"+mtypeB+"_DATA"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
+
+            if memInfo.is_binned:
+                varStr = "_8_5b"
+            else:
+                varStr = "_7b"
+            arrName = "t_arr_"+mtypeB+"_NENT"
+            ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
 
     ss += "end package memUtil_pkg;\n"
 
@@ -309,6 +319,19 @@ def writeMemoryLHSPorts_interface(mtypeB, extraports=False):
     string_input_mems += "    "+mtypeB+"_mem_A_wea        : "+direction+" t_arr_"+mtypeB+"_1b;\n"
     string_input_mems += "    "+mtypeB+"_mem_AV_writeaddr : "+direction+" t_arr_"+mtypeB+"_ADDR;\n"
     string_input_mems += "    "+mtypeB+"_mem_AV_din       : "+direction+" t_arr_"+mtypeB+"_DATA;\n"
+
+    return string_input_mems
+
+def writeDTCLinkPorts_interface(mtypeB):
+    """
+    # Top-level interface: DTC link' ports.
+    """
+    
+    string_input_mems = ""
+    string_input_mems += "    "+mtypeB+"_link_AV_dout       : in t_arr_"+mtypeB+"_DATA;\n"
+    string_input_mems += "    "+mtypeB+"_link_SOMETHING_IN       : in t_arr_"+mtypeB+"_SOMETHING_IN;\n"
+    string_input_mems += "    "+mtypeB+"_link_SOMETHING_OUT : out t_arr_"+mtypeB+"_SOMETHING_OUT;\n"
+    
 
     return string_input_mems
 
@@ -589,5 +612,17 @@ def writeLUTMemPorts(argname, module):
     string_mem_ports += module.inst+"_"+argname+"_ce,\n"
     string_mem_ports += "      "+argname+"_V_q0                        => "
     string_mem_ports += module.inst+"_"+argname+"_dout,\n"
-    
+    return string_mem_ports
+
+def writeProcDTCLinkRHSPorts(argname,mem):
+    """
+    # Processing module port assignment: inputs from memories
+    """
+    string_mem_ports = ""
+    string_mem_ports += "      "+argname+"_V_dout       => "
+    string_mem_ports += mem.keyName()+"_link_AV_dout("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_empty_n  => "
+    string_mem_ports += mem.keyName()+"_link_SOMETHING_IN("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_read        => "
+    string_mem_ports += mem.keyName()+"_link_SOMETHING_OUT("+mem.var()+"),\n"
     return string_mem_ports

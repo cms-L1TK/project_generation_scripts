@@ -121,9 +121,9 @@ class MemTypeInfoByKey(object):
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
-        if self.mixedIO:
-            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
-            exit(1)
+        # if self.mixedIO:
+        #     print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+        #     exit(1)
 
 
 #######################################
@@ -173,8 +173,10 @@ class TrackletGraph(object):
             mem.bitwidth = 23 if mem.inst.find("L5") else 22
         elif mem.mtype == "VMStubsTEOuter":
             mem.bitwidth = 16 if (mem.inst.find("L4") or mem.inst.find("L6")) else mem.bitwidth = 17
-        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink" or mem.mtype == "DTCLink":
+        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
+        elif mem.mtype == "DTCLink":
+            mem.bitwidth = 39
         elif mem.mtype == "StubPairs":
             mem.bitwidth = 14
         elif mem.mtype == "TrackletParameters":
@@ -327,11 +329,12 @@ class TrackletGraph(object):
                     isbarrel = True
                 if diskseed.search(mem_inst):
                     isdisk = True
-            elif mem_type in ['DTCLink']: # WHAT DO I DO WITH THIS
+            elif mem_type in ['DTCLink']: # DTCLinks are not memories
                 if barrelstr.search(mem_inst):
                     isbarrel = True
                 if diskstr.search(mem_inst):
                     isdisk = True
+                #continue
             else:
                 raise ValueError("Unknown memory type: "+mem_type)
 

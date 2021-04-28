@@ -273,7 +273,7 @@ def getListsOfGroupedMemories(aProcModule):
 
     # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2n1"), then alphabetically
     zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p[:] if i.isdigit()]))) # sort by number. need to use p[:-2] if we have nX
+    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number. need to use p[:-2] if we have nX
     zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
@@ -312,7 +312,7 @@ def arrangeMemoriesByKey(memory_list):
 ########################################
 
 ################################
-# VMRouter
+# InputRouter
 ################################
 def writeTemplatePars_IR(aVMRModule):
     #raise ValueError("VMRouter is not implemented yet!")
@@ -340,6 +340,7 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
     # argname and portname does not contain enough information to determine matches
     phi_region = memoryname.split("PHI")[1][0]
     position = memoryname.split("_")[1][0:2]
+    overlap_phi_regions = ['Q','R','S','T','W','X','Y','Z']
 
     # DISK2S memories has a seperate array
     if 'inputStubsDisk2S' in argname:
@@ -350,35 +351,21 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
             return 'stubin' in portname
         else:
             return ('stubin' in portname) and ('PS' in memoryname)
+    # Allstub memories
     elif 'memoriesAS' in argname:
         return 'allstubout' in portname
     # ME and TE memories use the same portnames, thereof an extra check
     elif 'memoriesME'  in argname:
-        return ('vmstubout' in portname) and (memoryname[3:5] == 'ME')
+        return 'vmstuboutME' in portname
     # TE inner/outer/overlap use the same portnames, thereof extra checks
     elif 'memoriesTEI' in argname:
-        if position == 'L1' or position == 'L3' or position == 'L5' or position == 'D1' or position == 'D3':
-            return ('vmstubout' in portname) and (phi_region in ['A','B','C','D','E','F','G','H']) # L1L21, L3L4, or D1D2 seeding
-        elif position == 'L2':
-            return ('vmstubout' in portname) and (phi_region in ['I','J','K','L']) # L2L3 seeding
-        else:
-            return False
-    # TE inner/outer/overlap use the same portnames, thereof extra checks
+        return ('vmstuboutTEI' in portname) and (phi_region not in overlap_phi_regions)
+    # TE outer
     elif 'memoriesTEO' in argname:
-        if position == 'L2' or position == 'L4' or position == 'L6' or position == 'D2' or position == 'D4':
-            return ('vmstubout' in portname) and (phi_region in ['A','B','C','D']) # L1L2 seeding
-        elif position == 'L3':
-            return ('vmstubout' in portname) and (phi_region in ['I','J','K','L']) # L2L3 seeding
-        elif position == 'D1':
-            return ('vmstubout' in portname) and (phi_region in ['W','X','Y','Z']) # L1D1 or L2D1 seeding
-        else:
-            return False
-    # TE inner/outer/overlap use the same portnames, thereof extra checks
+        return 'vmstuboutTEO' in portname
+    # TE overlap
     elif 'memoriesOL' in argname:
-        if position == 'L1' or position == 'L2':
-            return ('vmstubout' in portname) and (phi_region in ['Q','R','S','T','W','X','Y','Z']) # L1D1 or L2D1 overlap seeding
-        else:
-            return False
+        return ('vmstuboutTEI' in portname) and (phi_region in overlap_phi_regions)
     # Known arguments that should not be matched to any ports
     elif 'mask' in argname or 'Table' in argname:
         return False
@@ -967,7 +954,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                                 tmp_argname += "_" + str(array_dict[tmp_argname])
                         # For two-dimensional arrays
                         else:
-                            tmp_portname = portname[:] # portname without the "nX" at the end
+                            tmp_portname = portname # portname without the "nX" at the end
                             # Keep track of the array names and the number of array elements
                             # array_dict[tmp_argname] keeps track of the first dimension
                             # array_dict[tmp_portname] keeps track of the second dimension

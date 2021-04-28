@@ -11,7 +11,7 @@ from WriteHDLUtils import arrangeMemoriesByKey, \
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
                             writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
-                            writeMemoryLHSPorts_interface, writeDTCLinkPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
+                            writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeProcDTCLinkRHSPorts
 import ROOT
 import os, subprocess
@@ -117,7 +117,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         if memInfo.is_initial:
             # Input arguments
             if "DL" in mtypeB: # DTCLink
-                string_input_mems += writeDTCLinkPorts_interface(mtypeB)
+                string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB)
             else:
                 string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
         elif memInfo.is_final:

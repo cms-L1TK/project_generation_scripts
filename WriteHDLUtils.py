@@ -273,7 +273,7 @@ def getListsOfGroupedMemories(aProcModule):
 
     # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2n1"), then alphabetically
     zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number. need to use p[:-2] if we have nX
+    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number. Need to use p[:-2] if we have nX at the end
     zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
@@ -954,20 +954,20 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                                 tmp_argname += "_" + str(array_dict[tmp_argname])
                         # For two-dimensional arrays
                         else:
-                            tmp_portname = portname # portname without the "nX" at the end
                             # Keep track of the array names and the number of array elements
                             # array_dict[tmp_argname] keeps track of the first dimension
-                            # array_dict[tmp_portname] keeps track of the second dimension
+                            # array_dict[portname] keeps track of the second dimension
                             if tmp_argname not in array_dict:
                                 array_dict[tmp_argname] = 0
-                                array_dict[tmp_portname] = 0
-                            elif tmp_portname not in array_dict:
+                                array_dict[portname] = 0
+                            elif portname not in array_dict:
                                 array_dict[tmp_argname] += 1
-                                array_dict[tmp_portname] = 0
+                                array_dict[portname] = 0
                             else:
-                                array_dict[tmp_portname] += 1
+                                array_dict[portname] += 1
                             # Add array index to the name as HLS implements one port for each array element
-                            tmp_argname += "_" + str(array_dict[tmp_argname]) + "_" + str(array_dict[tmp_portname])
+                            tmp_argname += "_" + str(array_dict[tmp_argname]) + "_" + str(array_dict[portname])
+
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:

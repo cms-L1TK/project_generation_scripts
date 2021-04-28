@@ -250,6 +250,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     parameterlist += "        INIT_HEX        => true,\n"
     parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
 
+    if "VMSME_D" in memList[0].inst: # VMSME memories have 16 bins in the disks
+        parameterlist += "        NUM_MEM_BINS    => 16,\n"
+        parameterlist += "        NUM_ENTRIES_PER_MEM_BINS => 8,\n"
+
     # Write ports
     portlist += "        clka      => clk,\n"
     portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"

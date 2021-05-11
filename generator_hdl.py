@@ -9,7 +9,7 @@ from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHDLUtils import groupAllConnectedMemories, writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
                             writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
-                            writeTopLevelMemoryInstance, writeTopLevelLUTInstance, writeControlSignals_interface, \
+                            writeTopLevelMemoryInstance, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts
 import ROOT
@@ -50,17 +50,6 @@ def writeMemoryModules(mem_list, interface=0):
         string_mem += string_mem_inst
     
     return string_wires, string_mem
-
-def writeLookupTables(lut_list, interface=0):
-    string_wires = ""
-    string_mem = ""
-    # Loop over memories in the list                                                                              
-    for lut in sorted(lut_list,key=lambda x: x.index):
-        string_wires_inst, string_lut_inst = writeTopLevelLUTInstance(module,interface)
-        string_wires += string_wires_inst
-        string_lut += string_lut_inst
-        
-    return string_wires, string_lut
 
 ########################################
 # Processing modules

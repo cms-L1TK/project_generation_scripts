@@ -98,6 +98,43 @@ def writeTBMemoryReadInstance(memModule):
         wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
     return wirelist
 
+def writeTopLevelLUTInstance(lut, interface):
+    wirelist = ""
+    parameterlist = ""
+    portlist = ""
+    lut_str = ""
+
+    # Write wires                                                                                                
+    if interface != -1:
+        wirelist += "  signal "+lut.inst+"_addr       : "
+        wirelist += "std_logic_vector("+str(lut.bitwidth-1)+" downto 0);\n"
+        wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
+        wirelist += "  signal "+lut.inst+"_dout : "
+        wirelist += "std_logic_vector("+str(6+lut.bxbitwidth)+" downto 0);\n"
+    if interface != 1:
+        wirelist += "  signal "+lut.inst+"_addr       : "
+        wirelist += "std_logic_vector("+str(lut.bitwidth-1)+" downto 0);\n"
+        wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
+        wirelist += "  signal "+lut.inst+"_dout : "
+        wirelist += "std_logic_vector("+str(6+lut.bxbitwidth)+" downto 0);\n"
+    
+    # Write parameters                                                                                            
+    parameterlist += "      lut_file   => "+"TODO"+",\n"
+    parameterlist += "      lut_width  => "+"TODO"+",\n"
+    parameterlist += "      lut_depth  => \"\",\n"
+
+    # Write ports                                                                                                 
+    portlist += "      clk       => ap_clk,\n"
+    portlist += "      addr      => "+lut.inst+"_addr,\n"
+    portlist += "      ce        => "+memModule.inst+"_ce,\n"
+    portlist += "      dout      => "+memModule.inst+"_dout;\n"
+
+    lut_str += "\n  "+lut.inst+" : entity work.tf_lut"
+    lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
+    lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
+
+    return wirelist,lut_str
+
 def writeTopLevelMemoryInstance(memModule, interface):
     """
     # Declaration of memories & associated wires
@@ -322,6 +359,14 @@ def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_p
 
     return module_str
 
+def writeLUTCombination(lut, portlist, parameterlist):
+    lut_str = ""
+    lut_str += "\n  "+lut.inst+" : entity work.tf_lut"
+    lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
+    lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
+
+    return lut_str
+
 def writeStartSwitchAndInternalBX(module,mem):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
@@ -383,6 +428,7 @@ def writeProcMemoryLHSPorts(argname,memory):
     string_mem_ports += memory.inst+"_dataarray_data_V_writeaddr,\n"
     string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
     string_mem_ports += memory.inst+"_dataarray_data_V_din,\n"
+    # TODO Include table stuff here too i.e bendinnertable_V_address0
 
     return string_mem_ports
 
@@ -409,3 +455,34 @@ def writeProcMemoryRHSPorts(argname,memory):
                 string_mem_ports += memory.inst+"_nentries_VV_dout("+str(i)+"),\n"
 
     return string_mem_ports
+
+def writeLUTPorts(argname,lut):
+    string_lut_ports = ""
+    argname = argname.split("[")[0]
+    string_lut_ports += "      clk       => ap_clk,\n"
+    string_lut_ports += "      addr      => "+lut.inst+"_"+argname+"_addr,\n"
+    string_lut_ports += "      ce        => "+lut.inst+"_"+argname+"_ce,\n"
+    string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout;\n"
+
+    return string_lut_ports
+
+def writeLUTParameters(argname, lut):
+    parameterlist = ""
+    if "in" in argname:
+        parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
+    elif "out" in argname:
+        parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
+    parameterlist += "      lut_width => "+"TODO"+",\n"
+    parameterlist += "      lut_depth => \"\",\n"
+    
+    return parameterlist
+
+def writeLUTWires(argname, lut):
+    wirelist = ""
+    argname = argname.split("[")[0]
+    wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
+    wirelist += "std_logic_vector("+"TODO"+" downto 0);\n"
+    wirelist += "  signal "+lut.inst+"_"+argname+"_ce       : std_logic;\n"
+    wirelist += "  signal "+lut.inst+"_"+argname+"_dout : "
+    wirelist += "std_logic_vector("+"TODO"+" downto 0);\n"
+    return wirelist

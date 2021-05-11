@@ -5,7 +5,7 @@
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires
 import re
 
 def getMemoryClassName_InputStub(instance_name):
@@ -288,7 +288,7 @@ def getListsOfGroupedMemories(aProcModule):
 
     # add array name to 'userlabel' of the connected memory module
     """
-    labelConnectedMemoryArrays([aProcModule])
+    #labelConnectedMemoryArrays([aProcModule])
 
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
@@ -329,7 +329,7 @@ def groupAllConnectedMemories(proc_list, mem_list):
 
     # add array name to 'userlabel' of the connected memory module
     # if they are to be constructed and connected in an array
-    labelConnectedMemoryArrays(proc_list)
+    #labelConnectedMemoryArrays(proc_list)
 
     arraycontainer_dict = {}
     for memory in mem_list:
@@ -855,6 +855,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     string_bx_out = ""
     # memory ports
     string_mem_ports = ""
+    # module string
+    module_str = ""
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
@@ -874,6 +876,12 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype,False,False) # output bx
         else:
+            if "table" in argname:
+                string_ports = writeLUTPorts(argname, module)
+                string_parameters = writeLUTParameters(argname, module)
+                module_str += writeLUTCombination(module, string_ports, string_parameters)
+                str_ctrl_wire += writeLUTWires(argname, module)
+
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
             for memory, portname in zip(memModuleList, portNameList):
@@ -885,7 +893,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Use the provided matching rules
                     if "table" not in argname:
                         foundMatch = f_matchArgPortNames(argname, portname)
-
+                        
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
@@ -920,18 +928,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                                 string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
-                    if portname.find("stubPairs_") != -1 and module.mtype == "TrackletEngine":
-                        if isinstance(memory, list):
-                            for memmodule in memory:
-                                string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)
-                        else:
-                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
-                    elif portname.find("stubPairs_") != -1 and module.mtype == "TrackletCalculator":
-                        if isinstance(memory, list):
-                            for memmodule in memory:
-                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
-                        else:
-                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
                         if isinstance(memory, list):
                             for memmodule in memory:
@@ -960,7 +956,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str = writeProcCombination(module, str_ctrl_func, 
+    if module_str == "":
+        module_str = writeProcCombination(module, str_ctrl_func, 
                                       special_TC, templpars_str, string_ports)
     return str_ctrl_wire,module_str
 

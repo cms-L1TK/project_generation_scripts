@@ -98,43 +98,6 @@ def writeTBMemoryReadInstance(memModule):
         wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
     return wirelist
 
-def writeTopLevelLUTInstance(lut, interface):
-    wirelist = ""
-    parameterlist = ""
-    portlist = ""
-    lut_str = ""
-
-    # Write wires                                                                                                
-    if interface != -1:
-        wirelist += "  signal "+lut.inst+"_addr       : "
-        wirelist += "std_logic_vector("+str(lut.bitwidth-1)+" downto 0);\n"
-        wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
-        wirelist += "  signal "+lut.inst+"_dout : "
-        wirelist += "std_logic_vector("+str(6+lut.bxbitwidth)+" downto 0);\n"
-    if interface != 1:
-        wirelist += "  signal "+lut.inst+"_addr       : "
-        wirelist += "std_logic_vector("+str(lut.bitwidth-1)+" downto 0);\n"
-        wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
-        wirelist += "  signal "+lut.inst+"_dout : "
-        wirelist += "std_logic_vector("+str(6+lut.bxbitwidth)+" downto 0);\n"
-    
-    # Write parameters                                                                                            
-    parameterlist += "      lut_file   => "+"TODO"+",\n"
-    parameterlist += "      lut_width  => "+"TODO"+",\n"
-    parameterlist += "      lut_depth  => \"\",\n"
-
-    # Write ports                                                                                                 
-    portlist += "      clk       => ap_clk,\n"
-    portlist += "      addr      => "+lut.inst+"_addr,\n"
-    portlist += "      ce        => "+memModule.inst+"_ce,\n"
-    portlist += "      dout      => "+memModule.inst+"_dout;\n"
-
-    lut_str += "\n  "+lut.inst+" : entity work.tf_lut"
-    lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
-    lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
-
-    return wirelist,lut_str
-
 def writeTopLevelMemoryInstance(memModule, interface):
     """
     # Declaration of memories & associated wires

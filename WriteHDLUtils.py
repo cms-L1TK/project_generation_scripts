@@ -5,7 +5,7 @@
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 
 def getMemoryClassName_InputStub(instance_name):
@@ -821,13 +821,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         
     # Update here if the function name is not exactly the same as the module type
 
-    # TrackletCalculator
-    special_TC = ""
-    if module.mtype == 'TrackletCalculator':
-        # 'TrackletCalculator_<seeding>'
-        # extract seeding from instance name: TC_L3L4C
-        special_TC += '_'+module.inst.split('_')[1][0:4]
-
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.h'
@@ -879,8 +872,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             if "table" in argname:
                 string_ports = writeLUTPorts(argname, module)
                 string_parameters = writeLUTParameters(argname, module)
-                module_str += writeLUTCombination(module, string_ports, string_parameters)
+                module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
                 str_ctrl_wire += writeLUTWires(argname, module)
+                string_mem_ports += writeLUTMemPorts(argname, module)
 
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
@@ -956,9 +950,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    if module_str == "":
-        module_str = writeProcCombination(module, str_ctrl_func, 
-                                      special_TC, templpars_str, string_ports)
+    module_str += writeProcCombination(module, str_ctrl_func, 
+                                      templpars_str, string_ports)
     return str_ctrl_wire,module_str
 
 ################################

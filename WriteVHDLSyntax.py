@@ -309,22 +309,22 @@ def writeFWBlockMemoryRHSPorts(memModule):
 
     return string_output_mems
 
-def writeProcCombination(module, str_ctrl_func, special_TC, templpars_str, str_ports):
+def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
     """
     # Instantiation of processing module within top-level.
     # FIXME needs fixing to include template parameters for generic proc module writing
     """
     module_str = ""
     module_str += str_ctrl_func
-    module_str += special_TC
     module_str += "  "+module.inst+" : entity work."+module.IPname+"\n"
     module_str += "    port map (\n"+str_ports.rstrip(",\n")+"\n  );\n\n"
 
     return module_str
 
-def writeLUTCombination(lut, portlist, parameterlist):
+def writeLUTCombination(lut, argname, portlist, parameterlist):
+    argname = argname.split("[")[0]
     lut_str = ""
-    lut_str += "\n  "+lut.inst+" : entity work.tf_lut"
+    lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lut"
     lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
     lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
 
@@ -391,7 +391,6 @@ def writeProcMemoryLHSPorts(argname,memory):
     string_mem_ports += memory.inst+"_dataarray_data_V_writeaddr,\n"
     string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
     string_mem_ports += memory.inst+"_dataarray_data_V_din,\n"
-    # TODO Include table stuff here too i.e bendinnertable_V_address0
 
     return string_mem_ports
 
@@ -431,21 +430,46 @@ def writeLUTPorts(argname,lut):
 
 def writeLUTParameters(argname, lut):
     parameterlist = ""
+    width = 0
     if "in" in argname:
+        width = 1
+        depth = 8
         parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
     elif "out" in argname:
+        width = 1
+        depth = 8
         parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
-    parameterlist += "      lut_width => "+"TODO"+",\n"
-    parameterlist += "      lut_depth => \"\",\n"
+    parameterlist += "      lut_width => "+str(width)+",\n"
+    parameterlist += "      lut_depth => "+str(2**depth)+"\"\",\n"
     
     return parameterlist
 
 def writeLUTWires(argname, lut):
     wirelist = ""
     argname = argname.split("[")[0]
+    depth = 0
+    width = 0
+    if "in" in argname:
+        depth = 8
+        width = 1
+    elif "out" in argname:
+        depth = 8
+        width = 1
     wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
-    wirelist += "std_logic_vector("+"TODO"+" downto 0);\n"
-    wirelist += "  signal "+lut.inst+"_"+argname+"_ce       : std_logic;\n"
+    wirelist += "std_logic_vector("+str(depth-1)+" downto 0);\n"
+    wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
     wirelist += "  signal "+lut.inst+"_"+argname+"_dout : "
-    wirelist += "std_logic_vector("+"TODO"+" downto 0);\n"
+    wirelist += "std_logic_vector("+str(width-1)+" downto 0);\n"
     return wirelist
+
+def writeLUTMemPorts(argname, module):
+    argname = argname.split("[")[0]
+    string_mem_ports = ""
+    string_mem_ports += "      "+argname+"_V_address0                  => " 
+    string_mem_ports += module.inst+"_"+argname+"_addr,\n"
+    string_mem_ports += "      "+argname+"_V_ce0                       => "
+    string_mem_ports += module.inst+"_"+argname+"ce,\n"
+    string_mem_ports += "      "+argname+"_V_q0                        => "
+    string_mem_ports += module.inst+"_"+argname+"_dout,\n"
+    
+    return string_mem_ports

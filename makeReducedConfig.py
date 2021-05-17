@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from collections import OrderedDict
 
 # Creates a reduced configuration when given a TC phi region
 # Takes a full configuration as input
@@ -65,8 +66,8 @@ class project:
         self.tcs = []
         self.l1phis = []
         self.lxphis = []
-        self.ref_modules = {}
-        self.ref_memories = {}
+        self.ref_modules = OrderedDict()
+        self.ref_memories = OrderedDict()
 
     def addRefModules(self, fname):
         with open(fname, "r") as f:
@@ -119,20 +120,30 @@ class project:
                 self.addNode(node_out)
 
     # Save a project to a wires file
-    def saveProject(self, fname):
+    def saveProject(self, fname, ref_proj):
         with open(fname, "w") as f:
-            for c in self.connections:
+            # Loop over full wire project to preserve ordering
+            for c in ref_proj.connections:
+                for c1 in self.connections:
+                    if c1.memory == c.memory:
                 f.write(c.printConnection()+"\n")
+                        break
 
     def saveModules(self, fname):
         with open(fname, "w") as f:
-            for n in self.nodes:
+            # Loop over reference modules file to preserve ordering
+            for n in self.ref_modules:
+                if n in self.nodes:
                 f.write(self.ref_modules[n])
 
     def saveMemories(self, fname):
         with open(fname, "w") as f:
+            # Loop over reference memories file to preserve ordering
+            for m in self.ref_memories:
             for c in self.connections:
-                f.write(self.ref_memories[c.memory])
+                    if c.memory==m:
+                        f.write(self.ref_memories[m])
+                        break
 
     def addTC(self, tc, layers, ref_p):
         tcs = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
@@ -253,7 +264,7 @@ reduced_wires = project()
 reduced_wires.addRefModules(args.process)
 reduced_wires.addRefMemories(args.memories)
 reduced_wires.addTC(args.sector, args.layers, full_wires)
-reduced_wires.saveProject("%swires.dat"%args.output)
+reduced_wires.saveProject("%swires.dat"%args.output, full_wires)
 reduced_wires.saveModules("%sprocessingmodules.dat"%args.output)
 reduced_wires.saveMemories("%smemorymodules.dat"%args.output)
 

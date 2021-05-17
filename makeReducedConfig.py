@@ -126,7 +126,7 @@ class project:
             for c in ref_proj.connections:
                 for c1 in self.connections:
                     if c1.memory == c.memory:
-                f.write(c.printConnection()+"\n")
+                        f.write(c.printConnection()+"\n")
                         break
 
     def saveModules(self, fname):
@@ -134,13 +134,13 @@ class project:
             # Loop over reference modules file to preserve ordering
             for n in self.ref_modules:
                 if n in self.nodes:
-                f.write(self.ref_modules[n])
+                    f.write(self.ref_modules[n])
 
     def saveMemories(self, fname):
         with open(fname, "w") as f:
             # Loop over reference memories file to preserve ordering
             for m in self.ref_memories:
-            for c in self.connections:
+                for c in self.connections:
                     if c.memory==m:
                         f.write(self.ref_memories[m])
                         break

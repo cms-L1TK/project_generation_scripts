@@ -101,9 +101,9 @@ By default the script will run starting with *TC_L1L2F*, and produced files call
     -w, --wires         Reference wires.dat file (from full config)
     -p, --process       Reference processingmodules.dat file (from full config)
     -m, --memories      Reference memorymodules.dat file (from full config)
-    -s, --sector        TC phi sector from which to create the reduced config
+    -s, --sector        TC phi sector from which to create the reduced config. By default this is "F".
     -o, --output        Prefix to add to all output files
-    -l, --layers        Select the layer pair to create seeds with
+    -l, --layers        Select the layer pair to create seeds with. By default this is "L1L2". 
 
 -----------------------------------------------------------------
 

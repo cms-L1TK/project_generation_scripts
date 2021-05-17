@@ -6,7 +6,7 @@
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -324,9 +324,23 @@ def matchArgPortNames_IR(argname, portname, memoryname):
         return 'stubin' in portname
     elif 'hOutputStubs' in argname:
         return 'stubout' in portname
+    elif 'hPhBnWord' in argname or 'hLinkWord' in argname:
+        return False
     else:
         print "matchArgPortNames_IR: Unknown argument", argname
         return False
+
+# Dictionary with the number of memories per layer/disk. Needed for the InputRouter
+def numberOfMemoriesPerLayer(module):
+    numMemories = OrderedDict() # Dictionary that keeps track of number of memories per layer (minus one)
+    # Count memories per layer/disk
+    for memory in list(module.downstreams):
+        layerID = memory.inst.split('_')[1][0:2] # L1, L2, etc.
+        if layerID in numMemories:
+            numMemories[layerID] += 1
+        else:
+            numMemories[layerID] = 0
+    return numMemories
 
 ################################
 # VMRouter
@@ -904,7 +918,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False)
                     break
-        elif argtype == "BXType&":
+        elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
         elif "table" in argname:
@@ -988,11 +1002,23 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
+<<<<<<< HEAD
+=======
+
+    # External LUTs
+    string_luts = ""
+    if module.mtype == "InputRouter": # Might be temporary
+        string_luts += writeInputLinkWordPort(module.inst, numberOfMemoriesPerLayer(module))
+        string_luts += writeInputLinkPhiBinsPort(numberOfMemoriesPerLayer(module))
+
+    # Add all ports together
+>>>>>>> fd1e3e2... debugged IR-VMR chain. needs debugging for mixedIO
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
     string_ports += string_bx_out
     string_ports += string_mem_ports
+    string_ports += string_luts
     string_ports.rstrip(",\n")
 
     ####

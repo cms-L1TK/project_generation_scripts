@@ -1,4 +1,5 @@
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
+from collections import OrderedDict
 
 def writeTopPreamble(all=True):
     string_preamble = "--! Standard libraries\n"
@@ -629,3 +630,38 @@ def writeProcDTCLinkRHSPorts(argname,mem):
     string_mem_ports += "      "+argname+"_V_read        => "
     string_mem_ports += mem.keyName()+"_link_read("+mem.var()+"),\n"
     return string_mem_ports
+
+def writeInputLinkWordPort(module_instance, memoriesPerLayer):
+    """
+    # Processing module port assignment: InputRouter kInputLink port
+    """
+    inputLinkWord = ""
+
+    # Loop over each layer/disk the module instance writes to. Repeat up to four times.
+    for layer in memoriesPerLayer:
+        isBarrelBit = "1" if "L" in layer else "0" # Is barrel bit
+        inputLinkWord = '{0:03b}'.format(int(layer[1])) + isBarrelBit + inputLinkWord # Add the layer number (3 bits) and the barrelbit
+
+    inputLinkWord = inputLinkWord.zfill(16) # Pad with zeros so it contains 16 bits
+    inputLinkWord = ("1" if "2S" in module_instance else "0") + inputLinkWord # Is 2S bit
+    inputLinkWord = '{0:03b}'.format(len(memoriesPerLayer)) + inputLinkWord # Number of layers
+
+    string_ilword_port = "      hLinkWord_V => \""+inputLinkWord+"\",\n"
+
+    return string_ilword_port
+
+def writeInputLinkPhiBinsPort(memoriesPerLayer):
+    """
+    # Processing module port assignment: InputRouter kNPhiBns/hPhBnWord port
+    """
+    phiBinWord = ""
+
+    # Loop through the layers and write the number of memories as three bits to phiBinWord
+    for layer in memoriesPerLayer:
+        phiBinWord = '{0:03b}'.format(memoriesPerLayer[layer]) + phiBinWord
+    
+    phiBinWord = phiBinWord.zfill(12) # Pad with zeros so it contains 12 bits
+
+    string_phibin_port = "      hPhBnWord_V => \""+phiBinWord+"\",\n"
+
+    return string_phibin_port

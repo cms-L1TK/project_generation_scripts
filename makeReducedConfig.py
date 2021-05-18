@@ -146,6 +146,12 @@ class project:
                         break
 
     def addTC(self, tc, layers, ref_p):
+
+        # tcs, l1phis, and lxphis refer to the phi sector of a given module
+        # TCs modules each cover one of 12 phi segments (A-L)
+        # The L1 regions are broken into 8 phi segments (A-H) while all other layers
+        # are broken into 4 segments (A-D)
+        # So for example, a TC in sector F would align with the D region in L1 and B in other layers
         tcs = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"]
         l1phis = ["A", "B", "C", "D", "E", "F", "G", "H"]
         lxphis = ["A", "B", "C", "D"]

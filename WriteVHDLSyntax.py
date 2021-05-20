@@ -454,13 +454,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False):
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
 
-    int_ctrl_func = ""
-    int_ctrl_func += "  p_"+mtype_down+"_start : process(clk)\n  begin\n"
-    int_ctrl_func += "    if rising_edge(clk) then\n"
-    int_ctrl_func += "      if "+mtype+"_done = '1' then\n"
-    int_ctrl_func += "        "+mtype_down+"_start <= '1';\n"
-    int_ctrl_func += "      end if;\n    end if;\n"
-    int_ctrl_func += "  end process;\n\n"
+    int_ctrl_func = "  "+mtype_down+"_start <= '1' when "+mtype+"_done = '1';\n\n"
 
     return int_ctrl_wire,int_ctrl_func
 

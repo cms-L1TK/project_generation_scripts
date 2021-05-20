@@ -179,16 +179,16 @@ class TrackletGraph(object):
             if barrel2S>-1: mem.bitwidth = 58
             if disk>-1: mem.bitwidth = 59
         elif mem.mtype == "VMProjections":
-            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
-            if disk>-1: mem.bitwidth = 21
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 24
+            if disk>-1: mem.bitwidth = 24
         elif mem.mtype == "VMStubsME":
-            if barrelPS>-1: mem.bitwidth = 13
-            if barrel2S>-1 or disk>-1: mem.bitwidth = 14
+            if barrelPS>-1: mem.bitwidth = 16
+            if barrel2S>-1 or disk>-1: mem.bitwidth = 17
         elif mem.mtype == "CandidateMatch":
             mem.bitwidth = 14
         elif mem.mtype == "FullMatch":
-            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 45
-            if disk>-1: mem.bitwidth = 43
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
+            if disk>-1: mem.bitwidth = 55
         else:
             raise ValueError("Bitwidth undefined for "+mem.mtype)
 

@@ -101,9 +101,10 @@ class MemTypeInfoByKey(object):
         self.bxbitwidth = memList[0].bxbitwidth
         self.is_binned  = memList[0].is_binned
         self.has_numEntries_out = memList[0].has_numEntries_out
-        # At least one memory of this type is initial or final.
+        # At least one memory of this type is initial.
         self.is_initial = any(m.is_initial for m in memList)
-        self.is_final   = any(m.is_final for m in memList)
+        # All memories of this type is final.
+        self.is_final   = all(m.is_final for m in memList)
         assert(not (self.is_initial and self.is_final))
         # Short type name of any upstream/downstream processing module.
         self.upstream_mtype_short   = ""
@@ -121,9 +122,9 @@ class MemTypeInfoByKey(object):
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
-        # if self.mixedIO:
-        #     print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
-        #     exit(1)
+        if self.mixedIO and self.is_initial:
+            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+            exit(1)
 
 
 #######################################

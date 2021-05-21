@@ -1,5 +1,4 @@
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-from collections import OrderedDict
 
 def writeTopPreamble(all=True):
     string_preamble = "--! Standard libraries\n"

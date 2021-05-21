@@ -330,7 +330,7 @@ class TrackletGraph(object):
                     isbarrel = True
                 if diskseed.search(mem_inst):
                     isdisk = True
-            elif mem_type in ['DTCLink']: # DTCLinks are not memories
+            elif mem_type in ['DTCLink']: # DTCLinks are technically not memories
                 if barrelstr.search(mem_inst):
                     isbarrel = True
                 if diskstr.search(mem_inst):

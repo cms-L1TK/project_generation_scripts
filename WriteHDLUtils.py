@@ -271,9 +271,9 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
-    # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2n1"), then alphabetically
+    # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number. Need to use p[:-2] if we have nX at the end
+    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number
     zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
@@ -314,9 +314,9 @@ def arrangeMemoriesByKey(memory_list):
 ################################
 # InputRouter
 ################################
-def writeTemplatePars_IR(aVMRModule):
-    #raise ValueError("VMRouter is not implemented yet!")
-    print("InputRouter template parameters are not implemented yet! But does it matter?!")
+def writeTemplatePars_IR(anIRModule):
+    #raise ValueError("InputRouter is not implemented yet!")
+    print("InputRouter template parameters are not implemented yet!")
     return ""
 
 def matchArgPortNames_IR(argname, portname, memoryname):
@@ -347,7 +347,7 @@ def numberOfMemoriesPerLayer(module):
 ################################
 def writeTemplatePars_VMR(aVMRModule):
     #raise ValueError("VMRouter is not implemented yet!")
-    print("VMRouter template parameters are not implemented yet! But does it matter?!")
+    print("VMRouter template parameters are not implemented yet!")
     return ""
 
 def matchArgPortNames_VMR(argname, portname, memoryname):

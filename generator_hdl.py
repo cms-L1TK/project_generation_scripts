@@ -270,13 +270,13 @@ def writeTestBench(topfunc, memDict, memInfoDict, emData_dir, sector="04"):
     
     return string_tb,""
     """
-    return "NOT IMPLEMENTED",""
+    return "NOT IMPLEMENTED\n",""
 
 ########################################
 # Tcl
 ########################################
 def writeTcl(projname, topfunc, emData_dir):
-    string_tcl = "Not yet implemented!"
+    string_tcl = "Not yet implemented!\n"
     return string_tcl
 
 def getMemPrintDirectory(fname):

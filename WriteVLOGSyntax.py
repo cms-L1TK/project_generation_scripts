@@ -18,11 +18,11 @@ def writeTopModuleEntityCloser(topfunc):
     return ""
 
 def writeTopModuleCloser(topmodule_name):
-    string_closer = "\n\nendmodule"
+    string_closer = "\n\nendmodule\n"
     return string_closer
 
 def writeTBModuleCloser(topmodule_name):
-    string_closer = "\n\nendmodule"
+    string_closer = "\n\nendmodule\n"
     return string_closer
 
 def writeTBMemoryStimulusInstance(memModule):

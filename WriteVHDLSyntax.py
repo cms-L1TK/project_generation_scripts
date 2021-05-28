@@ -133,7 +133,7 @@ def writeTopLevelMemoryInstance(memModule, interface):
             num_pages = 2**memModule.bxbitwidth
             if memModule.is_binned:
                 wirelist += "  signal "+memModule.inst+"_nentries_VVV_dout : "
-                wirelist += "t_arr"+str(num_pages)+"_8_5b; -- (#page)(#bin)\n"
+                wirelist += "t_arr_8_5b(0 to "+str(num_pages-1)+"); -- (#page)(#bin)\n"
             else:
                 wirelist += "  signal "+memModule.inst+"_nentries_VV_dout : "
                 wirelist += "t_arr"+str(num_pages)+"_7b; -- (#page)\n"
@@ -316,7 +316,12 @@ def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
     """
     module_str = ""
     module_str += str_ctrl_func
-    module_str += "  "+module.inst+" : entity work."+module.IPname+"\n"
+    ipname = ""
+    if module.mtype == "TrackletEngine":
+        ipname = "TE"
+    else:
+        ipname = module.IPname
+    module_str += "  "+module.inst+" : entity work."+ipname+"\n"
     module_str += "    port map (\n"+str_ports.rstrip(",\n")+"\n  );\n\n"
 
     return module_str

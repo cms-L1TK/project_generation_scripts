@@ -4,9 +4,13 @@
 """
 
 #from collections import deque
-from TrackletGraph import MemModule, ProcModule
+from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
+
 import re
+# This dictionary preserves key order. 
+# (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
+from collections import OrderedDict
 
 def getMemoryClassName_InputStub(instance_name):
     """
@@ -259,41 +263,33 @@ def getHLSMemoryClassName(module):
 def getListsOfGroupedMemories(aProcModule):
     """
     # Get a list of memories and a list of ports for a given processing module
-    # The memories are further grouped in a list if they are expected to be
-    # constructed and passed to the processing function as an array
-    """
 
+    """
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
     return memList, portList
+
+def arrangeMemoriesByKey(memory_list):
+    """
+    # Put memories in a dictionary organised by their keyName(),
+    # corresponding to their type + bit width (TPROJ_60 etc.).
+    # Also return dictionary with properties of each key name.
+    """
+    memDict = OrderedDict()
+    for mem in memory_list:
+        keyName = mem.keyName()
+        if not keyName in memDict:
+            memDict[keyName] = []
+        memDict[keyName].append(mem)
+
+    memTypeDict = OrderedDict()
+    for keyN in memDict:
+        memList = memDict[keyN]
+        memTypeDict[keyN] = MemTypeInfoByKey(memList)
+
+    return memDict, memTypeDict
  
-def groupAllConnectedMemories(proc_list, mem_list):
-    """
-    # Regroup memories into the lists called inside, topin, topout
-    #   topin:  memories at the top of the fw block, stimulated by test bench
-    #   inside: memories internal to the fw block
-    #   topout: memories at the bottom of the fw blcok, read by test bench
-    """
-
-    memories_topin = []  # input memories at the top function interface
-    memories_inside = []  # memories instantiated inside the top function
-    memories_topout = []  # output memories at the top function interface
-
-    # add array name to 'userlabel' of the connected memory module
-    # if they are to be constructed and connected in an array
-    #labelConnectedMemoryArrays(proc_list)
-
-    arraycontainer_dict = {}
-    for memory in mem_list:
-        if memory.is_initial:
-            memories_topin.append(memory)
-        elif memory.is_final:
-            memories_topout.append(memory)
-        else:
-            memories_inside.append(memory)
-
-    return memories_topin, memories_inside, memories_topout
 ########################################
 # Processing functions
 ########################################
@@ -735,7 +731,7 @@ def parseProcFunction(proc_name, fname_def):
     return arg_types_list, arg_names_list, templ_pars_list
 
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
-                              f_matchArgPortNames, first_of_type):
+                              f_matchArgPortNames, first_of_type, extraports):
     ####
     # function name
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
@@ -750,7 +746,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             if mem.bxbitwidth != 1: continue
             oneProcDownMem = mem
             break
-        ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem)
+        ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem,extraports)
         str_ctrl_wire += ctrl_wire_inst
         str_ctrl_func += ctrl_func_inst
         
@@ -795,14 +791,14 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype,True,True)
+                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype,True,False)
+                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False)
                     break
         elif argtype == "BXType&":
             if first_of_type:
-                string_bx_out += writeProcBXPort(module.mtype,False,False) # output bx
+                string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
         else:
             if "table" in argname:
                 string_ports = writeLUTPorts(argname, module)
@@ -890,46 +886,46 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     return str_ctrl_wire,module_str
 
 ################################
-def writeModuleInstance(module, hls_src_dir, first_of_type):
+def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
     if module.mtype == 'VMRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMR,
                                          matchArgPortNames_VMR,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'TrackletEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TE,
                                          matchArgPortNames_TE,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'TrackletCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TC,
                                          matchArgPortNames_TC,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'ProjectionRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PR,
                                          matchArgPortNames_PR,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'MatchEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_ME,
                                          matchArgPortNames_ME,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype in ['MatchCalculator','DiskMatchCalculator']:
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_MC,
                                          matchArgPortNames_MC,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'FitTrack':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_FT,
                                          matchArgPortNames_FT,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'PurgeDuplicate':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PD,
                                          matchArgPortNames_PD,
-                                         first_of_type)
+                                         first_of_type, extraports)
     else:
         raise ValueError(module.mtype + " is unknown.")

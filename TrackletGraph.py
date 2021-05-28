@@ -46,16 +46,19 @@ ModuleDrawWidth_dict = {'InputLink':3.0,
 # Processing and memory module classes
 class Node(object):
     def __init__(self, module_type, instance_name, i):
-        self.mtype = module_type
+        self.mtype = module_type # Module type (e.g. "TrackletProjections")
         self.inst = instance_name
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
         self.index = i  # instance index from the configuration file
-        self.userlabel = "" # label for customized usage
         # drawing parameters
         self.width = 1.  # Width of the box
         self.xstart = 0  # Starting x coordinate
         self.ycenter = 0  # y coordinate
+    def mtype_short(self):
+        return self.inst.split("_",1)[0] # Short module type (e.g. "TPROJ")
+    def var(self):
+        return self.inst.split("_",1)[-1] # Remainder of instance name
         
 class MemModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -70,6 +73,8 @@ class MemModule(Node):
         self.bxbitwidth = 0
         self.is_binned = False
         self.has_numEntries_out = True # True if has numEntries out port.
+    def keyName(self): # All mems with same keyName made in same VHDL "generate" loop.
+        return self.mtype_short()+"_"+str(self.bitwidth)
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -81,6 +86,43 @@ class ProcModule(Node):
         self.is_first = False
         self.is_last = False
         self.IPname = instance_name
+
+class MemTypeInfoByKey(object):
+    """
+    # Info common to all memory objects of a given keyName() (e.g. TPROJ_60)
+    """
+    def __init__(self, memList):        
+        # Input: list of all memory objects of a given key type
+        assert(len(memList) > 0)
+        self.mtype_short = memList[0].mtype_short() 
+        self.bitwidth   = memList[0].bitwidth
+        self.bxbitwidth = memList[0].bxbitwidth
+        self.is_binned  = memList[0].is_binned
+        self.has_numEntries_out = memList[0].has_numEntries_out
+        # At least one memory of this type is initial or final.
+        self.is_initial = any(m.is_initial for m in memList)
+        self.is_final   = any(m.is_final for m in memList)
+        assert(not (self.is_initial and self.is_final))
+        # Short type name of any upstream/downstream processing module.
+        self.upstream_mtype_short   = ""
+        self.downstream_mtype_short = ""
+        # Indicates if some modules of this type take have upstream/downstream
+        # connections and others do not.
+        self.mixedIO = False; 
+        keySet = set()
+        for m in memList:
+            keySet.add(m.keyName())
+            if len(m.upstreams) > 0:
+                self.upstream_mtype_short = m.upstreams[0].mtype_short()
+            if len(m.downstreams) > 0:
+                self.downstream_mtype_short = m.downstreams[0].mtype_short()
+            if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
+                self.mixedIO = True
+        assert(len(keySet) == 1) # Ensure only one key name is input memory list.
+        if self.mixedIO:
+            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+            exit(1)
+
 
 #######################################
 # Tracklet Graph
@@ -140,16 +182,16 @@ class TrackletGraph(object):
             if barrel2S>-1: mem.bitwidth = 58
             if disk>-1: mem.bitwidth = 59
         elif mem.mtype == "VMProjections":
-            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 21
-            if disk>-1: mem.bitwidth = 21
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 24
+            if disk>-1: mem.bitwidth = 24
         elif mem.mtype == "VMStubsME":
-            if barrelPS>-1: mem.bitwidth = 13
-            if barrel2S>-1 or disk>-1: mem.bitwidth = 14
+            if barrelPS>-1: mem.bitwidth = 16
+            if barrel2S>-1 or disk>-1: mem.bitwidth = 17
         elif mem.mtype == "CandidateMatch":
             mem.bitwidth = 14
         elif mem.mtype == "FullMatch":
-            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 45
-            if disk>-1: mem.bitwidth = 43
+            if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
+            if disk>-1: mem.bitwidth = 55
         else:
             raise ValueError("Bitwidth undefined for "+mem.mtype)
 

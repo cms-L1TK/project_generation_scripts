@@ -171,7 +171,7 @@ class project:
 
         # Add nodes and connections to the project
         # Starting with e.g. TC_L1L2F and moving up and down the chain
-        # Will only look for inputs of inputs and outputs of outputs
+        # For each node it adds, will check for all inputs and outputs of that node
 
         print "Starting with node TC_%s%s"%(layers,tcs[tc_i])
         n = node("TC_%s%s"%(layers,tcs[tc_i]))
@@ -198,6 +198,7 @@ class project:
                 if in_n.name != "" and in_n.name not in self.nodes:
                     self.addNode(in_n)
                     self.findInputConnections(in_n, ref_p)
+                    self.findOutputConnections(in_n, ref_p)
 
     def findOutputConnections(self, n, ref_p):
         if verbose: print "\t", n.name
@@ -216,6 +217,7 @@ class project:
                 if out_n.name != "" and out_n.name not in self.nodes:
                     self.addNode(out_n)
                     self.findOutputConnections(out_n, ref_p)
+                    self.findInputConnections(out_n, ref_p)
 
     def isIncluded(self, n):
         if n.name.startswith("TC_"):

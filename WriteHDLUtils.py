@@ -856,15 +856,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
                         if isinstance(memory, list):
                             for memmodule in memory:
-                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
-                        else:
-                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
-                    elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
-                        if isinstance(memory, list):
-                            for memmodule in memory:
                                 string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,  memmodule)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
+                        if isinstance(memory, list):
+                            for memmodule in memory:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)

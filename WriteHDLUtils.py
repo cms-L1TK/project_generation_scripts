@@ -479,14 +479,6 @@ def decodeSeedIndex_TC(memoryname):
         return 14
     elif ('L3PHID' in memoryname) or ('D4PHID' in memoryname):
         return 15
-    elif ('D5PHIA' in memoryname):
-        return 16
-    elif ('D5PHIB' in memoryname):
-        return 17
-    elif ('D5PHIC' in memoryname):
-        return 18
-    elif ('D5PHID' in memoryname):
-        return 19
     else:
         print "decodeSeedIndex_TC: Unknown memory name", memoryname
         return False

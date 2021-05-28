@@ -438,13 +438,59 @@ def matchArgPortNames_TC(argname, portname):
             return False
         if destination == "disk":
             return "projoutD" in portname
-        elif destination == "2s":
-            return portname[7:9] in ["L1", "L2", "L3"]
         elif destination == "ps":
+            return portname[7:9] in ["L1", "L2", "L3"]
+        elif destination == "2s":
             return portname[7:9] in ["L4", "L5", "L6"]
     else:
         print "matchArgPortNames_TC: Unknown argument", argname
         return False
+
+def decodeSeedIndex_TC(memoryname):
+    if ('L1PHIA' in memoryname) or ('L4PHIA' in memoryname) or ('D1PHIA' in memoryname):
+        return 0
+    elif ('L1PHIB' in memoryname) or ('L4PHIB' in memoryname) or ('D1PHIB' in memoryname):
+        return 1
+    elif ('L1PHIC' in memoryname) or ('L4PHIC' in memoryname) or ('D1PHIC' in memoryname):
+        return 2
+    elif ('L1PHID' in memoryname) or ('L4PHID' in memoryname) or ('D1PHID' in memoryname):
+        return 3
+    elif ('L1PHIE' in memoryname) or ('L5PHIA' in memoryname) or ('D2PHIA' in memoryname):
+        return 4
+    elif ('L1PHIF' in memoryname) or ('L5PHIB' in memoryname) or ('D2PHIB'  in memoryname):
+        return 5
+    elif ('L1PHIG' in memoryname) or ('L5PHIC' in memoryname) or ('D2PHIC' in memoryname):
+        return 6
+    elif ('L1PHIH' in memoryname) or ('L5PHID' in memoryname) or ('D2PHID' in memoryname):
+        return 7
+    elif ('L2PHIA' in memoryname) or ('L6PHIA' in memoryname) or ('D3PHIA' in memoryname):
+        return 8
+    elif ('L2PHIB' in memoryname) or ('L6PHIB' in memoryname) or ('D3PHIB'  in memoryname):
+        return 9
+    elif ('L2PHIC' in memoryname) or ('L6PHIC' in memoryname) or ('D3PHIC' in memoryname):
+        return 10
+    elif ('L2PHID' in memoryname) or ('L6PHID' in memoryname) or ('D3PHID' in memoryname):
+        return 11
+    elif ('L3PHIA' in memoryname) or ('D4PHIA' in memoryname):
+        return 12
+    elif ('L3PHIB' in memoryname) or ('D4PHIB' in memoryname):
+        return 13
+    elif ('L3PHIC' in memoryname) or ('D4PHIC' in memoryname):
+        return 14
+    elif ('L3PHID' in memoryname) or ('D4PHID' in memoryname):
+        return 15
+    elif ('D5PHIA' in memoryname):
+        return 16
+    elif ('D5PHIB' in memoryname):
+        return 17
+    elif ('D5PHIC' in memoryname):
+        return 18
+    elif ('D5PHID' in memoryname):
+        return 19
+    else:
+        print "decodeSeedIndex_TC: Unknown memory name", memoryname
+        return False
+
 
 ################################
 # ProjectionRouter
@@ -836,9 +882,11 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         # Temporary bodge to account for encoded index in fullmatch memories
                         if tmp_argname == 'fullmatch':
                             tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                        elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
+                            tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
                         else:
                             tmp_argname += "_" + str(array_dict[tmp_argname])
-
+                    
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?
                     if portname.replace("inner","").find("in") != -1:

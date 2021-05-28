@@ -17,7 +17,8 @@ import re
 #######################################
 # Drawing parameters
 ModuleDrawWidth_dict = {'InputLink':3.0,
-                        'VMStubsTE':3.0,
+                        'VMStubsTEInner':3.0,
+                        'VMStubsTEOuter':3.0,
                         'VMStubsME':3.0,
                         'AllStubs':2.5,
                         'StubPairs':4.0,
@@ -124,8 +125,10 @@ class TrackletGraph(object):
         disk = -1
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
-        if mem.mtype == "VMStubsTE":
-            mem.bitwidth = 22 if mem.inst.find("L1") else 16 # FIXME
+        if mem.mtype == "VMStubsTEInner":  #FIXME
+            mem.bitwidth = 22 if mem.inst.find("L1") else 16
+        elif mem.mtype == "VMStubsTEOuter":
+            mem.bitwidth = 16
         elif mem.mtype == "AllStubs":
             mem.bitwidth = 36
         elif mem.mtype == "StubPairs":
@@ -153,7 +156,7 @@ class TrackletGraph(object):
         # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
-               or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTE"):
+                  or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
@@ -256,7 +259,7 @@ class TrackletGraph(object):
             mem_type = line_mem.split(':')[0].strip()
             # Instance name
             mem_inst = line_mem.split(':')[1].strip().split(' ')[0]
-
+            
             # Check which detector region the memory belongs to
             isbarrel = False
             isdisk = False
@@ -288,7 +291,46 @@ class TrackletGraph(object):
             elif region == 'D': # disk project
                 if not isdisk or isbarrel:
                     continue
-            
+
+            if mem_type == 'VMStubsTE':
+                """
+                # An example of instance name: VMSTE_L6PHIB15n3
+                """
+                position = mem_inst.split('_')[1][:2] # layer/disk
+                philabel = mem_inst.split('_')[1][5] # PHI
+                mem_type_new = ""
+                if position == 'L1':
+                    mem_type_new = 'VMStubsTEInner'
+                elif position == 'L2':
+                    if philabel in ['I','J','K','L','W','X','Y','Z']: # L2L3 or L2D1 seeding
+                        mem_type_new = 'VMStubsTEInner'
+                    elif philabel in ['A','B','C','D']: # L1L2 seeding
+                        mem_type_new = 'VMStubsTEOuter'
+                    else:
+                        raise ValueError("Unknown PHI label "+philabel)
+                elif position == 'L3':
+                    if philabel in ['A','B','C','D']: # L3L4
+                        mem_type_new = 'VMStubsTEInner'
+                    elif philabel in ['I','J','K','L']: # L2L3
+                        mem_type_new = 'VMStubsTEOuter'
+                    else:
+                        raise ValueError("Unknown PHI label "+philabel)
+                elif position == 'L4' or position == 'L6':
+                    mem_type_new = 'VMStubsTEOuter'
+                elif position == 'L5':
+                    mem_type_new = 'VMStubsTEInner'
+                elif position == 'D1':
+                    if philabel in ['A','B','C','D']: # D1D2 seeding
+                        mem_type_new = 'VMStubsTEInner'
+                    elif philabel in ['W','X','Y','Z']: # L1D1 or L2D1 seeding
+                        mem_type_new = 'VMStubsTEOuter'
+                    else:
+                        raise ValueError("Unknown PHI label "+philabel)
+                elif position == 'D2' or position == 'D4':
+                    mem_type_new = 'VMStubsTEOuter'
+                elif position == 'D3':
+                    mem_type_new = 'VMStubsTEInner'
+                mem_type= mem_type_new
             # Construct MemModule object
             aMemMod = MemModule(mem_type, mem_inst, i)
             # Add to dictionary
@@ -298,7 +340,7 @@ class TrackletGraph(object):
         file_mem.close()
 
         return mem_dict
-        
+
     @staticmethod
     def wire_modules_from_config(fname_wconfig, p_dict, m_dict):
         """ Read wiring configuration file and connect the modules
@@ -314,7 +356,6 @@ class TrackletGraph(object):
             ######
             # memory instance in wiring config
             wmem_inst = line_wire.split('input=>')[0].strip()
-
             # check if the memory is in the dictionary
             if not wmem_inst in m_dict:
                 continue

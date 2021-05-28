@@ -256,65 +256,18 @@ def getHLSMemoryClassName(module):
     else:
         raise ValueError(module.mtype + " is unknown.")
 
-def labelConnectedMemoryArrays(proc_list):
-    """
-    # label those memories that will be constructed in an array
-    # (if these scripts end up generating the HLS top levels, will this function
-    # be needed? That is, even if the templated HLS function has arrays on the
-    # interface, the top-level could still be individual memories, although you'd
-    # still have to pass those individual memories to the templated block as an array
-    """
-    for aProcModule in proc_list:
-
-        if aProcModule.mtype == 'TrackletCalculator':
-            # stubpair and allstub memories are arrays
-            # they are all inputs
-            for inmem,inport in zip(aProcModule.upstreams,aProcModule.input_port_names):
-                if 'stubpair' in inport:
-                    inmem.userlabel = 'stubPairs_'+aProcModule.inst
-                elif 'innerallstubin' in inport:
-                    inmem.userlabel = 'innerStubs_'+aProcModule.inst
-                elif 'outerallstubin' in inport:
-                    inmem.userlabel = 'outerStubs_'+aProcModule.inst
-
-        # add other processing steps here if they have array inputs/outputs
-        #elif aProcModule.mtype == '':
-
 def getListsOfGroupedMemories(aProcModule):
     """
     # Get a list of memories and a list of ports for a given processing module
     # The memories are further grouped in a list if they are expected to be
     # constructed and passed to the processing function as an array
-
-    # add array name to 'userlabel' of the connected memory module
     """
-    #labelConnectedMemoryArrays([aProcModule])
 
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
-    # sort?
 
-    newmemList = []
-    newportList = []
-    arraycontainer_dict = {}
-
-    for memory, portname in zip(memList, portList):
-        if not memory.userlabel:  # default is '', i.e. no array label added
-            newmemList.append(memory)
-            newportList.append(portname)
-        else:
-            arrayname = memory.userlabel
-            if arrayname not in arraycontainer_dict:
-                arraycontainer_dict[arrayname] = [memory]
-            else:
-                arraycontainer_dict[arrayname].append(memory)
-    # add back memory arrays
-    for arrayname in arraycontainer_dict:
-        newmemList.append(arraycontainer_dict[arrayname])
-        newportList.append(arrayname)
-
-    return newmemList, newportList
-
+    return memList, portList
+ 
 def groupAllConnectedMemories(proc_list, mem_list):
     """
     # Regroup memories into the lists called inside, topin, topout
@@ -333,30 +286,14 @@ def groupAllConnectedMemories(proc_list, mem_list):
 
     arraycontainer_dict = {}
     for memory in mem_list:
-        if not memory.userlabel:  # default is '', i.e. no array label added
-            if memory.is_initial:
-                memories_topin.append(memory)
-            elif memory.is_final:
-                memories_topout.append(memory)
-            else:
-                memories_inside.append(memory)
+        if memory.is_initial:
+            memories_topin.append(memory)
+        elif memory.is_final:
+            memories_topout.append(memory)
         else:
-            arrayname = memory.userlabel
-            if arrayname not in arraycontainer_dict:
-                arraycontainer_dict[arrayname] = [memory]
-            else:
-                arraycontainer_dict[arrayname].append(memory)
-    # add memory arrays
-    for arrayname in arraycontainer_dict:
-        if arraycontainer_dict[arrayname][0].is_initial:
-            memories_topin.append(arraycontainer_dict[arrayname])
-        elif arraycontainer_dict[arrayname][0].is_final:
-            memories_topout.append(arraycontainer_dict[arrayname])
-        else:
-            memories_inside.append(arraycontainer_dict[arrayname])
+            memories_inside.append(memory)
 
     return memories_topin, memories_inside, memories_topout
- 
 ########################################
 # Processing functions
 ########################################
@@ -439,17 +376,15 @@ def writeTemplatePars_TC(aTCModule):
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
+            assert(innerphilabel in PhiLabelASInner)
+            innerindex = PhiLabelASInner.index(innerphilabel)
 
-            #assert(innerphilabel in PhiLabelASInner)
-            #innerindex = PhiLabelASInner.index(innerphilabel)
+            assert(outerphilabel in PhiLabelASOuter)
+            outerindex = PhiLabelASOuter.index(outerphilabel)
 
-            #assert(outerphilabel in PhiLabelASOuter)
-            #outerindex = PhiLabelASOuter.index(outerphilabel)
-
-            #NSPMem[innerindex][outerindex] += 1
+            NSPMem[innerindex][outerindex] += 1
             
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
-
     # Count connected TProj memories and compute the TPROJMask parameter
 
     # list of layers/disks the seeds projecting to for a given seeding
@@ -493,11 +428,11 @@ def writeTemplatePars_TC(aTCModule):
 
 def matchArgPortNames_TC(argname, portname):
     if 'innerStubs' in argname:
-        return 'innerStubs' in portname
+        return 'innerallstub' in portname
     elif 'outerStubs' in argname:
-        return 'outerStubs' in portname
+        return 'outerallstub' in portname
     elif 'stubPairs' in argname:
-        return 'stubPairs' in portname
+        return 'stubpair' in portname
     elif 'trackletParameters' in argname:
         return 'trackpar' in portname
     elif 'projout' in argname:
@@ -910,13 +845,13 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?
-                    if portname.find("in") != -1:
+                    if portname.replace("inner","").find("in") != -1:
                         if isinstance(memory, list):
                             for memmodule in memory:
                                 string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,  memmodule)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
-                    if portname.find("out") != -1:
+                    if portname.replace("outer","").find("out") != -1:
                         if isinstance(memory, list):
                             for memmodule in memory:
                                 string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memmodule)

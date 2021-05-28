@@ -421,10 +421,10 @@ def writeProcMemoryRHSPorts(argname,memory):
 def writeLUTPorts(argname,lut):
     string_lut_ports = ""
     argname = argname.split("[")[0]
-    string_lut_ports += "      clk       => ap_clk,\n"
+    string_lut_ports += "      clk       => clk,\n"
     string_lut_ports += "      addr      => "+lut.inst+"_"+argname+"_addr,\n"
     string_lut_ports += "      ce        => "+lut.inst+"_"+argname+"_ce,\n"
-    string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout;\n"
+    string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout\n"
 
     return string_lut_ports
 
@@ -440,7 +440,7 @@ def writeLUTParameters(argname, lut):
         depth = 8
         parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
     parameterlist += "      lut_width => "+str(width)+",\n"
-    parameterlist += "      lut_depth => "+str(2**depth)+"\"\",\n"
+    parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     
     return parameterlist
 
@@ -457,7 +457,7 @@ def writeLUTWires(argname, lut):
         width = 1
     wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
     wirelist += "std_logic_vector("+str(depth-1)+" downto 0);\n"
-    wirelist += "  signal "+lut.inst+"_ce       : std_logic;\n"
+    wirelist += "  signal "+lut.inst+"_"+argname+"_ce       : std_logic;\n"
     wirelist += "  signal "+lut.inst+"_"+argname+"_dout : "
     wirelist += "std_logic_vector("+str(width-1)+" downto 0);\n"
     return wirelist
@@ -468,7 +468,7 @@ def writeLUTMemPorts(argname, module):
     string_mem_ports += "      "+argname+"_V_address0                  => " 
     string_mem_ports += module.inst+"_"+argname+"_addr,\n"
     string_mem_ports += "      "+argname+"_V_ce0                       => "
-    string_mem_ports += module.inst+"_"+argname+"ce,\n"
+    string_mem_ports += module.inst+"_"+argname+"_ce,\n"
     string_mem_ports += "      "+argname+"_V_q0                        => "
     string_mem_ports += module.inst+"_"+argname+"_dout,\n"
     

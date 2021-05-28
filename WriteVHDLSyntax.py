@@ -434,11 +434,11 @@ def writeLUTParameters(argname, lut):
     if "in" in argname:
         width = 1
         depth = 8
-        parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
+        parameterlist += "      lut_file  => "+"\"../../../emData/LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
     elif "out" in argname:
         width = 1
         depth = 8
-        parameterlist += "      lut_file  => "+"\"emData/LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
+        parameterlist += "      lut_file  => "+"\"../../../emData/LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
     parameterlist += "      lut_width => "+str(width)+",\n"
     parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     

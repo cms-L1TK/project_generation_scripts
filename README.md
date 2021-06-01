@@ -53,7 +53,11 @@ Basic instructions to run the project generation for the Vivado HLS project with
       
       ./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
 
-  *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
+      example for IRVMR chain:
+
+      generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
+
+	*dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
   (Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).
 

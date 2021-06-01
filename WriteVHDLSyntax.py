@@ -161,11 +161,8 @@ def writeMemoryUtil(memDict, memInfoDict):
         num_pages = 2**memInfo.bxbitwidth
 
         if "DL" in mtypeB: # DTCLinks
-            arrName = "t_arr_"+mtypeB+"_empty_neg"
-            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
-
-            arrName = "t_arr_"+mtypeB+"_read"
-            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
+            arrName = "t_arr_"+mtypeB+"_1b"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n"
 
             arrName = "t_arr_"+mtypeB+"_DATA"
             ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
@@ -333,8 +330,8 @@ def writeDTCLinkLHSPorts_interface(mtypeB):
 
     string_input_mems = ""
     string_input_mems += "    "+mtypeB+"_link_AV_dout       : in t_arr_"+mtypeB+"_DATA;\n"
-    string_input_mems += "    "+mtypeB+"_link_empty_neg       : in t_arr_"+mtypeB+"_empty_neg;\n"
-    string_input_mems += "    "+mtypeB+"_link_read : out t_arr_"+mtypeB+"_read;\n"
+    string_input_mems += "    "+mtypeB+"_link_empty_neg     : in t_arr_"+mtypeB+"_1b;\n"
+    string_input_mems += "    "+mtypeB+"_link_read          : out t_arr_"+mtypeB+"_1b;\n"
 
     return string_input_mems
 

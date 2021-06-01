@@ -16,12 +16,12 @@ import re
 # TODO: Should be able to generate this from the wiring
 #######################################
 # Drawing parameters
-ModuleDrawWidth_dict = {'DTCLink':3.0,
-                        'InputLink':3.0,
+ModuleDrawWidth_dict = {'DTCLink':2.0,
+                        'InputLink':2.0,
                         'VMStubsTEInner':3.0,
                         'VMStubsTEOuter':3.0,
                         'VMStubsME':3.0,
-                        'AllStubs':2.5,
+                        'AllStubs':3.0,
                         'StubPairs':4.0,
                         'TrackletParameters':3.0,
                         'TrackletProjections':4.0,
@@ -872,19 +872,12 @@ class TrackletGraph(object):
         fo.close()
 
         # FIXME
-        # Return canvas size in pixels along X and Y
-        pageHeight = (maxnum+1)*40
-        #width = sum(columns_width)*85
-        pageWidth =  pageHeight * 2
-        dyBox = 0.5/(maxnum+1)
-        textSize = 0.5/(maxnum+1)
-        
-        #print  width, height, dy, textsize
-        
         # Work In Progress - adjusts sizes in TrackletProject.pdf
+        # Return canvas size in pixels along X and Y
         pageWidth = 10000
         pageHeight = 5000
-        dyBox = 0.025
-        textSize = 0.015
-        
+        dyBox = 0.5/(maxnum+1)
+        textSize = 0.5/(maxnum+10)
+
+        #print  pageWidth, pageHeight, dyBox, textSize
         return int(pageWidth), int(pageHeight), dyBox, textSize

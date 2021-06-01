@@ -274,7 +274,7 @@ def getListsOfGroupedMemories(aProcModule):
     # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = zip(memList, portList)
     zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number
-    zipped_list.sort(key=lambda (m, p): p) # sort alphabetically
+    zipped_list.sort(key=lambda (m, p): p if ('PHI' not in p or not p[-1].isdigit()) else p[:p.index('PHI')+1]) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
 
@@ -945,9 +945,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     argname_is_array = (tmp_argname.find('[') != -1) # Check if array
 
                     # Special case if argname is an array
-                    # Note: it assumes the arrays are partitioned
+                    # Note: it  the arrays are partitioned
                     if argname_is_array:
-                        # Assumes no more than two dimensions
+                        #  no more than two dimensions
                         argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
                         tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
 

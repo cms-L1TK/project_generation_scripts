@@ -187,11 +187,7 @@ def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
     string_mem = ""
     for memModule in memories_list:
         amem_str=""
-        if isinstance(memModule, list):
-            for module in memModule:
-                amem_str += writeTBMemoryStimulusInstance(module)
-        else:
-            amem_str = writeTBMemoryStimulusInstance(memModule)
+        amem_str = writeTBMemoryStimulusInstance(memModule)
         string_mem += amem_str
     string_mem += "\n"
     return string_mem
@@ -214,11 +210,7 @@ def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_pr
     string_fwblock_ctrl = writeFWBlockControlSignalPorts(first_proc, last_proc)
 
     for memModule in memories_in:
-        if isinstance(memModule, list):
-            for module in memModule:
-                string_inmems_ports += writeFWBlockMemoryLHSPorts(module)
-        else:
-            string_inmems_ports += writeFWBlockMemoryLHSPorts(memModule)
+        string_inmems_ports += writeFWBlockMemoryLHSPorts(memModule)
 
     string_outmems_ports = ""
     for memModule in memories_out:

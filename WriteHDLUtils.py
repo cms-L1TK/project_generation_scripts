@@ -411,7 +411,7 @@ def writeTemplatePars_TC(aTCModule):
                 mask = 4
             elif phi == 'D':
                 mask = 8
-            #assert(mask > 0)
+            assert(mask > 0)
 
             TPROJMask += mask << (index * 4)
             
@@ -845,14 +845,13 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         elif argtype == "BXType&":
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
+        elif "table" in argname:
+            string_ports = writeLUTPorts(argname, module)
+            string_parameters = writeLUTParameters(argname, module)
+            module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
+            str_ctrl_wire += writeLUTWires(argname, module)
+            string_mem_ports += writeLUTMemPorts(argname, module)
         else:
-            if "table" in argname:
-                string_ports = writeLUTPorts(argname, module)
-                string_parameters = writeLUTParameters(argname, module)
-                module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
-                str_ctrl_wire += writeLUTWires(argname, module)
-                string_mem_ports += writeLUTMemPorts(argname, module)
-
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
             for memory, portname in zip(memModuleList, portNameList):
@@ -862,8 +861,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     foundMatch = (argname==portname)
                 else:
                     # Use the provided matching rules
-                    if "table" not in argname:
-                        foundMatch = f_matchArgPortNames(argname, portname)
+                    foundMatch = f_matchArgPortNames(argname, portname)
                         
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches

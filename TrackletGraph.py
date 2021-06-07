@@ -245,6 +245,8 @@ class TrackletGraph(object):
             # Final number unimportant in typical name "ME_D5PHIC11" 
             # (Can probably drop phi region too).
             proc.IPname = proc.inst[:9]
+        elif proc.mtype == 'TrackletEngine':
+            proc.IPname = proc.inst[:5]+proc.inst.split("_")[2][:2]
         else:
             # FIX: check for other processing modules steps.
             proc.IPname = proc.inst

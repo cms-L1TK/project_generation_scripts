@@ -433,12 +433,7 @@ def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
     """
     module_str = ""
     module_str += str_ctrl_func
-    ipname = ""
-    if module.mtype == "TrackletEngine":
-        ipname = "TE"
-    else:
-        ipname = module.IPname
-    module_str += "  "+module.inst+" : entity work."+ipname+"\n"
+    module_str += "  "+module.inst+" : entity work."+module.IPname+"\n"
     module_str += "    port map (\n"+str_ports.rstrip(",\n")+"\n  );\n\n"
 
     return module_str

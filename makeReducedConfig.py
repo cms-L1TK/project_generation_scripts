@@ -68,6 +68,7 @@ class project:
         self.lxphis = []
         self.ref_modules = OrderedDict()
         self.ref_memories = OrderedDict()
+        self.seed_layers = []
 
     def addRefModules(self, fname):
         with open(fname, "r") as f:
@@ -160,6 +161,10 @@ class project:
             print "Bad TC index, not adding."
             return
 
+        # Store which layer pair we're seeding from to use when deciding what to keep
+        self.seed_layers.append(layers[:2])
+        self.seed_layers.append(layers[2:])
+
         tc_i = tcs.index(tc.upper())
         phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
         phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
@@ -188,7 +193,7 @@ class project:
         if verbose: print "\tInputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_inputs]
         for ref_c in ref_inputs:
             ref_n = ref_c.cinput
-            if self.isIncluded(ref_n):
+            if self.isIncluded(ref_n, ref_c.memory):
                 if verbose: print "\t\t", "Found good input!:", ref_n.name
                 in_n = node(ref_n.name)
                 in_c = connection(ref_c.memory, in_n, n, ref_c.cinext, ref_c.coutext)
@@ -207,7 +212,7 @@ class project:
         if verbose: print "\tOutputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_outputs]
         for ref_c in ref_outputs:
             ref_n = ref_c.coutput
-            if self.isIncluded(ref_n):
+            if self.isIncluded(ref_n, ref_c.memory):
                 if verbose: print "\t\t", "Found good output!:", ref_n.name
                 out_n = node(ref_n.name)
                 out_c = connection(ref_c.memory, n, out_n, ref_c.cinext, ref_c.coutext)
@@ -219,15 +224,36 @@ class project:
                     self.findOutputConnections(out_n, ref_p)
                     self.findInputConnections(out_n, ref_p)
 
-    def isIncluded(self, n):
+    def isIncluded(self, n, mem):
+
+        # Remove stuff that shouldn't be included due to only having one seeding pair
+        if n.name.startswith("MC_"):
+            for l in self.seed_layers:
+                if n.name.startswith("MC_%s"%l): return False
+        if n.name.startswith("ME_"):
+            for l in self.seed_layers:
+                if n.name.startswith("ME_%s"%l): return False
+        if n.name.startswith("PR_"):
+            for l in self.seed_layers:
+                if n.name.startswith("PR_%s"%l): return False
+        if n.name.startswith("TE_"):
+            if not (n.name.startswith("TE_%s"%self.seed_layers[0]) and "_%s"%self.seed_layers[1] in n.name): return False
+        if mem.startswith("CT_"):
+            if not mem.startswith("CT_%s%s"%(self.seed_layers[0], self.seed_layers[1])): return False
+        if n.name.startswith("FT_"):
+            if not n.name.startswith("FT_%s%s"%(self.seed_layers[0], self.seed_layers[1])): return False
+
+        # Only include the phi slice we care about
         if n.name.startswith("TC_"):
             for tc in self.tcs:
                 if n.name == tc: return True
             return False
-        if n.name.startswith("TE_L1PHI"):
+        if n.name.startswith("TE_"):
             for l1 in self.l1phis:
                 for lx in self.lxphis:
-                    if "L1PHI%s"%l1 in n.name and "L2PHI%s"%lx in n.name: return True
+                    phistr1 = "%sPHI%s"%(self.seed_layers[0], l1) if self.seed_layers[0]=="L1" else "%sPHI%s"%(self.seed_layers[0], lx)
+                    phistr2 = "%sPHI%s"%(self.seed_layers[1], l1) if self.seed_layers[1]=="L1" else "%sPHI%s"%(self.seed_layers[1], lx)
+                    if phistr1 in n.name and phistr2 in n.name: return True
             return False
         if "L1PHI" in n.name:
             for l1 in self.l1phis:
@@ -238,10 +264,7 @@ class project:
                 for x in [2,3,4,5,6]:
                     if "L%sPHI%s"%(x,lx) in n.name: return True
             return False
-        if n.name.startswith("FT_"):
-            for tc in self.tcs:
-                layers = tc[3:-1]
-                if n.name == "FT_%s"%layers: return True
+        if n.name.startswith("FT_"): return True
         if n.name in ["PD", ""]: return True
         if n.name.startswith("IR_"): return True
         return False

@@ -393,7 +393,7 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
 def writeTemplatePars_TE(aTEModule):
     return ""
 
-def matchArgPortNames_TE(argname, portname):
+def matchArgPortNames_TE(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for MatchEngine
     """
@@ -921,7 +921,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
-        elif "table" in argname:
+        elif "table" in argname: # For TE
             string_ports = writeLUTPorts(argname, module)
             string_parameters = writeLUTParameters(argname, module)
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
@@ -1002,8 +1002,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
-<<<<<<< HEAD
-=======
 
     # External LUTs
     string_luts = ""
@@ -1012,7 +1010,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         string_luts += writeInputLinkPhiBinsPort(numberOfMemoriesPerLayer(module))
 
     # Add all ports together
->>>>>>> fd1e3e2... debugged IR-VMR chain. needs debugging for mixedIO
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
@@ -1028,12 +1025,12 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     return str_ctrl_wire,module_str
 
 ################################
-def writeModuleInstance(module, hls_src_dir, first_of_type):
+def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
     if module.mtype == 'InputRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_IR,
                                          matchArgPortNames_IR,
-                                         first_of_type)
+                                         first_of_type, extraports)
     elif module.mtype == 'VMRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMR,

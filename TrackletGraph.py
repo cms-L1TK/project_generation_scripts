@@ -171,9 +171,11 @@ class TrackletGraph(object):
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
         if mem.mtype == "VMStubsTEInner":
-            mem.bitwidth = 23 if mem.inst.find("L5") else 22
+            if mem.inst.find("L5")>-1: mem.bitwidth = 23 
+            else: mem.bitwidth = 22
         elif mem.mtype == "VMStubsTEOuter":
-            mem.bitwidth = 16 if (mem.inst.find("L4") or mem.inst.find("L6")) else mem.bitwidth = 17
+            if (mem.inst.find("L4")>-1 or mem.inst.find("L6")>-1): mem.bitwidth = 17
+            else: mem.bitwidth = 16
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
         elif mem.mtype == "DTCLink":

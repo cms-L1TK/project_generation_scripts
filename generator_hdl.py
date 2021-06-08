@@ -154,6 +154,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
 
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
+
     string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports)
 
     # Top function interface
@@ -167,7 +168,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     string_src += string_memWires
     string_src += string_procWires
     string_src += writeModulesPreamble()
-    string_src += string_memModules 
+    string_src += string_memModules
     string_src += string_procModules
     string_src += writeTopModuleCloser(topfunc)
 
@@ -185,6 +186,7 @@ def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
 
     string_mem = ""
     for memModule in memories_list:
+        amem_str=""
         amem_str = writeTBMemoryStimulusInstance(memModule)
         string_mem += amem_str
     string_mem += "\n"
@@ -239,12 +241,22 @@ def writeTestBench(topfunc, memDict, memInfoDict, emData_dir, sector="04"):
 
     # Find the first and last processing block in firmware chain
     for memModule in memories_in:
-        if memModule.downstreams[0].is_first:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_first:
+                    first_proc = module.downstreams[0].mtype_short()
+                    break
+        elif memModule.downstreams[0].is_first:
             first_proc = memModule.downstreams[0].mtype_short()
             break
     
     for memModule in memories_out:
-        if memModule.upstreams[0].is_last:
+        if isinstance(memModule, list):
+            for module in memModule:
+                if module.downstreams[0].is_last:
+                    last_proc = module.upstreams[0].mtype_short()
+                    break
+        elif memModule.upstreams[0].is_last:
             last_proc = memModule.upstreams[0].mtype_short()
             break
 

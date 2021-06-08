@@ -1,10 +1,12 @@
 """
-# Utilities for writing HDL code from Vivado HLS blocks
+########################################
+# Utilities for writing Verilog code from Vivado HLS blocks
 """
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
+
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -261,6 +263,7 @@ def getHLSMemoryClassName(module):
 def getListsOfGroupedMemories(aProcModule):
     """
     # Get a list of memories and a list of ports for a given processing module
+
     """
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
@@ -313,12 +316,21 @@ def matchArgPortNames_VMR(argname, portname):
 # TrackletEngine
 ################################
 def writeTemplatePars_TE(aTEModule):
-    raise ValueError("TrackletEngine is not implemented yet!")
     return ""
 
 def matchArgPortNames_TE(argname, portname):
-    raise ValueError("TrackletEngine is not implemented yet!")
-    return False
+    """
+    # Define rules to match the argument and the port names for MatchEngine
+    """
+    if argname == 'instubinnerdata':
+        return portname == 'innervmstubin'
+    elif argname == 'instubouterdata':
+        return portname == 'outervmstubin'
+    elif argname == 'outstubpair':
+        return portname == 'stubpairout' or 'stubPairs_' in portname
+    else:
+        print "matchArgPortNames_TE: Unknown argument name", argname
+        return False
 
 ################################
 # TrackletCalculator
@@ -348,8 +360,8 @@ def writeTemplatePars_TC(aTCModule):
     PhiLabelASInner.sort()
     PhiLabelASOuter.sort()
 
-    assert(NASMemInner<=2)
-    assert(NASMemOuter<=2)
+    #assert(NASMemInner<=2)
+    #assert(NASMemOuter<=2)
 
     # Count StubPair memories
     NSPMem = [[0,0],[0,0]]
@@ -360,7 +372,6 @@ def writeTemplatePars_TC(aTCModule):
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
-
             assert(innerphilabel in PhiLabelASInner)
             innerindex = PhiLabelASInner.index(innerphilabel)
 
@@ -370,7 +381,6 @@ def writeTemplatePars_TC(aTCModule):
             NSPMem[innerindex][outerindex] += 1
             
     template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
-
     # Count connected TProj memories and compute the TPROJMask parameter
 
     # list of layers/disks the seeds projecting to for a given seeding
@@ -414,20 +424,73 @@ def writeTemplatePars_TC(aTCModule):
 
 def matchArgPortNames_TC(argname, portname):
     if 'innerStubs' in argname:
-        return 'innerStubs' in portname
+        return 'innerallstub' in portname
     elif 'outerStubs' in argname:
-        return 'outerStubs' in portname
+        return 'outerallstub' in portname
     elif 'stubPairs' in argname:
-        return 'stubPairs' in portname
+        return 'stubpair' in portname
     elif 'trackletParameters' in argname:
         return 'trackpar' in portname
     elif 'projout' in argname:
-        # e.g. "projout_L6PHIC"
-        destination = argname.strip().split('_')[-1]
-        return destination in portname and 'projout' in portname
+        # e.g. "projout_disk[TC::N_PROJOUT_DISK]"
+        destination = argname.strip().split('_')[-1][:-2]
+        if 'projout' not in portname:
+            return False
+        if destination == "disk":
+            return "projoutD" in portname
+        elif destination == "ps":
+            return portname[7:9] in ["L1", "L2", "L3"]
+        elif destination == "2s":
+            return portname[7:9] in ["L4", "L5", "L6"]
     else:
         print "matchArgPortNames_TC: Unknown argument", argname
         return False
+
+def decodeSeedIndex_TC(memoryname):
+    if ('L1PHIA' in memoryname) or ('L4PHIA' in memoryname) or ('D1PHIA' in memoryname):
+        return 0
+    elif ('L1PHIB' in memoryname) or ('L4PHIB' in memoryname) or ('D1PHIB' in memoryname):
+        return 1
+    elif ('L1PHIC' in memoryname) or ('L4PHIC' in memoryname) or ('D1PHIC' in memoryname):
+        return 2
+    elif ('L1PHID' in memoryname) or ('L4PHID' in memoryname) or ('D1PHID' in memoryname):
+        return 3
+    elif ('L1PHIE' in memoryname) or ('L5PHIA' in memoryname) or ('D2PHIA' in memoryname):
+        return 4
+    elif ('L1PHIF' in memoryname) or ('L5PHIB' in memoryname) or ('D2PHIB'  in memoryname):
+        return 5
+    elif ('L1PHIG' in memoryname) or ('L5PHIC' in memoryname) or ('D2PHIC' in memoryname):
+        return 6
+    elif ('L1PHIH' in memoryname) or ('L5PHID' in memoryname) or ('D2PHID' in memoryname):
+        return 7
+    elif ('L2PHIA' in memoryname) or ('L6PHIA' in memoryname) or ('D3PHIA' in memoryname):
+        return 8
+    elif ('L2PHIB' in memoryname) or ('L6PHIB' in memoryname) or ('D3PHIB'  in memoryname):
+        return 9
+    elif ('L2PHIC' in memoryname) or ('L6PHIC' in memoryname) or ('D3PHIC' in memoryname):
+        return 10
+    elif ('L2PHID' in memoryname) or ('L6PHID' in memoryname) or ('D3PHID' in memoryname):
+        return 11
+    elif ('L3PHIA' in memoryname) or ('D4PHIA' in memoryname):
+        return 12
+    elif ('L3PHIB' in memoryname) or ('D4PHIB' in memoryname):
+        return 13
+    elif ('L3PHIC' in memoryname) or ('D4PHIC' in memoryname):
+        return 14
+    elif ('L3PHID' in memoryname) or ('D4PHID' in memoryname):
+        return 15
+    elif ('D5PHIA' in memoryname):
+        return 16
+    elif ('D5PHIB' in memoryname):
+        return 17
+    elif ('D5PHIC' in memoryname):
+        return 18
+    elif ('D5PHID' in memoryname):
+        return 19
+    else:
+        print "decodeSeedIndex_TC: Unknown memory name", memoryname
+        return False
+
 
 ################################
 # ProjectionRouter
@@ -659,7 +722,7 @@ def parseProcFunction(proc_name, fname_def):
                 # get rid of comments and the new line character
                 procfunc_str += nextline.split("//",1)[0].strip("\n") 
                 # If detect ")", we are done. Stop reading the following lines
-                if ")" in nextline:
+                if nextline.find(")") != -1 and nextline.find("()") == -1:
                     nextline = ""
                 else:
                     nextline = next(file_proc_hh)
@@ -678,10 +741,9 @@ def parseProcFunction(proc_name, fname_def):
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
-    arguments_str = procfunc_str.split("(")[1].split(")")[0].strip()
+    arguments_str = procfunc_str.partition("(")[2].rpartition(")")[0].strip()
 
     # Split by comma, ignoring commas inside template brackets <...>.
-    #args_list = arguments_str.split(",")
     args_list = re.split(', *(?![^<]*>)', arguments_str)
     for args in args_list:
         # get rid of 'const' 
@@ -736,13 +798,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         
     # Update here if the function name is not exactly the same as the module type
 
-    # TrackletCalculator
-    special_TC = ""
-    if module.mtype == 'TrackletCalculator':
-        # 'TrackletCalculator_<seeding>'
-        # extract seeding from instance name: TC_L3L4C
-        special_TC += '_'+module.inst.split('_')[1][0:4]
-
     ####
     # Header file when the processing function is defined
     fname_def = module.mtype + '.h'
@@ -770,10 +825,11 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     string_bx_out = ""
     # memory ports
     string_mem_ports = ""
+    # module string
+    module_str = ""
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
-
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -789,6 +845,12 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         elif argtype == "BXType&":
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
+        elif "table" in argname:
+            string_ports = writeLUTPorts(argname, module)
+            string_parameters = writeLUTParameters(argname, module)
+            module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
+            str_ctrl_wire += writeLUTWires(argname, module)
+            string_mem_ports += writeLUTMemPorts(argname, module)
         else:
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
@@ -800,7 +862,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     # Use the provided matching rules
                     foundMatch = f_matchArgPortNames(argname, portname)
-
+                        
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
@@ -818,15 +880,21 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         # Temporary bodge to account for encoded index in fullmatch memories
                         if tmp_argname == 'fullmatch':
                             tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                        elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
+                            tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
                         else:
                             tmp_argname += "_" + str(array_dict[tmp_argname])
-
+                    
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays?
-                    if portname.find("in") != -1:
+                    if portname.replace("inner","").find("in") != -1:
                         string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
-                    if portname.find("out") != -1:
+                    if portname.replace("outer","").find("out") != -1:
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                    elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
@@ -834,7 +902,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
-
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
@@ -844,9 +911,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str = writeProcCombination(module, str_ctrl_func, 
-                                      special_TC, templpars_str, string_ports)
-
+    module_str += writeProcCombination(module, str_ctrl_func, 
+                                      templpars_str, string_ports)
     return str_ctrl_wire,module_str
 
 ################################

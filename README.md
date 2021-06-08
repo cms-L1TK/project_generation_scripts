@@ -48,6 +48,10 @@ Basic instructions to run the project generation for the Vivado HLS project with
       3) Make top-level VHDL - example for PRMEMC chain: 
 
       ./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
+      
+      example for TETC chain:
+      
+      ./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
 
   *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 

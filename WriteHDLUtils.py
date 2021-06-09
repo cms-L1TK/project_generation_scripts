@@ -5,8 +5,8 @@
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -52,9 +52,12 @@ def getMemoryClassName_VMStubsTE(instance_name):
             raise ValueError("Unknown PHI label "+philabel)
         
     elif position == 'L2':
-        if philabel in ['I','J','K','L','W','X','Y','Z']: # L2L3 or L2D1 seeding
+        if philabel in ['W','X','Y','Z']: # L2D1 seeding
             memoryclass = 'VMStubTEInnerMemory'
             bitformat = 'BARRELOL'
+        elif philabel in ['I','J','K','L']: # L2L3 seeding
+            memoryclass = 'VMStubTEInnerMemory'
+            bitformat = 'BARRELPS'
         elif philabel in ['A','B','C','D']: # L1L2 seeding
             memoryclass = 'VMStubTEOuterMemory'
             bitformat = 'BARRELPS'
@@ -268,6 +271,13 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
+    # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
+    zipped_list = zip(memList, portList)
+    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
+    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
+    memList, portList = zip(*zipped_list) # unzip
+    memList, portList = list(memList), list(portList)
+
     return memList, portList
 
 def arrangeMemoriesByKey(memory_list):
@@ -302,15 +312,78 @@ def arrangeMemoriesByKey(memory_list):
 ########################################
 
 ################################
+# InputRouter
+################################
+def writeTemplatePars_IR(anIRModule):
+    #InputRouter template parameters are not implemented. Add if necessary.
+    return ""
+
+def matchArgPortNames_IR(argname, portname, memoryname):
+    if 'hInputStubs' in argname:
+        return 'stubin' in portname
+    elif 'hOutputStubs' in argname:
+        return 'stubout' in portname
+    elif 'hPhBnWord' in argname or 'hLinkWord' in argname:
+        return False
+    else:
+        print "matchArgPortNames_IR: Unknown argument", argname
+        return False
+
+# Dictionary with the number of memories per layer/disk. Needed for the InputRouter
+def numberOfMemoriesPerLayer(module):
+    numMemories = OrderedDict() # Dictionary that keeps track of number of memories per layer (minus one)
+    # Count memories per layer/disk
+    for memory in list(module.downstreams):
+        layerID = memory.inst.split('_')[1][0:2] # L1, L2, etc.
+        if layerID in numMemories:
+            numMemories[layerID] += 1
+        else:
+            numMemories[layerID] = 0
+    return numMemories
+
+################################
 # VMRouter
 ################################
 def writeTemplatePars_VMR(aVMRModule):
-    raise ValueError("VMRouter is not implemented yet!")
+    #VMRouter template parameters are not implemented. Add if necessary.
     return ""
 
-def matchArgPortNames_VMR(argname, portname):
-    raise ValueError("VMRouter is not implemented yet!")
-    return False
+def matchArgPortNames_VMR(argname, portname, memoryname):
+    # argname and portname does not contain enough information to determine matches
+    phi_region = memoryname.split("PHI")[1][0]
+    position = memoryname.split("_")[1][0:2]
+    overlap_phi_regions = ['Q','R','S','T','W','X','Y','Z']
+
+    # DISK2S memories has a seperate array
+    if 'inputStubsDisk2S' in argname:
+        return ('stubin' in portname) and ('D' in position) and ('2S' in memoryname)
+    # Non-DISK2S inputs
+    elif 'inputStubs' in argname:
+        if ('L' in position):
+            return 'stubin' in portname
+        else:
+            return ('stubin' in portname) and ('PS' in memoryname)
+    # Allstub memories
+    elif 'memoriesAS' in argname:
+        return 'allstubout' in portname
+    # ME and TE memories use the same portnames, thereof an extra check
+    elif 'memoriesME'  in argname:
+        return 'vmstuboutME' in portname
+    # TE inner/outer/overlap use the same portnames, thereof extra checks
+    elif 'memoriesTEI' in argname:
+        return ('vmstuboutTEI' in portname) and (phi_region not in overlap_phi_regions)
+    # TE outer
+    elif 'memoriesTEO' in argname:
+        return 'vmstuboutTEO' in portname
+    # TE overlap
+    elif 'memoriesOL' in argname:
+        return ('vmstuboutTEI' in portname) and (phi_region in overlap_phi_regions)
+    # Known arguments that should not be matched to any ports
+    elif 'mask' in argname or 'Table' in argname:
+        return False
+    else:
+        print "matchArgPortNames_VMR: Unknown argument", argname
+        return False
 
 ################################
 # TrackletEngine
@@ -318,7 +391,7 @@ def matchArgPortNames_VMR(argname, portname):
 def writeTemplatePars_TE(aTEModule):
     return ""
 
-def matchArgPortNames_TE(argname, portname):
+def matchArgPortNames_TE(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for MatchEngine
     """
@@ -422,7 +495,7 @@ def writeTemplatePars_TC(aTCModule):
 
     return template_str
 
-def matchArgPortNames_TC(argname, portname):
+def matchArgPortNames_TC(argname, portname, memoryname):
     if 'innerStubs' in argname:
         return 'innerallstub' in portname
     elif 'outerStubs' in argname:
@@ -524,7 +597,7 @@ def writeTemplatePars_PR(aPRModule):
     templpars_str = PROJTYPE+','+VMPTYPE+','+str(nInMemory)+','+LAYER+','+DISK
     return templpars_str
 
-def matchArgPortNames_PR(argname, portname):
+def matchArgPortNames_PR(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for ProjectionRouter
     """
@@ -567,7 +640,7 @@ def writeTemplatePars_ME(aMEModule):
     templpars_str = LAYER+','+VMSTYPE
     return templpars_str
 
-def matchArgPortNames_ME(argname, portname):
+def matchArgPortNames_ME(argname, portname, memoryname):
     """
     # Define rules to match the argument and the port names for MatchEngine
     """
@@ -618,7 +691,7 @@ def writeTemplatePars_MC(aMCModule):
         
     return templpars_str
 
-def matchArgPortNames_MC(argname, portname):
+def matchArgPortNames_MC(argname, portname, memoryname):
     if argname in ['allstub','allproj']:
         return portname == argname+'in'
     elif 'fullmatch' in argname:
@@ -659,7 +732,7 @@ def writeTemplatePars_FT(aFTModule):
     raise ValueError("FitTrack is not implemented yet!")
     return ""
 
-def matchArgPortNames_FT(argname, portname):
+def matchArgPortNames_FT(argname, portname, memoryname):
     raise ValueError("FitTrack is not implemented yet!")
     return False
 
@@ -671,7 +744,7 @@ def writeTemplatePars_PD(aPDModule):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return ""
 
-def matchArgPortNames_PD(argname, portname):
+def matchArgPortNames_PD(argname, portname, memoryname):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return False
 
@@ -780,7 +853,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type, extraports):
     ####
     # function name
-    assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
+    assert(module.mtype in ['InputRouter', 'VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
                             'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
 
@@ -830,6 +903,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Dictionary of array names and the number of elements (minus one)
     array_dict = {}
+
     # loop over the list of argument names from parsing the header file
     for argtype, argname in zip(argtypes, argnames):
         # bunch crossing
@@ -842,10 +916,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                 else:
                     string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False)
                     break
-        elif argtype == "BXType&":
+        elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
-        elif "table" in argname:
+        elif "table" in argname: # For TE
             string_ports = writeLUTPorts(argname, module)
             string_parameters = writeLUTParameters(argname, module)
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
@@ -861,34 +935,58 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     foundMatch = (argname==portname)
                 else:
                     # Use the provided matching rules
-                    foundMatch = f_matchArgPortNames(argname, portname)
-                        
+                    foundMatch = f_matchArgPortNames(argname, portname, memory.inst)
+
                 if foundMatch:
                     # Create temporary argument name as argname can be an array and have several matches
                     tmp_argname = argname
                     argname_is_array = (tmp_argname.find('[') != -1) # Check if array
 
                     # Special case if argname is an array
+                    # Note: it assumes the arrays are partitioned
                     if argname_is_array:
+                        #  no more than two dimensions
+                        argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
                         tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
-                        # Keep track of the array names and the number of array elements
-                        if tmp_argname in array_dict:
-                            array_dict[tmp_argname] += 1
+
+                        # For one-dimensional arrays
+                        if not argname_is_2d_array:
+                            # Keep track of the array names and the number of array elements
+                            if tmp_argname in array_dict:
+                                array_dict[tmp_argname] += 1
+                            else:
+                                array_dict[tmp_argname] = 0
+                            # Add array index to the name as HLS implements one port for each array element
+                            # Temporary bodge to account for encoded index in fullmatch and projection memories
+                            if tmp_argname == 'fullmatch':
+                                tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
+                            elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
+                                tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
+                            else:
+                                tmp_argname += "_" + str(array_dict[tmp_argname])
+                        # For two-dimensional arrays
                         else:
-                            array_dict[tmp_argname] = 0
-                        # Add array index to the name as HLS implements one port for each array element
-                        # Temporary bodge to account for encoded index in fullmatch memories
-                        if tmp_argname == 'fullmatch':
-                            tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
-                        elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':
-                            tmp_argname += "_" + str(decodeSeedIndex_TC(memory.inst))
-                        else:
-                            tmp_argname += "_" + str(array_dict[tmp_argname])
-                    
+                            # Keep track of the array names and the number of array elements
+                            # array_dict[tmp_argname] keeps track of the first dimension
+                            # array_dict[portname] keeps track of the second dimension
+                            if tmp_argname not in array_dict:
+                                array_dict[tmp_argname] = 0
+                                array_dict[portname] = 0
+                            elif portname not in array_dict:
+                                array_dict[tmp_argname] += 1
+                                array_dict[portname] = 0
+                            else:
+                                array_dict[portname] += 1
+                            # Add array index to the name as HLS implements one port for each array element
+                            tmp_argname += "_" + str(array_dict[tmp_argname]) + "_" + str(array_dict[portname])
+
                     # Add the memory instance to the port string
-                    # Assumes a sorted memModuleList due to arrays?
+                    # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        if "DL" in memory.inst: # DTCLink
+                            string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
+                        else:
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
                     if portname.replace("outer","").find("out") != -1:
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
                     if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
@@ -902,11 +1000,24 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
+
+    # Check that all the ports/memories have been matched
+    if (memModuleList or portNameList):
+        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]))
+
+    # External LUTs
+    string_luts = ""
+    if module.mtype == "InputRouter": # Might be temporary
+        string_luts += writeInputLinkWordPort(module.inst, numberOfMemoriesPerLayer(module))
+        string_luts += writeInputLinkPhiBinsPort(numberOfMemoriesPerLayer(module))
+
+    # Add all ports together
     string_ports = ""
     string_ports += string_ctrl_ports
     string_ports += string_bx_in
     string_ports += string_bx_out
     string_ports += string_mem_ports
+    string_ports += string_luts
     string_ports.rstrip(",\n")
 
     ####
@@ -917,7 +1028,12 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
 ################################
 def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
-    if module.mtype == 'VMRouter':
+    if module.mtype == 'InputRouter':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_IR,
+                                         matchArgPortNames_IR,
+                                         first_of_type, extraports)
+    elif module.mtype == 'VMRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMR,
                                          matchArgPortNames_VMR,

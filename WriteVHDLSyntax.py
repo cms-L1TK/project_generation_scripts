@@ -12,7 +12,7 @@ def writeTopPreamble(all=True):
 
 def writeModulesPreamble():
     string_preamble = "\n"
-    string_preamble = "begin\n\n"
+    string_preamble = "\nbegin\n\n"
     return string_preamble
 
 def writeTBPreamble():
@@ -159,22 +159,29 @@ def writeMemoryUtil(memDict, memInfoDict):
         mtype = mtypeB.split("_")[0]
         bitwidth = int(mtypeB.split("_")[1]);
         num_pages = 2**memInfo.bxbitwidth
-        
-        arrName = "t_arr_"+mtypeB+"_1b"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
 
-        arrName = "t_arr_"+mtypeB+"_ADDR"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+        if "DL" in mtypeB: # DTCLinks
+            arrName = "t_arr_"+mtypeB+"_1b"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n"
 
-        arrName = "t_arr_"+mtypeB+"_DATA"
-        ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
-
-        if memInfo.is_binned:
-            varStr = "_8_5b"
+            arrName = "t_arr_"+mtypeB+"_DATA"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
         else:
-            varStr = "_7b"
-        arrName = "t_arr_"+mtypeB+"_NENT"
-        ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
+            arrName = "t_arr_"+mtypeB+"_1b"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
+
+            arrName = "t_arr_"+mtypeB+"_ADDR"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+
+            arrName = "t_arr_"+mtypeB+"_DATA"
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
+
+            if memInfo.is_binned:
+                varStr = "_8_5b"
+            else:
+                varStr = "_7b"
+            arrName = "t_arr_"+mtypeB+"_NENT"
+            ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
 
     ss += "end package memUtil_pkg;\n"
 
@@ -239,6 +246,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     parameterlist += "        INIT_FILE       => \"\",\n"
     parameterlist += "        INIT_HEX        => true,\n"
     parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
+
+    if "VMSME_D" in memList[0].inst: # VMSME memories have 16 bins in the disks
+        parameterlist += "        NUM_MEM_BINS    => 16,\n"
+        parameterlist += "        NUM_ENTRIES_PER_MEM_BINS => 8,\n"
 
     # Write ports
     portlist += "        clka      => clk,\n"
@@ -309,6 +320,18 @@ def writeMemoryLHSPorts_interface(mtypeB, extraports=False):
     string_input_mems += "    "+mtypeB+"_mem_A_wea        : "+direction+" t_arr_"+mtypeB+"_1b;\n"
     string_input_mems += "    "+mtypeB+"_mem_AV_writeaddr : "+direction+" t_arr_"+mtypeB+"_ADDR;\n"
     string_input_mems += "    "+mtypeB+"_mem_AV_din       : "+direction+" t_arr_"+mtypeB+"_DATA;\n"
+
+    return string_input_mems
+
+def writeDTCLinkLHSPorts_interface(mtypeB):
+    """
+    # Top-level interface: input DTC link ports.
+    """
+
+    string_input_mems = ""
+    string_input_mems += "    "+mtypeB+"_link_AV_dout       : in t_arr_"+mtypeB+"_DATA;\n"
+    string_input_mems += "    "+mtypeB+"_link_empty_neg     : in t_arr_"+mtypeB+"_1b;\n"
+    string_input_mems += "    "+mtypeB+"_link_read          : out t_arr_"+mtypeB+"_1b;\n"
 
     return string_input_mems
 
@@ -589,5 +612,52 @@ def writeLUTMemPorts(argname, module):
     string_mem_ports += module.inst+"_"+argname+"_ce,\n"
     string_mem_ports += "      "+argname+"_V_q0                        => "
     string_mem_ports += module.inst+"_"+argname+"_dout,\n"
-    
     return string_mem_ports
+
+def writeProcDTCLinkRHSPorts(argname,mem):
+    """
+    # Processing module port assignment: inputs from DTCLink FIFOs
+    """
+    string_mem_ports = ""
+    string_mem_ports += "      "+argname+"_V_dout       => "
+    string_mem_ports += mem.keyName()+"_link_AV_dout("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_empty_n  => "
+    string_mem_ports += mem.keyName()+"_link_empty_neg("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_read        => "
+    string_mem_ports += mem.keyName()+"_link_read("+mem.var()+"),\n"
+    return string_mem_ports
+
+def writeInputLinkWordPort(module_instance, memoriesPerLayer):
+    """
+    # Processing module port assignment: InputRouter kInputLink port
+    """
+    inputLinkWord = ""
+
+    # Loop over each layer/disk the module instance writes to. Repeat up to four times.
+    for layer in memoriesPerLayer:
+        isBarrelBit = "1" if "L" in layer else "0" # Is barrel bit
+        inputLinkWord = '{0:03b}'.format(int(layer[1])) + isBarrelBit + inputLinkWord # Add the layer number (3 bits) and the barrelbit
+
+    inputLinkWord = inputLinkWord.zfill(16) # Pad with zeros so it contains 16 bits
+    inputLinkWord = ("1" if "2S" in module_instance else "0") + inputLinkWord # Is 2S bit
+    inputLinkWord = '{0:03b}'.format(len(memoriesPerLayer)) + inputLinkWord # Number of layers
+
+    string_ilword_port = "      hLinkWord_V => \""+inputLinkWord+"\",\n"
+
+    return string_ilword_port
+
+def writeInputLinkPhiBinsPort(memoriesPerLayer):
+    """
+    # Processing module port assignment: InputRouter kNPhiBns/hPhBnWord port
+    """
+    phiBinWord = ""
+
+    # Loop through the layers and write the number of memories as three bits to phiBinWord
+    for layer in memoriesPerLayer:
+        phiBinWord = '{0:03b}'.format(memoriesPerLayer[layer]) + phiBinWord
+    
+    phiBinWord = phiBinWord.zfill(12) # Pad with zeros so it contains 12 bits
+
+    string_phibin_port = "      hPhBnWord_V => \""+phiBinWord+"\",\n"
+
+    return string_phibin_port

@@ -1,4 +1,5 @@
 import re
+import math
 
 #######################################
 # Ordering of the processing steps
@@ -16,11 +17,12 @@ import re
 # TODO: Should be able to generate this from the wiring
 #######################################
 # Drawing parameters
-ModuleDrawWidth_dict = {'InputLink':3.0,
+ModuleDrawWidth_dict = {'DTCLink':2.0,
+                        'InputLink':2.0,
                         'VMStubsTEInner':3.0,
                         'VMStubsTEOuter':3.0,
                         'VMStubsME':3.0,
-                        'AllStubs':2.5,
+                        'AllStubs':3.0,
                         'StubPairs':4.0,
                         'TrackletParameters':3.0,
                         'TrackletProjections':4.0,
@@ -31,6 +33,7 @@ ModuleDrawWidth_dict = {'InputLink':3.0,
                         'TrackFit':2.5,
                         'CleanTrack':2.5,
                         ###################
+                        'InputRouter':2.0,
                         'VMRouter':2.0,
                         'TrackletEngine':4.0,
                         'TrackletCalculator':2.5,
@@ -99,9 +102,10 @@ class MemTypeInfoByKey(object):
         self.bxbitwidth = memList[0].bxbitwidth
         self.is_binned  = memList[0].is_binned
         self.has_numEntries_out = memList[0].has_numEntries_out
-        # At least one memory of this type is initial or final.
+        # At least one memory of this type is initial.
         self.is_initial = any(m.is_initial for m in memList)
-        self.is_final   = any(m.is_final for m in memList)
+        # All memories of this type is final.
+        self.is_final   = all(m.is_final for m in memList)
         assert(not (self.is_initial and self.is_final))
         # Short type name of any upstream/downstream processing module.
         self.upstream_mtype_short   = ""
@@ -112,15 +116,15 @@ class MemTypeInfoByKey(object):
         keySet = set()
         for m in memList:
             keySet.add(m.keyName())
-            if len(m.upstreams) > 0:
+            if m.upstreams[0] is not None:
                 self.upstream_mtype_short = m.upstreams[0].mtype_short()
-            if len(m.downstreams) > 0:
+            if m.downstreams[0] is not None:
                 self.downstream_mtype_short = m.downstreams[0].mtype_short()
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
-        if self.mixedIO:
-            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+        if self.mixedIO and self.is_initial:
+            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
             exit(1)
 
 
@@ -167,12 +171,16 @@ class TrackletGraph(object):
         disk = -1
         for item in diskList:
             disk = max(disk,mem.inst.find(item))
-        if mem.mtype == "VMStubsTEInner":  #FIXME
-            mem.bitwidth = 22 if mem.inst.find("L1") else 16
+        if mem.mtype == "VMStubsTEInner":
+            if mem.inst.find("L5")>-1: mem.bitwidth = 23 
+            else: mem.bitwidth = 22
         elif mem.mtype == "VMStubsTEOuter":
-            mem.bitwidth = 16
-        elif mem.mtype == "AllStubs":
+            if (mem.inst.find("L4")>-1 or mem.inst.find("L6")>-1): mem.bitwidth = 17
+            else: mem.bitwidth = 16
+        elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
+        elif mem.mtype == "DTCLink":
+            mem.bitwidth = 39
         elif mem.mtype == "StubPairs":
             mem.bitwidth = 14
         elif mem.mtype == "TrackletParameters":
@@ -198,7 +206,8 @@ class TrackletGraph(object):
         # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
-                  or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"):
+               or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
+               or mem.mtype == "InputLink" or mem.mtype == "DTCLink"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
@@ -324,6 +333,12 @@ class TrackletGraph(object):
                     isbarrel = True
                 if diskseed.search(mem_inst):
                     isdisk = True
+            elif mem_type in ['DTCLink']: # DTCLinks are technically not memories
+                if barrelstr.search(mem_inst):
+                    isbarrel = True
+                if diskstr.search(mem_inst):
+                    isdisk = True
+                #continue
             else:
                 raise ValueError("Unknown memory type: "+mem_type)
 
@@ -860,19 +875,12 @@ class TrackletGraph(object):
         fo.close()
 
         # FIXME
-        # Return canvas size in pixels along X and Y
-        pageHeight = (maxnum+1)*40
-        #width = sum(columns_width)*85
-        pageWidth =  pageHeight * 2
-        dyBox = 0.5/(maxnum+1)
-        textSize = 0.5/(maxnum+1)
-        
-        #print  width, height, dy, textsize
-        
         # Work In Progress - adjusts sizes in TrackletProject.pdf
+        # Return canvas size in pixels along X and Y
         pageWidth = 10000
         pageHeight = 5000
-        dyBox = 0.025
-        textSize = 0.015
-        
+        dyBox = 0.5/(math.log(maxnum)*10)
+        textSize = 0.5/(math.log(maxnum)*10+1)
+
+        # print  pageWidth, pageHeight, dyBox, textSize, maxnum
         return int(pageWidth), int(pageHeight), dyBox, textSize

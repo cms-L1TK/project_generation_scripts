@@ -271,7 +271,7 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
-    # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
+    # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = zip(memList, portList)
     zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
     zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
@@ -315,8 +315,7 @@ def arrangeMemoriesByKey(memory_list):
 # InputRouter
 ################################
 def writeTemplatePars_IR(anIRModule):
-    #raise ValueError("InputRouter is not implemented yet!")
-    print("InputRouter template parameters are not implemented yet!")
+    #InputRouter template parameters are not implemented. Add if necessary.
     return ""
 
 def matchArgPortNames_IR(argname, portname, memoryname):
@@ -346,8 +345,7 @@ def numberOfMemoriesPerLayer(module):
 # VMRouter
 ################################
 def writeTemplatePars_VMR(aVMRModule):
-    #raise ValueError("VMRouter is not implemented yet!")
-    print("VMRouter template parameters are not implemented yet!")
+    #VMRouter template parameters are not implemented. Add if necessary.
     return ""
 
 def matchArgPortNames_VMR(argname, portname, memoryname):
@@ -945,7 +943,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     argname_is_array = (tmp_argname.find('[') != -1) # Check if array
 
                     # Special case if argname is an array
-                    # Note: it  the arrays are partitioned
+                    # Note: it assumes the arrays are partitioned
                     if argname_is_array:
                         #  no more than two dimensions
                         argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
@@ -959,7 +957,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             else:
                                 array_dict[tmp_argname] = 0
                             # Add array index to the name as HLS implements one port for each array element
-                            # Temporary bodge to account for encoded index in fullmatch memories
+                            # Temporary bodge to account for encoded index in fullmatch and projection memories
                             if tmp_argname == 'fullmatch':
                                 tmp_argname += "_" + str(decodeSeedIndex_MC(memory.inst))
                             elif tmp_argname == 'projout_barrel_ps' or tmp_argname == 'projout_barrel_2s' or tmp_argname == 'projout_disk':

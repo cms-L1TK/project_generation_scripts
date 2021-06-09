@@ -1001,6 +1001,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     if not argname_is_array: break # We only need one match for non-arrays
     # end of loop
 
+    # Check that all the ports/memories have been matched
+    if (memModuleList or portNameList):
+        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]))
+
     # External LUTs
     string_luts = ""
     if module.mtype == "InputRouter": # Might be temporary

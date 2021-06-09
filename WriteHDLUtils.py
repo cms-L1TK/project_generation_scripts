@@ -273,8 +273,8 @@ def getListsOfGroupedMemories(aProcModule):
 
     # Sort the lists using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if ('PHI' not in p or not p[-1].isdigit()) else int("".join([i for i in p if i.isdigit()]))) # sort by number
-    zipped_list.sort(key=lambda (m, p): p if ('PHI' not in p or not p[-1].isdigit()) else p[:p.index('PHI')]) # sort alphabetically
+    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
+    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
     memList, portList = zip(*zipped_list) # unzip
     memList, portList = list(memList), list(portList)
 

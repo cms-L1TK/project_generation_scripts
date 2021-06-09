@@ -1,4 +1,5 @@
 import re
+import math
 
 #######################################
 # Ordering of the processing steps
@@ -878,8 +879,8 @@ class TrackletGraph(object):
         # Return canvas size in pixels along X and Y
         pageWidth = 10000
         pageHeight = 5000
-        dyBox = 0.5/(maxnum+1)
-        textSize = 0.5/(maxnum+10)
+        dyBox = 0.5/(math.log(maxnum)*10)
+        textSize = 0.5/(math.log(maxnum)*10+1)
 
-        #print  pageWidth, pageHeight, dyBox, textSize
+        # print  pageWidth, pageHeight, dyBox, textSize, maxnum
         return int(pageWidth), int(pageHeight), dyBox, textSize

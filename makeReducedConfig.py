@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from TrackletGraph import TrackletGraph
+import ROOT
 import argparse
 from collections import OrderedDict
 
@@ -299,4 +301,9 @@ reduced_wires.saveProject("%swires.dat"%args.output, full_wires)
 reduced_wires.saveModules("%sprocessingmodules.dat"%args.output)
 reduced_wires.saveMemories("%smemorymodules.dat"%args.output)
 
-
+# Create a pdf of the .dat files we've made
+tracklet = TrackletGraph.from_configs("%sprocessingmodules.dat"%args.output,"%smemorymodules.dat"%args.output,"%swires.dat"%args.output)
+pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(tracklet.get_all_proc_modules())
+ROOT.gROOT.SetBatch(True)
+ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
+ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize)

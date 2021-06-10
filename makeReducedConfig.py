@@ -205,7 +205,9 @@ class project:
                 if in_n.name != "" and in_n.name not in self.nodes:
                     self.addNode(in_n)
                     self.findInputConnections(in_n, ref_p)
-                    self.findOutputConnections(in_n, ref_p)
+                    if not in_n.name.startswith("VMR_"):
+                        # This fixes a problem where extra TEs were being included
+                        self.findOutputConnections(in_n, ref_p)
 
     def findOutputConnections(self, n, ref_p):
         if verbose: print "\t", n.name

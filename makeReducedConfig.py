@@ -71,6 +71,7 @@ class project:
         self.ref_modules = OrderedDict()
         self.ref_memories = OrderedDict()
         self.seed_layers = []
+        self.noneg = False
 
     def addRefModules(self, fname):
         with open(fname, "r") as f:
@@ -148,7 +149,7 @@ class project:
                         f.write(self.ref_memories[m])
                         break
 
-    def addTC(self, tc, layers, ref_p):
+    def addTC(self, tc, layers, ref_p, noneg):
 
         # tcs, l1phis, and lxphis refer to the phi sector of a given module
         # TCs modules each cover one of 12 phi segments (A-L)
@@ -162,6 +163,9 @@ class project:
         if tc.upper() not in tcs:
             print "Bad TC index, not adding."
             return
+
+        # Store whether or not we're including negative eta inputs
+        self.noneg = noneg
 
         # Store which layer pair we're seeding from to use when deciding what to keep
         self.seed_layers.append(layers[:2])
@@ -231,6 +235,7 @@ class project:
     def isIncluded(self, n, mem):
 
         # Remove stuff that shouldn't be included due to only having one seeding pair
+        if self.noneg and "neg" in n.name: return False
         if n.name.startswith("MC_"):
             for l in self.seed_layers:
                 if n.name.startswith("MC_%s"%l): return False
@@ -285,6 +290,7 @@ parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", h
 parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector from which to create the reduced config")
 parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
+parser.add_argument("-n", "--noneg", type=bool, default=True, help="Remove all negative eta modules from the config")
 args = parser.parse_args()
 
 # Load in full project
@@ -298,7 +304,7 @@ print "Finding reduced configuration..."
 reduced_wires = project()
 reduced_wires.addRefModules(args.process)
 reduced_wires.addRefMemories(args.memories)
-reduced_wires.addTC(args.sector, args.layers, full_wires)
+reduced_wires.addTC(args.sector, args.layers, full_wires, args.noneg)
 reduced_wires.saveProject("%swires.dat"%args.output, full_wires)
 reduced_wires.saveModules("%sprocessingmodules.dat"%args.output)
 reduced_wires.saveMemories("%smemorymodules.dat"%args.output)

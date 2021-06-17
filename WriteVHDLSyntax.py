@@ -115,6 +115,7 @@ def writeMemoryUtil(memDict, memInfoDict):
     """
     ss = writeTopPreamble(False)
     ss += "package memUtil_pkg is\n\n"
+    ss += "  -- ########################### Types ###########################\n\n"
 
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
@@ -183,7 +184,29 @@ def writeMemoryUtil(memDict, memInfoDict):
             arrName = "t_arr_"+mtypeB+"_NENT"
             ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
 
-    ss += "end package memUtil_pkg;\n"
+    ss += "\n  -- ########################### Functions ###########################\n\n"
+    ss += "  -- Following functions are needed because VHDL is not case sensitive when converting an enum to a string\n"
+
+    for mtypeB in memDict:
+        ss += "  function memory_enum_to_string(val: enum_"+mtypeB+") return string;\n";
+
+    ss += "\nend package memUtil_pkg;\n\n"
+    ss += "package body memUtil_pkg is\n\n"
+    ss += "  -- ########################### Functions ###########################\n\n"
+ 
+    for mtypeB in memDict:
+        memList = memDict[mtypeB]
+        
+        ss += "  function memory_enum_to_string(val: enum_"+mtypeB+") return string is\n";
+        ss += "  begin\n"
+        ss += "    case val is\n"
+        for mem in memList:
+            ss += "       when "+mem.var()+" => return \""+mem.var()+"\";\n"
+        ss += "    end case;\n"
+        ss += "    return \"No conversion found.\";\n"
+        ss += "  end memory_enum_to_string;\n\n"
+
+    ss += "end package body memUtil_pkg;\n"
 
     return ss;
 

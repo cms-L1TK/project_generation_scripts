@@ -185,7 +185,7 @@ def writeMemoryUtil(memDict, memInfoDict):
             ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
 
     ss += "\n  -- ########################### Functions ###########################\n\n"
-    ss += "  -- Following functions are needed because VHDL is not case sensitive when converting an enum to a string\n"
+    ss += "  -- Following functions are needed because VHDL doesn't preserve case when converting an enum to a string using image\n"
 
     for mtypeB in memDict:
         ss += "  function memory_enum_to_string(val: enum_"+mtypeB+") return string;\n";

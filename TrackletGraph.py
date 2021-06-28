@@ -1,5 +1,6 @@
 import re
 import math
+import copy
 
 #######################################
 # Ordering of the processing steps
@@ -31,6 +32,9 @@ ModuleDrawWidth_dict = {'DTCLink':2.0,
                         'CandidateMatch':3.0,
                         'FullMatch':3.0,
                         'TrackFit':2.5,
+                        'TrackWord':2.5,
+                        'BarrelStubWord':2.5,
+                        'DiskStubWord':2.5,
                         'CleanTrack':2.5,
                         ###################
                         'InputRouter':2.0,
@@ -42,6 +46,7 @@ ModuleDrawWidth_dict = {'DTCLink':2.0,
                         'MatchCalculator':2.5,
                         'DiskMatchCalculator':2.5,
                         'FitTrack':2.0,
+                        'TrackBuilder':2.0,
                         'PurgeDuplicate':2.0,
                         'XGap':2.0}
 
@@ -153,6 +158,10 @@ class TrackletGraph(object):
         
         # Wire the modules based on the wiring configuration
         cls.wire_modules_from_config(fname_wire, procDict, memDict)
+
+        # Convert the TrackFit memory into separate streams for the track and
+        # stub words
+        cls.split_track_fit_streams(procDict, memDict)
         
         return cls(procDict, memDict)      
 
@@ -200,6 +209,12 @@ class TrackletGraph(object):
         elif mem.mtype == "FullMatch":
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
             if disk>-1: mem.bitwidth = 55
+        elif mem.mtype == "TrackWord":
+            mem.bitwidth = 84
+        elif mem.mtype == "BarrelStubWord":
+            mem.bitwidth = 46
+        elif mem.mtype == "DiskStubWord":
+            mem.bitwidth = 49
         else:
             raise ValueError("Bitwidth undefined for "+mem.mtype)
 
@@ -212,6 +227,9 @@ class TrackletGraph(object):
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
+        elif (    mem.mtype == "TrackWord"
+               or mem.mtype == "BarrelStubWord" or mem.mtype == "DiskStubWord"):
+            mem.bxbitwidth = 0
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)
 
@@ -229,6 +247,8 @@ class TrackletGraph(object):
         if mem.mtype == "AllStubs" and not mem.is_final:
             mem.has_numEntries_out = False
         elif mem.mtype == "AllProj" and not mem.is_final:
+            mem.has_numEntries_out = False
+        elif mem.mtype == "TrackletParameters":
             mem.has_numEntries_out = False
         else:
             mem.has_numEntries_out = True
@@ -275,9 +295,12 @@ class TrackletGraph(object):
         for i,line_proc in enumerate(file_proc):
             # Processing module type
             proc_type = line_proc.split(':')[0].strip()
-            # temperary hack: DiskMatchCalculator-->MatchCalculator
+            # temporary hack: DiskMatchCalculator-->MatchCalculator
             if proc_type == "DiskMatchCalculator":
                 proc_type = "MatchCalculator"
+            # temporary hack: FitTrack-->TrackBuilder
+            if proc_type == "FitTrack":
+                proc_type = "TrackBuilder"
             # Instance name
             proc_inst = line_proc.split(':')[1].strip()
             # Construct ProcModule object
@@ -400,6 +423,87 @@ class TrackletGraph(object):
         file_mem.close()
 
         return mem_dict
+
+    @staticmethod
+    def split_track_fit_streams(p_dict, m_dict):
+        """ Convert any TrackFit memories into separate streams for the track
+            and stub words
+            p_dict: processing module dictionary
+            m_dict: memory module dictionary
+        """
+        for m in m_dict.keys():
+            if not m.startswith("TF_"):
+                continue
+            seed = m.split("_")[1]
+
+            # Remove the TF memory from m_dict and from the downstreams and
+            # upstreams of the upstream and downstream module, respectively.
+            old_mem = m_dict.pop(m)
+            up_p = None
+            down_p = None
+            if len(old_mem.upstreams) > 0:
+                up_p = old_mem.upstreams[0]
+                if up_p is not None:
+                    i = up_p.downstreams.index(old_mem)
+                    up_p.downstreams.remove(old_mem)
+                    up_p.output_port_names.pop(i)
+            if len(old_mem.downstreams) > 0:
+                down_p = old_mem.downstreams[0]
+                if down_p is not None:
+                    i = down_p.upstreams.index(old_mem)
+                    down_p.upstreams.remove(old_mem)
+                    down_p.input_port_names.pop(i)
+
+            # Replace the old memory with a track word.
+            new_mem = copy.copy(old_mem)
+            new_mem.mtype = "TrackWord"
+            new_mem.inst = "TW_" + seed
+            m_dict[new_mem.inst] = new_mem
+            if up_p is not None:
+                up_p.downstreams.append(new_mem)
+                up_p.output_port_names.append("trackwordout")
+            if down_p is not None:
+                down_p.upstreams.append(new_mem)
+                down_p.input_port_names.append("trackwordin")
+
+            # Determine the layers/disks from the associated full match
+            # memories.
+            layers = set()
+            if up_p is not None:
+                for up_m in up_p.upstreams:
+                    if up_m.mtype != "FullMatch":
+                        continue
+                    layer = up_m.inst.split("_")[-1][0:2]
+                    assert(layer.startswith("L") or layer.startswith("D"))
+                    layers.add(layer)
+
+            # Replace the old memory with a stub word for each of the
+            # layers/disks that can have matches.
+            barrelIndex = 0
+            diskIndex = 0
+            for layer in sorted(layers):
+                new_mem = copy.copy(old_mem)
+                portname = None
+                index = None
+                if layer.startswith("L"):
+                    new_mem.mtype = "BarrelStubWord"
+                    new_mem.inst = "BW_" + seed + "_" + layer
+                    portname = "barrelstub"
+                    index = barrelIndex
+                    barrelIndex += 1
+                elif layer.startswith("D"):
+                    new_mem.mtype = "DiskStubWord"
+                    new_mem.inst = "DW_" + seed + "_" + layer
+                    portname = "diskstub"
+                    index = diskIndex
+                    diskIndex += 1
+                m_dict[new_mem.inst] = new_mem
+                if up_p is not None:
+                    up_p.downstreams.append(new_mem)
+                    up_p.output_port_names.append(portname + str(index) + "out")
+                if down_p is not None:
+                    down_p.upstreams.append(new_mem)
+                    down_p.input_port_names.append(portname + str(index) + "in")
 
     @staticmethod
     def wire_modules_from_config(fname_wconfig, p_dict, m_dict):

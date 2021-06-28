@@ -385,6 +385,19 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo):
 
     return string_output_mems
 
+def writeTrackStreamRHSPorts_interface(mtypeB):
+    """
+    # Top-level interface: output track stream ports.
+    # Inputs:
+    #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
+    """
+    string_output_mems = ""
+    string_output_mems += "    "+mtypeB+"_stream_AV_din     : in t_arr_"+mtypeB+"_DATA;\n"
+    string_output_mems += "    "+mtypeB+"_stream_full_neg   : in t_arr_"+mtypeB+"_1b;\n"
+    string_output_mems += "    "+mtypeB+"_stream_write      : out t_arr_"+mtypeB+"_1b;\n"
+
+    return string_output_mems
+
 def writeTBControlSignals(topfunc, first_proc, last_proc):
     """
     # Verilog test bench: control signals
@@ -558,19 +571,19 @@ def writeProcMemoryLHSPorts(argname,mem):
 
     return string_mem_ports
 
-def writeProcMemoryRHSPorts(argname,mem):
+def writeProcMemoryRHSPorts(argname,mem,portindex=0):
     """
     # Processing module port assignment: inputs from memories
     """
     string_mem_ports = ""
-    string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_ce"+str(portindex)+"       => "
     string_mem_ports += mem.keyName()+"_mem_A_enb("+mem.var()+"),\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_address"+str(portindex)+"  => "
     string_mem_ports += mem.keyName()+"_mem_AV_readaddr("+mem.var()+"),\n"
-    string_mem_ports += "      "+argname+"_dataarray_data_V_q0        => "
+    string_mem_ports += "      "+argname+"_dataarray_data_V_q"+str(portindex)+"        => "
     string_mem_ports += mem.keyName()+"_mem_AV_dout("+mem.var()+"),\n"
 
-    if mem.has_numEntries_out:
+    if mem.has_numEntries_out and portindex == 0:
         for i in range(0,2**mem.bxbitwidth):
             if mem.is_binned:
                 for j in range(0,8):
@@ -642,12 +655,25 @@ def writeProcDTCLinkRHSPorts(argname,mem):
     # Processing module port assignment: inputs from DTCLink FIFOs
     """
     string_mem_ports = ""
-    string_mem_ports += "      "+argname+"_V_dout       => "
+    string_mem_ports += "      "+argname+"_V_dout     => "
     string_mem_ports += mem.keyName()+"_link_AV_dout("+mem.var()+"),\n"
     string_mem_ports += "      "+argname+"_V_empty_n  => "
     string_mem_ports += mem.keyName()+"_link_empty_neg("+mem.var()+"),\n"
-    string_mem_ports += "      "+argname+"_V_read        => "
+    string_mem_ports += "      "+argname+"_V_read     => "
     string_mem_ports += mem.keyName()+"_link_read("+mem.var()+"),\n"
+    return string_mem_ports
+
+def writeProcTrackStreamLHSPorts(argname,mem):
+    """
+    # Processing module port assignment: output track streams
+    """
+    string_mem_ports = ""
+    string_mem_ports += "      "+argname+"_V_din       => "
+    string_mem_ports += mem.keyName()+"_stream_AV_din("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_full_n    => "
+    string_mem_ports += mem.keyName()+"_stream_full_neg("+mem.var()+"),\n"
+    string_mem_ports += "      "+argname+"_V_write     => "
+    string_mem_ports += mem.keyName()+"_stream_write("+mem.var()+"),\n"
     return string_mem_ports
 
 def writeInputLinkWordPort(module_instance, memoriesPerLayer):

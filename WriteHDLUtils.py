@@ -6,7 +6,7 @@
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeProcTrackStreamLHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -737,6 +737,27 @@ def matchArgPortNames_FT(argname, portname, memoryname):
     return False
 
 ################################
+# TrackBuilder
+################################
+
+def writeTemplatePars_TB(aTBModule):
+    return ""
+
+def matchArgPortNames_TB(argname, portname, memoryname):
+    if argname.startswith("trackletParameters"):
+        return portname.startswith("tpar")
+    if argname.startswith("barrelFullMatches"):
+        return portname.startswith("fullmatch")
+    if argname.startswith("trackWord"):
+        return portname.startswith("trackword")
+    if argname.startswith("barrelStubWords"):
+        return portname.startswith("barrelstub")
+    if argname.startswith("diskStubWords"):
+        return portname.startswith("diskstub")
+    print "matchArgPortNames_TB: Unknown argument name", argname
+    return False
+
+################################
 # PurgeDuplicate
 ################################
 
@@ -823,13 +844,19 @@ def parseProcFunction(proc_name, fname_def):
         args = args.replace("const","").strip()
         # get rid of '*'
         args = args.replace("*","").strip()
-        # get rid of '&' ?
 
         # get rid of '[...]' in case it is an array
         #args = args.split('[')[0]
 
         # argument type
         atype = ' '.join(args.split()[:-1]) # combine all strings except the last
+
+        # get rid of '&' and append it to the type
+        if "&" in args:
+            args = args.replace("&","").strip()
+            if "&" not in atype:
+                atype += "&"
+
         arg_types_list.append(atype)
         # argument name
         aname = args.split()[-1] # the last entry in the list
@@ -855,7 +882,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # function name
     assert(module.mtype in ['InputRouter', 'VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
-                            'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
+                            'DiskMatchCalculator','FitTrack','TrackBuilder','PurgeDuplicate'])
 
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
@@ -942,11 +969,23 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     tmp_argname = argname
                     argname_is_array = (tmp_argname.find('[') != -1) # Check if array
 
+                    # TrackWords are treated differently because they are
+                    # currently streams
+                    if "TW" in memory.inst:
+                        argname_is_array = False
+                        tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
+
                     # Special case if argname is an array
                     # Note: it assumes the arrays are partitioned
                     if argname_is_array:
                         #  no more than two dimensions
                         argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
+
+                        # BarrelWords and DiskWords are treated differently
+                        # because they are currently streams
+                        if "BW" in memory.inst or "DW" in memory.inst:
+                            argname_is_2d_array = False
+
                         tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
 
                         # For one-dimensional arrays
@@ -987,8 +1026,18 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+
+                            # Two sets of input FullMatch ports are generated
+                            # because the TrackBuilder performs two reads per
+                            # iteration
+                            if "FM" in memory.inst:
+                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,1)
+
                     if portname.replace("outer","").find("out") != -1:
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                        if "TW" in memory.inst or "BW" in memory.inst or "DW" in memory.inst:
+                            string_mem_ports += writeProcTrackStreamLHSPorts(tmp_argname,memory)
+                        else:
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
                     if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
@@ -1067,6 +1116,11 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_FT,
                                          matchArgPortNames_FT,
+                                         first_of_type, extraports)
+    elif module.mtype == 'TrackBuilder':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_TB,
+                                         matchArgPortNames_TB,
                                          first_of_type, extraports)
     elif module.mtype == 'PurgeDuplicate':
         return writeModuleInst_generic(module, hls_src_dir,

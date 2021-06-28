@@ -12,7 +12,7 @@ from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleC
                             writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
-                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeProcDTCLinkRHSPorts
+                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeTrackStreamRHSPorts_interface
 import ROOT
 import os, subprocess
 
@@ -35,7 +35,9 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
     string_mem = ""
     # Loop over memory type
     for mtypeB in memDict:
-        if "DL" in mtypeB: # DTCLink
+        # no memories for DTC links or output track streams
+        if "DL" in mtypeB \
+           or "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
             continue
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
@@ -122,7 +124,10 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
         elif memInfo.is_final:
             # Output arguments
-            string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
+            if "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
+                string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB)
+            else:
+                string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(mtypeB, extraports)            

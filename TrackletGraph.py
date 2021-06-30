@@ -229,7 +229,7 @@ class TrackletGraph(object):
             mem.bxbitwidth = 3
         elif (    mem.mtype == "TrackWord"
                or mem.mtype == "BarrelStubWord" or mem.mtype == "DiskStubWord"):
-            mem.bxbitwidth = 0
+            mem.bxbitwidth = 0 # FIFO memories
         else:
             raise ValueError("Bxbitwidth undefined for "+mem.mtype)
 

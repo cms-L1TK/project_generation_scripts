@@ -110,7 +110,7 @@ for line in fi :
         processingmodules.append([6,splitline[1]])
     if (splitline[0]=="MatchEngine:") :
         processingmodules.append([7,splitline[1]])
-    if (splitline[0]=="MatchCalculator:" or splitline[0]=="DiskMatchCalculator:") :
+    if (splitline[0]=="MatchCalculator:") :
         processingmodules.append([8,splitline[1]])
     if (splitline[0]=="MatchTransceiver:") :
         processingmodules.append([9,splitline[1]])

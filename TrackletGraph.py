@@ -11,7 +11,6 @@ import copy
 #    'ProjectionRouter':4,
 #    'MatchEngine':5,
 #    'MatchCalculator':6,
-#    'DiskMatchCalculator':6,
 #    'FitTrack':7,
 #    'PurgeDuplicate':8
 #}
@@ -44,7 +43,6 @@ ModuleDrawWidth_dict = {'DTCLink':2.0,
                         'ProjectionRouter':2.5,
                         'MatchEngine':3.0,
                         'MatchCalculator':2.5,
-                        'DiskMatchCalculator':2.5,
                         'FitTrack':2.0,
                         'TrackBuilder':2.0,
                         'PurgeDuplicate':2.0,
@@ -295,9 +293,6 @@ class TrackletGraph(object):
         for i,line_proc in enumerate(file_proc):
             # Processing module type
             proc_type = line_proc.split(':')[0].strip()
-            # temporary hack: DiskMatchCalculator-->MatchCalculator
-            if proc_type == "DiskMatchCalculator":
-                proc_type = "MatchCalculator"
             # temporary hack: FitTrack-->TrackBuilder
             if proc_type == "FitTrack":
                 proc_type = "TrackBuilder"

@@ -814,7 +814,7 @@ def writeProcFunction_generic(module, hls_src_dir, f_writeTemplatePars,
     # function name
     assert(module.mtype in ['VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
-                            'DiskMatchCalculator','FitTrack','PurgeDuplicate'])
+                            'FitTrack','PurgeDuplicate'])
     function_str = module.mtype
     # Update here if the function name is not exactly the same as the module type
 
@@ -830,7 +830,6 @@ def writeProcFunction_generic(module, hls_src_dir, f_writeTemplatePars,
     # Special cases (probably should make the naming consistent...)
     if module.mtype in ['TrackletEngine','MatchEngine']:
         fname_def = module.mtype + '.h'
-    # DiskMatchCalculator?
     
     fname_def = hls_src_dir.rstrip('/')+'/'+fname_def
     
@@ -875,7 +874,7 @@ def writeProcFunction(module, hls_src_dir):
         return writeProcFunction_generic(module, hls_src_dir,
                                          writeTemplatePars_ME,
                                          matchArgPortNames_ME)
-    elif module.mtype in ['MatchCalculator','DiskMatchCalculator']:
+    elif module.mtype == 'MatchCalculator':
         return writeProcFunction_generic(module, hls_src_dir,
                                          writeTemplatePars_MC,
                                          matchArgPortNames_MC)

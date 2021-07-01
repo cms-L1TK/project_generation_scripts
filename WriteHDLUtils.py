@@ -882,7 +882,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # function name
     assert(module.mtype in ['InputRouter', 'VMRouter','TrackletEngine','TrackletCalculator',
                             'ProjectionRouter','MatchEngine','MatchCalculator',
-                            'DiskMatchCalculator','FitTrack','TrackBuilder','PurgeDuplicate'])
+                            'FitTrack','TrackBuilder','PurgeDuplicate'])
 
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
@@ -1107,7 +1107,7 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
                                          writeTemplatePars_ME,
                                          matchArgPortNames_ME,
                                          first_of_type, extraports)
-    elif module.mtype in ['MatchCalculator','DiskMatchCalculator']:
+    elif module.mtype == 'MatchCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_MC,
                                          matchArgPortNames_MC,

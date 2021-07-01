@@ -89,7 +89,7 @@ for aProcMod in proc_list:
     elif moduletype == 'MatchEngine':
         h_proc_input_num_me.Fill(ninputs)
         h_proc_output_num_me.Fill(noutputs)
-    elif moduletype in ['MatchCalculator','DiskMatchCalculator']:
+    elif moduletype == 'MatchCalculator':
         h_proc_input_num_mc.Fill(ninputs)
         h_proc_output_num_mc.Fill(noutputs)
     elif moduletype == 'FitTrack':

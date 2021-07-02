@@ -246,7 +246,7 @@ class TrackletGraph(object):
             mem.has_numEntries_out = False
         elif mem.mtype == "AllProj" and not mem.is_final:
             mem.has_numEntries_out = False
-        elif mem.mtype == "TrackletParameters":
+        elif mem.mtype == "TrackletParameters" and not mem.is_final:
             mem.has_numEntries_out = False
         else:
             mem.has_numEntries_out = True

@@ -161,7 +161,10 @@ def writeMemoryUtil(memDict, memInfoDict):
         bitwidth = int(mtypeB.split("_")[1]);
         num_pages = 2**memInfo.bxbitwidth
 
-        if "DL" in mtypeB: # DTCLinks
+        # address and nentries types not needed for DTC links or output track
+        # streams
+        if "DL" in mtypeB \
+           or "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
             arrName = "t_arr_"+mtypeB+"_1b"
             ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n"
 

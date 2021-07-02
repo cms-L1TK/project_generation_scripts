@@ -744,10 +744,16 @@ def writeTemplatePars_TB(aTBModule):
     return ""
 
 def matchArgPortNames_TB(argname, portname, memoryname):
+    fm_layer_or_disk = None
+    if memoryname.startswith("FM_"):
+        fm_layer_or_disk = memoryname.split("_")[2][0]
+
     if argname.startswith("trackletParameters"):
         return portname.startswith("tpar")
     if argname.startswith("barrelFullMatches"):
-        return portname.startswith("fullmatch")
+        return (fm_layer_or_disk == "L" and portname.startswith("fullmatch"))
+    if argname.startswith("diskFullMatches"):
+        return (fm_layer_or_disk == "D" and portname.startswith("fullmatch"))
     if argname.startswith("trackWord"):
         return portname.startswith("trackword")
     if argname.startswith("barrelStubWords"):

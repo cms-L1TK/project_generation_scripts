@@ -395,9 +395,9 @@ def writeTrackStreamRHSPorts_interface(mtypeB):
     #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
     """
     string_output_mems = ""
-    string_output_mems += "    "+mtypeB+"_stream_AV_din     : in t_arr_"+mtypeB+"_DATA;\n"
-    string_output_mems += "    "+mtypeB+"_stream_full_neg   : in t_arr_"+mtypeB+"_1b;\n"
-    string_output_mems += "    "+mtypeB+"_stream_write      : out t_arr_"+mtypeB+"_1b;\n"
+    string_output_mems += "    "+mtypeB+"_stream_AV_din       : in t_arr_"+mtypeB+"_DATA;\n"
+    string_output_mems += "    "+mtypeB+"_stream_A_full_neg   : in t_arr_"+mtypeB+"_1b;\n"
+    string_output_mems += "    "+mtypeB+"_stream_A_write      : out t_arr_"+mtypeB+"_1b;\n"
 
     return string_output_mems
 
@@ -674,9 +674,9 @@ def writeProcTrackStreamLHSPorts(argname,mem):
     string_mem_ports += "      "+argname+"_V_din       => "
     string_mem_ports += mem.keyName()+"_stream_AV_din("+mem.var()+"),\n"
     string_mem_ports += "      "+argname+"_V_full_n    => "
-    string_mem_ports += mem.keyName()+"_stream_full_neg("+mem.var()+"),\n"
+    string_mem_ports += mem.keyName()+"_stream_A_full_neg("+mem.var()+"),\n"
     string_mem_ports += "      "+argname+"_V_write     => "
-    string_mem_ports += mem.keyName()+"_stream_write("+mem.var()+"),\n"
+    string_mem_ports += mem.keyName()+"_stream_A_write("+mem.var()+"),\n"
     return string_mem_ports
 
 def writeInputLinkWordPort(module_instance, memoriesPerLayer):

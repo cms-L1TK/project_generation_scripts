@@ -1,5 +1,0 @@
-1) Wires.py takes "mem > proc > mem" file (wires.input.hourglassExtended) written by HourGlassConfig.py and converts it to "proc > mem > proc". WiresLongVM.py would be simpler if it stuck to "mem > proc > mem" format. So why doesn't it?
-
-2) Unclear that Wires.py writing processmodules.dat or memorymodules.dat is terrible useful, since the info in them can be trivially extracted from wires.input.hourglassExtended). And writing processmodules_input.dat seems useless, since this file is never read?
-
-3) Wires.py prints memory usage. This uses outdated, hard-wired assumptions about memory width & depth, which are not used for anything else in this script. So why not do this calculation in C++ emulation, which must know these numbers?

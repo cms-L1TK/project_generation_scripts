@@ -225,9 +225,10 @@ class TrackletGraph(object):
     def populate_has_numEntries_out(mem,hls_dir):
         # Some memories need no numEntries out port, as no processing module wants to read it.
         # (Check which by searching for GetEntries() in HLS code).
-        if mem.mtype == "AllStubs":
+        # If those memories are at the of the chain, add numEntries port anyway for VHDL chain debugging purposes.
+        if mem.mtype == "AllStubs" and not mem.is_final:
             mem.has_numEntries_out = False
-        elif mem.mtype == "AllProj":
+        elif mem.mtype == "AllProj" and not mem.is_final:
             mem.has_numEntries_out = False
         else:
             mem.has_numEntries_out = True

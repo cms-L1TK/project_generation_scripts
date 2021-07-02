@@ -359,7 +359,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -416,12 +416,16 @@ if __name__ == "__main__":
         for mem in memory_list:
             if mem.is_initial:
                 for proc in mem.upstreams:
+                    if proc is None:
+                        continue
                     for p in process_list:
                         if proc.inst == p.inst:
                             mem.is_initial = False
                             break
             if mem.is_final:
                 for proc in mem.downstreams:
+                    if proc is None:
+                        continue
                     for p in process_list:
                         if proc.inst == p.inst:
                             mem.is_final = False

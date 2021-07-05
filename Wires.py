@@ -405,10 +405,8 @@ for proc in processingmodules :
     if "ME_" in proc:
         if "VMRME_" not in proc:
             fp2.write("MatchEngine: "+proc+"\n")
-    if "MC_L" in proc:
+    if "MC_" in proc:
         fp2.write("MatchCalculator: "+proc+"\n")
-    if "MC_D" in proc:
-        fp2.write("DiskMatchCalculator: "+proc+"\n")
     if "MP_" in proc:
         fp2.write("MatchProcessor: "+proc+"\n")
         MP_nmod+=1

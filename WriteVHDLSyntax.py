@@ -395,7 +395,7 @@ def writeTrackStreamRHSPorts_interface(mtypeB):
     #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
     """
     string_output_mems = ""
-    string_output_mems += "    "+mtypeB+"_stream_AV_din       : in t_arr_"+mtypeB+"_DATA;\n"
+    string_output_mems += "    "+mtypeB+"_stream_AV_din       : out t_arr_"+mtypeB+"_DATA;\n"
     string_output_mems += "    "+mtypeB+"_stream_A_full_neg   : in t_arr_"+mtypeB+"_1b;\n"
     string_output_mems += "    "+mtypeB+"_stream_A_write      : out t_arr_"+mtypeB+"_1b;\n"
 

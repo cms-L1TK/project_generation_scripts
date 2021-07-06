@@ -39,17 +39,21 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
 
       5) Ensure ROOT is in your PATH.
 
-      6) Make top-level VHDL - example for PRMEMC chain: 
+      6) Make top-level VHDL - example for PR-ME-MC chain: 
 
       ./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
       
-      example for TETC chain:
+      example for TE-TC chain:
       
       ./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
 
-      example for IRVMR chain:
+      example for IR-VMR chain:
 
       generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
+
+      example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
+
+      generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
 
 	*dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
@@ -98,7 +102,7 @@ By default the script will run starting with *TC_L1L2F*, and produced files call
     -s, --sector        TC phi sector from which to create the reduced config. By default this is "F".
     -o, --output        Prefix to add to all output files
     -l, --layers        Select the layer pair to create seeds with. By default this is "L1L2". 
-    -n, --noneg         Remove all negative eta modules from the config
+    -n, --noneg         Remove all negative eta modules from the config. Done by default.
 
 -----------------------------------------------------------------
 

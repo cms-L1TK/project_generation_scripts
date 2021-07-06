@@ -9,7 +9,7 @@ memorycounts=[0,0,0,0,0,0,0,0,0,0,0]
 
 for line in fi :
     splitline=line.split(" ")
-    print "Line:",splitline
+    print("Line:",splitline)
     lenold=len(memorymodules)
     if (splitline[0]=="InputLink:") :
         memorymodules.append([1,splitline[1]])
@@ -79,9 +79,9 @@ for line in fi :
         memorycounts[memorymodules[len(memorymodules)-1][0]-1]+=1
 
 for x in memorymodules :
-    print x
+    print(x)
 
-print memorycounts
+print(memorycounts)
 
 
 
@@ -92,7 +92,7 @@ processingcounts=[0,0,0,0,0,0,0,0,0,0]
 
 for line in fi :
     splitline=line.split(" ")
-    print "Line:",splitline
+    print("Line:",splitline)
     lenold=len(processingmodules)
     if (splitline[0]=="LayerRouter:") :
         processingmodules.append([1,splitline[1]])
@@ -121,9 +121,9 @@ for line in fi :
         processingcounts[processingmodules[len(processingmodules)-1][0]-1]+=1
 
 for x in processingmodules :
-    print "processingmodules : ",x
+    print("processingmodules : ",x)
 
-print processingcounts
+print(processingcounts)
 
 xmemories=[0.005,0.065,0.145,0.26,0.37,0.495,0.60,0.72,0.82,0.90,0.975]
 dxmemories=[0.015,0.02,0.03,0.05,0.05,0.05,0.05,0.045,0.03,0.025,0.025]
@@ -140,7 +140,7 @@ for module in memorymodules :
     module.append([x,y,x+dx,y])
     fo.write("Memory "+module[1])
     fo.write(" "+str(x)+" "+str(y)+" "+str(x+dx)+" "+str(y)+"\n")
-    print module
+    print(module)
 
 
 xprocessing=[0.03,0.10,0.20,0.32,0.44,0.56,0.67,0.78,0.865,0.945]
@@ -156,7 +156,7 @@ for module in processingmodules :
     module.append([x,y,x+dx,y])
     fo.write("Process "+module[1].split("\n")[0])
     fo.write(" "+str(x)+" "+str(y)+" "+str(x+dx)+" "+str(y)+"\n")
-    print module
+    print(module)
 
 fi = open("wires.dat","r")
 for line in fi :
@@ -166,7 +166,7 @@ for line in fi :
     inprocess=line.split("input=> ")[1].split(" ")[0].split(".")[0]    
     outprocess=line.split("output=> ")[1].split("\n")[0].split(".")[0]
 
-    print memory+" in: "+inprocess+" out: "+outprocess
+    print(memory+" in: "+inprocess+" out: "+outprocess)
 
     #Find the memory module
     memmodule=[]
@@ -174,8 +174,8 @@ for line in fi :
         if (mem[1]==memory) :
             memmodule=mem
     if (memmodule==[]) :
-        print "Could not find memorymodule: ",memory
-        print "Will terminate"
+        print("Could not find memorymodule: ",memory)
+        print("Will terminate")
         exit()
 
     last=len(memmodule)-1
@@ -184,14 +184,14 @@ for line in fi :
     if (inprocess!="") :
         procmodule=[]        
         for proc in processingmodules :
-            #print "Comparing ",proc[1].split("\n")[0]," - ",inprocess
+            #print("Comparing ",proc[1].split("\n")[0]," - ",inprocess)
             if (proc[1].split("\n")[0]==inprocess) :
                 procmodule=proc
         if (procmodule==[]) :
-            print "Could not find in processingmodule: ",inprocess
-            print "Will terminate"
+            print("Could not find in processingmodule: ",inprocess)
+            print("Will terminate")
             exit()
-        print "memmodule[0], procmodule[0] : ", memmodule[0],procmodule[0]    
+        print("memmodule[0], procmodule[0] : ", memmodule[0],procmodule[0]    )
         if (memmodule[0]==procmodule[0]+1 or memmodule[0]==procmodule[0]) :
             fo.write("Line "+str(procmodule[2][2])+" "+str(procmodule[2][3]))
             fo.write(" "+str(memmodule[last][0])+" "+str(memmodule[last][1])+"\n")
@@ -201,12 +201,12 @@ for line in fi :
     if (outprocess!="") :    
         procmodule=[]        
         for proc in processingmodules :
-            #print "Comparing ",proc[1].split("\n")[0]," - ",outprocess
+            #print("Comparing ",proc[1].split("\n")[0]," - ",outprocess)
             if (proc[1].split("\n")[0]==outprocess) :
                 procmodule=proc
         if (procmodule==[]) :
-            print "Could not find outprocessingmodule: ",outprocess
-            print "Will terminate"
+            print("Could not find outprocessingmodule: ",outprocess)
+            print("Will terminate")
             exit()
         if (memmodule[0]==procmodule[0] or memmodule[0]==procmodule[0]-1) :
             fo.write("Line "+str(procmodule[2][0])+" "+str(procmodule[2][1]))

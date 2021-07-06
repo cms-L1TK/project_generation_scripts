@@ -326,7 +326,7 @@ def matchArgPortNames_IR(argname, portname, memoryname):
     elif 'hPhBnWord' in argname or 'hLinkWord' in argname:
         return False
     else:
-        print "matchArgPortNames_IR: Unknown argument", argname
+        print("matchArgPortNames_IR: Unknown argument", argname)
         return False
 
 # Dictionary with the number of memories per layer/disk. Needed for the InputRouter
@@ -382,7 +382,7 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
     elif 'mask' in argname or 'Table' in argname:
         return False
     else:
-        print "matchArgPortNames_VMR: Unknown argument", argname
+        print("matchArgPortNames_VMR: Unknown argument", argname)
         return False
 
 ################################
@@ -402,7 +402,7 @@ def matchArgPortNames_TE(argname, portname, memoryname):
     elif argname == 'outstubpair':
         return portname == 'stubpairout' or 'stubPairs_' in portname
     else:
-        print "matchArgPortNames_TE: Unknown argument name", argname
+        print("matchArgPortNames_TE: Unknown argument name", argname)
         return False
 
 ################################
@@ -516,7 +516,7 @@ def matchArgPortNames_TC(argname, portname, memoryname):
         elif destination == "2s":
             return portname[7:9] in ["L4", "L5", "L6"]
     else:
-        print "matchArgPortNames_TC: Unknown argument", argname
+        print("matchArgPortNames_TC: Unknown argument", argname)
         return False
 
 def decodeSeedIndex_TC(memoryname):
@@ -561,7 +561,7 @@ def decodeSeedIndex_TC(memoryname):
     elif ('D5PHID' in memoryname):
         return 19
     else:
-        print "decodeSeedIndex_TC: Unknown memory name", memoryname
+        print("decodeSeedIndex_TC: Unknown memory name", memoryname)
         return False
 
 
@@ -610,7 +610,7 @@ def matchArgPortNames_PR(argname, portname, memoryname):
     elif 'vmprojout' in argname:
         return 'vmprojout' in portname
     else:
-        print "matchArgPortNames_PR: Unknown argument", argname
+        print("matchArgPortNames_PR: Unknown argument", argname)
         return False
 
 ################################
@@ -651,7 +651,7 @@ def matchArgPortNames_ME(argname, portname, memoryname):
     elif argname == 'outputCandidateMatch':
         return portname == 'matchout'
     else:
-        print "matchArgPortNames_ME: Unknown argument name", argname
+        print("matchArgPortNames_ME: Unknown argument name", argname)
         return False
 
 ################################
@@ -699,7 +699,7 @@ def matchArgPortNames_MC(argname, portname, memoryname):
     elif 'match' in argname:
         return 'match' in portname and 'out' not in portname
     else:
-        print "matchArgPortNames_MC: Unknown argument name", argname
+        print("matchArgPortNames_MC: Unknown argument name", argname)
         return False
 
 # Temporary bodge to get the correct argname index for the fullmatch memories
@@ -721,7 +721,7 @@ def decodeSeedIndex_MC(memoryname):
     elif 'L2D1' in memoryname:
         return 7
     else:
-        print "decodeSeedIndex_MC: Unknown memory name", memoryname
+        print("decodeSeedIndex_MC: Unknown memory name", memoryname)
         return False
 
 ################################
@@ -760,7 +760,7 @@ def matchArgPortNames_TB(argname, portname, memoryname):
         return portname.startswith("barrelstub")
     if argname.startswith("diskStubWords"):
         return portname.startswith("diskstub")
-    print "matchArgPortNames_TB: Unknown argument name", argname
+    print("matchArgPortNames_TB: Unknown argument name", argname)
     return False
 
 ################################
@@ -837,7 +837,7 @@ def parseProcFunction(proc_name, fname_def):
     templ_pars_list = []
     
     if procfunc_str == "":
-        print "Cannot find processing function", proc_name, "in", fname_def
+        print("Cannot find processing function", proc_name, "in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
@@ -870,8 +870,8 @@ def parseProcFunction(proc_name, fname_def):
 
     # get the template parameter list
     if template_buffer == "":
-        print "No template parameters are found."
-        print "Please make sure the processing function", proc_name, "is templatized in", fname_def
+        print("No template parameters are found.")
+        print("Please make sure the processing function", proc_name, "is templatized in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     templPars_str = template_buffer.split("<")[1].split(">")[0]

@@ -127,7 +127,7 @@ class MemTypeInfoByKey(object):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
         if self.mixedIO and self.is_initial:
-            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+            print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
             exit(1)
 
 
@@ -584,7 +584,7 @@ class TrackletGraph(object):
             return self.__proc_dict[instance_name]
         else:
             if verbose:
-                print "WARNING!! Cannot find module", instance_name,"!!"
+                print("WARNING!! Cannot find module", instance_name,"!!")
             return None
 
     def get_all_module_units(self, module):
@@ -594,7 +594,7 @@ class TrackletGraph(object):
             if instance_name.startswith(module+"_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
-            print "WARNING!! Cannot find any modules", instance_name,"!!"
+            print("WARNING!! Cannot find any modules", instance_name,"!!")
         else:
             return modules
 
@@ -604,7 +604,7 @@ class TrackletGraph(object):
             return self.__mem_dict[instance_name]
         else:
             if verbose:
-                print "Cannot find module", instance_name
+                print("Cannot find module", instance_name)
             return None
     
     def get_module(self, instance_name):
@@ -614,9 +614,9 @@ class TrackletGraph(object):
         # if not, try memory modules
         if aModule is None:
             aModule = self.get_mem_module(instance_name, verbose=False)
-        # if still no, print warning
+        # if still no, print(warning)
         if aModule is None:
-            print "TrackletGraph: Cannot find module", instance_name
+            print("TrackletGraph: Cannot find module", instance_name)
 
         return aModule
     
@@ -982,5 +982,5 @@ class TrackletGraph(object):
         dyBox = 0.5/(math.log(maxnum)*10)
         textSize = 0.5/(math.log(maxnum)*10+1)
 
-        # print  pageWidth, pageHeight, dyBox, textSize, maxnum
+        # print( pageWidth, pageHeight, dyBox, textSize, maxnum)
         return int(pageWidth), int(pageHeight), dyBox, textSize

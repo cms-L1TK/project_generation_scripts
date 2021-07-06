@@ -343,7 +343,7 @@ if __name__ == "__main__":
                         default="../firmware-hls/",
                         help="HLS firmware project directory")
     parser.add_argument('-f', '--topfunc', type=str, default="SectorProcessor",
-                        help="HLS top function name")
+                        help="Top-level FW entity name")
     parser.add_argument('-n', '--projname', type=str, default="sectproc",
                         help="Project name")
     
@@ -394,7 +394,6 @@ if __name__ == "__main__":
     memory_list = []
 
     if args.mut is not None:
-        print("WARNING: This feature \"--mut\" has only been tested extensively with the PRMEMC chain.")
 
         # Get all module units of a given type
         mutModules = tracklet.get_all_module_units(args.mut)

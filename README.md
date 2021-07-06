@@ -28,36 +28,30 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
 * Generate the top-level FW for L1 track chain.
 
   N.B. Currently CANNOT generate a full project since some processing steps are under construction.
+  1) Checkout the project generation scripts: `git clone git@github.com:cms-L1TK/project_generation_scripts.git`
+  1) Checkout L1Trk HLS code: `git clone https://github.com/cms-tracklet/firmware-hls`
+  1) Download the wiring files: `cd firmware-hls/emData/ ; ./download.sh -t; cd ../..`
+  1) Copy the wiring files to the project generation area: `cd firmware-hls/; cp ../firmware-hls/emData/LUTs/*.dat .`
+  1) Ensure ROOT is in your PATH.
+  1) Make top-level VHDL - example for PR-ME-MC chain: 
+```
+./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
+```      
+Example for TE-TC chain:
+ ```     
+./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
+```
+Example for IR-VMR chain:
+```
+./generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
+```
+Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
+```
+generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
+```
+*dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
-      1) Checkout the project generation scripts: git clone git@github.com:cms-L1TK/project_generation_scripts.git
-
-      2) Checkout L1Trk HLS code: git clone https://github.com/cms-tracklet/firmware-hls
-
-      3) Download the wiring files: cd firmware-hls/emData/ ; ./download.sh -t; cd ../..
-
-      4) Copy the wiring files to the project generation area: cd firmware-hls/; cp ../firmware-hls/emData/LUTs/*.dat .
-
-      5) Ensure ROOT is in your PATH.
-
-      6) Make top-level VHDL - example for PR-ME-MC chain: 
-
-      ./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
-      
-      example for TE-TC chain:
-      
-      ./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
-
-      example for IR-VMR chain:
-
-      generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
-
-      example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
-
-      generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
-
-	*dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
-
-  (Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).
+(Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).
 
   Optional arguments include:
   
@@ -70,7 +64,8 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
       --memprint_dir      Directory to search for memory printouts produced by the emulation
       --emData_dir        Directory into which the memory printout files are copied for the HLS project
       
-      For generating a partial project:
+ For generating a partial project:
+ 
       -r, --region        Detector region of the generated project.
       		              Choose from A(all), L(barrel), D(disk).
       --uut               Specify a unit under test, e.g. TC_L1L2E

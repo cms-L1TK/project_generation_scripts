@@ -160,7 +160,7 @@ class project:
         lxphis = ["A", "B", "C", "D"]
 
         if tc.upper() not in tcs:
-            print "Bad TC index, not adding."
+            print("Bad TC index, not adding.")
             return
 
         # Store whether or not we're including negative eta inputs
@@ -174,7 +174,7 @@ class project:
         phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
         phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
 
-        print "Adding regions to project: TC_%s%s, L1PHI%s, LxPHI%s"%(tcs[tc_i], layers, l1phis[phi1_i], lxphis[phix_i])
+        print("Adding regions to project: TC_%s%s, L1PHI%s, LxPHI%s"%(tcs[tc_i], layers, l1phis[phi1_i], lxphis[phix_i]))
         self.tcs.append("TC_%s%s"%(layers,tcs[tc_i]))
         self.l1phis.append(l1phis[phi1_i])
         self.lxphis.append(lxphis[phix_i])
@@ -183,23 +183,23 @@ class project:
         # Starting with e.g. TC_L1L2F and moving up and down the chain
         # For each node it adds, will check for all inputs and outputs of that node
 
-        print "Starting with node TC_%s%s"%(layers,tcs[tc_i])
+        print("Starting with node TC_%s%s"%(layers,tcs[tc_i]))
         n = node("TC_%s%s"%(layers,tcs[tc_i]))
         self.addNode(n)
-        print "Finding inputs..."
+        print("Finding inputs...")
         self.findInputConnections(n, ref_p)
-        print "Finding outputs..."
+        print("Finding outputs...")
         self.findOutputConnections(n, ref_p)
 
     def findInputConnections(self, n, ref_p):
-        if verbose: print "\t", n.name
+        if verbose: print("\t", n.name)
         ref_node = ref_p.nodes[n.name]
         ref_inputs = ref_node.getInputConnections()
-        if verbose: print "\tInputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_inputs]
+        if verbose: print("\tInputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_inputs])
         for ref_c in ref_inputs:
             ref_n = ref_c.cinput
             if self.isIncluded(ref_n, ref_c.memory):
-                if verbose: print "\t\t", "Found good input!:", ref_n.name
+                if verbose: print("\t\t", "Found good input!:", ref_n.name)
                 in_n = node(ref_n.name)
                 in_c = connection(ref_c.memory, in_n, n, ref_c.cinext, ref_c.coutext)
                 n.addConnection(in_c)
@@ -213,14 +213,14 @@ class project:
                         self.findOutputConnections(in_n, ref_p)
 
     def findOutputConnections(self, n, ref_p):
-        if verbose: print "\t", n.name
+        if verbose: print("\t", n.name)
         ref_node = ref_p.nodes[n.name]
         ref_outputs = ref_node.getOutputConnections()
-        if verbose: print "\tOutputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_outputs]
+        if verbose: print("\tOutputs:", ["%s -> %s"%(r.cinput.name, r.coutput.name) for r in ref_outputs])
         for ref_c in ref_outputs:
             ref_n = ref_c.coutput
             if self.isIncluded(ref_n, ref_c.memory):
-                if verbose: print "\t\t", "Found good output!:", ref_n.name
+                if verbose: print("\t\t", "Found good output!:", ref_n.name)
                 out_n = node(ref_n.name)
                 out_c = connection(ref_c.memory, n, out_n, ref_c.cinext, ref_c.coutext)
                 n.addConnection(out_c)
@@ -296,13 +296,13 @@ parser.set_defaults(graph=True)
 args = parser.parse_args()
 
 # Load in full project
-print "Loading full wire project..."
+print("Loading full wire project...")
 full_wires = project()
 full_wires.loadProject(args.wires)
 #full_wires.saveProject("test.dat")
 
 # Set up reduced project and give it a phi sector in L1
-print "Finding reduced configuration..."
+print("Finding reduced configuration...")
 reduced_wires = project()
 reduced_wires.addRefModules(args.process)
 reduced_wires.addRefMemories(args.memories)

@@ -3,6 +3,7 @@
 ########################################
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule
+from six.moves import zip
 
 ########################################
 # Memory objects

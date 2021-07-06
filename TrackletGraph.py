@@ -1,6 +1,7 @@
 import re
 import math
 import copy
+from six.moves import range
 
 #######################################
 # Ordering of the processing steps

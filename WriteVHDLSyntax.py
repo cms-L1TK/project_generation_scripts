@@ -1,4 +1,5 @@
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
+from six.moves import range
 
 def writeTopPreamble(all=True):
     string_preamble = "--! Standard libraries\n"

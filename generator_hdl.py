@@ -12,7 +12,7 @@ from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleC
                             writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
-                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeProcDTCLinkRHSPorts
+                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeTrackStreamRHSPorts_interface
 import ROOT
 import os, subprocess
 
@@ -35,7 +35,9 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
     string_mem = ""
     # Loop over memory type
     for mtypeB in memDict:
-        if "DL" in mtypeB: # DTCLink
+        # no memories for DTC links or output track streams
+        if "DL" in mtypeB \
+           or "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
             continue
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
@@ -122,7 +124,10 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
         elif memInfo.is_final:
             # Output arguments
-            string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
+            if "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
+                string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB)
+            else:
+                string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(mtypeB, extraports)            
@@ -354,7 +359,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -411,12 +416,16 @@ if __name__ == "__main__":
         for mem in memory_list:
             if mem.is_initial:
                 for proc in mem.upstreams:
+                    if proc is None:
+                        continue
                     for p in process_list:
                         if proc.inst == p.inst:
                             mem.is_initial = False
                             break
             if mem.is_final:
                 for proc in mem.downstreams:
+                    if proc is None:
+                        continue
                     for p in process_list:
                         if proc.inst == p.inst:
                             mem.is_final = False

@@ -122,6 +122,14 @@ after running the Wires.py script by doing
 
 -----------------------------------------------------------------
 
+## Python version and other dependencies
+This code is currently not compatible with python 3. Some of the code also depends on ROOT and its 
+python interface (last tested with version 6.10.00).
+
+There are no other dependencies.
+
+-----------------------------------------------------------------
+
 ## Technical details of scripts for producing wiring files.
 
 N.B. The documetation below was written for the old python scripts, but is largely still revelant to the C++ version of them.

@@ -2,6 +2,7 @@
 ########################################
 # Utilities for writing Verilog code from Vivado HLS blocks
 """
+from __future__ import print_function
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey

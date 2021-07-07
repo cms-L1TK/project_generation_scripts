@@ -13,7 +13,6 @@ from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleC
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
                             writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeTrackStreamRHSPorts_interface
-import ROOT
 import os, subprocess
 
 ########################################
@@ -372,7 +371,11 @@ if __name__ == "__main__":
     parser.add_argument('--memprint_dir', type=str,
                         default="../fpga_emulation_longVM/MemPrints/",
                         help="Directory of emulation memory printouts")
-    
+    parser.add_argument('--graph', dest='graph', action='store_true',
+                        help="Make graph. Requires ROOT")
+    parser.add_argument('--no-graph', dest='graph', action='store_false',
+                        help="Do not make graph. Disable ROOT")
+    parser.set_defaults(graph=False)
     args = parser.parse_args()
 
     if args.extraports:
@@ -467,10 +470,12 @@ if __name__ == "__main__":
     ########################################
     #  Plot graph
     ########################################
-    pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
-    ROOT.gROOT.SetBatch(True)
-    ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
-    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
+    if ( args.graph == True ) :
+        import ROOT
+        pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
+        ROOT.gROOT.SetBatch(True)
+        ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
+        ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize);
 
 
     ###############

@@ -2,6 +2,7 @@
 # Utilities for writing Vivado HLS code
 ########################################
 #from collections import deque
+from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule
 from six.moves import zip
 

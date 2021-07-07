@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 from six.moves import range
 

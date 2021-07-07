@@ -5,6 +5,7 @@
 from __future__ import print_function
 
 #from collections import deque
+from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
 from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeProcTrackStreamLHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts

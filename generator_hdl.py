@@ -5,6 +5,7 @@
 #
 # N.B. Check hard-wired constants in TrackletGraph::populate_bitwidths()
 ################################################
+from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey, TrackletGraph
 from WriteHDLUtils import arrangeMemoriesByKey, \
                             writeModuleInstance

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from six.moves import range
 def writeTopPreamble():
     string_preamble = "`timescale 1ns / 1ps\n\n"

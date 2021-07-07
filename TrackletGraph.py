@@ -429,7 +429,7 @@ class TrackletGraph(object):
             p_dict: processing module dictionary
             m_dict: memory module dictionary
         """
-        for m in m_dict.keys():
+        for m in list(m_dict.keys()): # py3 doesn't make a copy of list of keys, like py2
             if not m.startswith("TF_"):
                 continue
             seed = m.split("_")[1]

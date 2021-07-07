@@ -63,6 +63,7 @@ generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmo
       -w, --wireconfig    Name of the wiring configuration .dat file
       --memprint_dir      Directory to search for memory printouts produced by the emulation
       --emData_dir        Directory into which the memory printout files are copied for the HLS project
+      --graph/--no-graph  Enable/disable making of the diagram. If disabled (not default) ROOT is not required.
       
  For generating a partial project:
  
@@ -98,6 +99,7 @@ By default the script will run starting with *TC_L1L2F*, and produced files call
     -o, --output        Prefix to add to all output files
     -l, --layers        Select the layer pair to create seeds with. By default this is "L1L2". 
     -n, --noneg         Remove all negative eta modules from the config. Done by default.
+    --graph/--no-graph  Enable/disable making of the diagram. If disabled (not default) ROOT is not required.
 
 -----------------------------------------------------------------
 

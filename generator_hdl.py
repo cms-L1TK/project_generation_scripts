@@ -375,7 +375,7 @@ if __name__ == "__main__":
                         help="Make graph. Requires ROOT")
     parser.add_argument('--no-graph', dest='graph', action='store_false',
                         help="Do not make graph. Disable ROOT")
-    parser.set_defaults(graph=False)
+    parser.set_defaults(graph=True)
     args = parser.parse_args()
 
     if args.extraports:

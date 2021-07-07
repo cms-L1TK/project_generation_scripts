@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from TrackletGraph import TrackletGraph
-import ROOT
 import argparse
 from collections import OrderedDict
 
@@ -291,6 +290,9 @@ parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector
 parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 parser.add_argument("-n", "--noneg", type=bool, default=True, help="Remove all negative eta modules from the config")
+parser.add_argument('--graph', dest='graph', action='store_true', help="Make graph. Requires ROOT")
+parser.add_argument('--no-graph', dest='graph', action='store_false', help="Do not make graph. Disable ROOT")
+parser.set_defaults(graph=True)
 args = parser.parse_args()
 
 # Load in full project
@@ -311,7 +313,9 @@ reduced_wires.saveMemories("%smemorymodules.dat"%args.output)
 
 # Create a pdf of the .dat files we've made
 tracklet = TrackletGraph.from_configs("%sprocessingmodules.dat"%args.output,"%smemorymodules.dat"%args.output,"%swires.dat"%args.output)
-pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(tracklet.get_all_proc_modules())
-ROOT.gROOT.SetBatch(True)
-ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
-ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize)
+if ( args.graph) :
+    pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(tracklet.get_all_proc_modules())
+    import ROOT
+    ROOT.gROOT.SetBatch(True)
+    ROOT.gROOT.LoadMacro('DrawTrackletProject.C')
+    ROOT.DrawTrackletProject(pageWidth, pageHeight, dyBox, textSize)

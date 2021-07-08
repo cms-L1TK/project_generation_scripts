@@ -275,9 +275,6 @@ def getListsOfGroupedMemories(aProcModule):
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
     # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
-    # zipped_list = zip(memList, portList)
-    # zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
-    # zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
     zipped_list = list(zip(memList, portList))
     zipped_list.sort(key=lambda m_p: 0 if 'vmstubout' else int("".join([i for i in m_p[1] if i.isdigit()]))) # sort by number
     zipped_list.sort(key=lambda m_p1: 0 if 'vmstubout' else m_p1[1][:m_p1[1].index('PHI')]) # sort alphabetically
@@ -424,7 +421,7 @@ def writeTemplatePars_TC(aTCModule):
     NASMemOuter = 0  # number of outer allstub memories
     PhiLabelASInner = []
     PhiLabelASOuter = []
-    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
         if 'innerallstub' in portname:
             NASMemInner += 1
             # AS memory instance name example: AS_L1PHICn3
@@ -445,7 +442,7 @@ def writeTemplatePars_TC(aTCModule):
     # Count StubPair memories
     NSPMem = [[0,0],[0,0]]
 
-    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
         if 'stubpair' in portname:
             sp_instance = inmem.inst
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
@@ -473,7 +470,7 @@ def writeTemplatePars_TC(aTCModule):
 
     TPROJMask = 0
     
-    for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
+    for outmem, portname in list(zip(aTCModule.downstreams, aTCModule.output_port_names)):
         if 'projout' in portname: # portname example: projoutL6PHID
             layer = portname[7:9] # L6
             phi = portname[-1] # D
@@ -944,7 +941,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     array_dict = {}
 
     # loop over the list of argument names from parsing the header file
-    for argtype, argname in zip(argtypes, argnames):
+    for argtype, argname in list(zip(argtypes, argnames)):
         # bunch crossing
         if argtype == "BXType":
             for mem in module.upstreams:
@@ -967,7 +964,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         else:
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
-            for memory, portname in zip(memModuleList, portNameList):
+            for memory, portname in list(zip(memModuleList, portNameList)):
                 # Check if the portname matches the argument name from function def
                 if f_matchArgPortNames is None:
                     # No matching rule provided, just check if the names are the same

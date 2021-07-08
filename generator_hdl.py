@@ -73,7 +73,6 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
     proc_type_list = []
 
     for aProcMod in proc_list:
-        print("procname"+ aProcMod.inst)
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports)
             proc_type_list.append(aProcMod.mtype)

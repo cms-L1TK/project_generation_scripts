@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 from __future__ import absolute_import
+from __future__ import print_function
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHLSUtils import getHLSMemoryClassName, groupAllConnectedMemories, writeMemoryInstance, writeProcFunction
 import os, subprocess
-from __future__ import print_function
 
 ########################################
 # Functions to write strings

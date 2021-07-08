@@ -5,7 +5,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 from TrackletGraph import MemModule, ProcModule
-from six.moves import zip
 
 ########################################
 # Memory objects

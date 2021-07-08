@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import division
 import re
 import math
 import copy
-from six.moves import range
+from builtins import range
 
 #######################################
 # Ordering of the processing steps

@@ -4,6 +4,7 @@
 #from collections import deque
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import division
 from TrackletGraph import MemModule, ProcModule
 
 ########################################

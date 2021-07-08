@@ -84,6 +84,8 @@ class MemModule(Node):
         self.has_numEntries_out = True # True if has numEntries out port.
     def keyName(self): # All mems with same keyName made in same VHDL "generate" loop.
         return self.mtype_short()+"_"+str(self.bitwidth)
+    def __lt__(self, other) : # py3 needs this explicitly for ordering
+        return self.inst < other.inst ### lexical sort on instance name
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):

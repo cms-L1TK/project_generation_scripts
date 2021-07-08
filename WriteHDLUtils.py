@@ -3,9 +3,9 @@
 # Utilities for writing Verilog code from Vivado HLS blocks
 """
 from __future__ import print_function
+from __future__ import absolute_import
 
 #from collections import deque
-from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
 from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeProcTrackStreamLHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
@@ -13,7 +13,6 @@ import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
 from collections import OrderedDict
-from six.moves import zip
 
 def getMemoryClassName_InputStub(instance_name):
     """
@@ -275,6 +274,9 @@ def getListsOfGroupedMemories(aProcModule):
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
     # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
+    # zipped_list = zip(memList, portList)
+    # zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
+    # zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
     zipped_list = list(zip(memList, portList))
     zipped_list.sort(key=lambda m_p: 0 if 'vmstubout' else int("".join([i for i in m_p[1] if i.isdigit()]))) # sort by number
     zipped_list.sort(key=lambda m_p1: 0 if 'vmstubout' else m_p1[1][:m_p1[1].index('PHI')]) # sort alphabetically

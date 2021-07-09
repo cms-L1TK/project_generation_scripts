@@ -1,16 +1,18 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
+from __future__ import print_function
 import math
 import sys
 
 if (len(sys.argv) != 2 ) :
-    print "Usage: SubGraph.py <proc. module>"
-    print len(sys.argv)
-    print sys.argv[0]
-    print sys.argv[1]
+    print("Usage: SubGraph.py <proc. module>")
+    print(len(sys.argv))
+    print(sys.argv[0])
+    print(sys.argv[1])
     exit(1)
 
-print 'Will read wires.dat'
+print('Will read wires.dat')
  
 #Build the geometry for layers
 
@@ -24,7 +26,7 @@ for line in fi:
         continue
     substr = line.split("=>")
     if len(substr) != 3 :
-        print substr
+        print(substr)
     subsubstr=substr[0].split()
     if sys.argv[1] in substr[1]:
         inputmemorymodules.append(subsubstr[0])

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from builtins import range
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
 def writeTopPreamble(all=True):

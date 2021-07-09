@@ -2,6 +2,9 @@
 # Utilities for writing Vivado HLS code
 ########################################
 #from collections import deque
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
 from TrackletGraph import MemModule, ProcModule
 
 ########################################
@@ -468,7 +471,7 @@ def matchArgPortNames_TC(argname, portname):
         destination = argname.strip().split('_')[-1]
         return destination in portname and 'projout' in portname
     else:
-        print "matchArgPortNames_TC: Unknown argument", argname
+        print("matchArgPortNames_TC: Unknown argument", argname)
         return False
 
 ################################
@@ -532,7 +535,7 @@ def matchArgPortNames_PR(argname, portname):
         X_arg = int(argname[9:])
         return X_arg == X_port
     else:
-        print "matchArgPortNames_PR: Unknown argument", argname
+        print("matchArgPortNames_PR: Unknown argument", argname)
         return False
     
 ################################
@@ -554,7 +557,7 @@ def writeTemplatePars_ME(aMEModule):
         else:
             VMSTYPE = 'BARRELPS'
     else:  # Disk
-        print "WARNING! Disk MatchEngine is not supported yet!"
+        print("WARNING! Disk MatchEngine is not supported yet!")
         DISK = pos[1]
         VMSTYPE = 'DISK'
 
@@ -572,7 +575,7 @@ def matchArgPortNames_ME(argname, portname):
     elif argname == 'outcandmatch':
         return portname == 'matchout'
     else:
-        print "matchArgPortNames_ME: Unknown argument name", argname
+        print("matchArgPortNames_ME: Unknown argument name", argname)
         return False
 
 ################################
@@ -621,7 +624,7 @@ def matchArgPortNames_MC(argname, portname):
     elif argname == 'fullmatch2':
         return portname == 'matchout2'
     else:
-        print "matchArgPortNames_MC: Unknow argument name", argname
+        print("matchArgPortNames_MC: Unknow argument name", argname)
         return False
 
 ################################
@@ -707,7 +710,7 @@ def parseProcFunction(proc_name, fname_def):
     templ_pars_list = []
     
     if procfunc_str == "":
-        print "Cannot find processing function", proc_name, "in", fname_def
+        print("Cannot find processing function", proc_name, "in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
@@ -732,8 +735,8 @@ def parseProcFunction(proc_name, fname_def):
 
     # get the template parameter list
     if template_buffer == "":
-        print "No template parameters are found."
-        print "Please make sure the processing function", proc_name, "is templatized in", fname_def
+        print("No template parameters are found.")
+        print("Please make sure the processing function", proc_name, "is templatized in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     templPars_str = template_buffer.split("<")[1].split(">")[0]

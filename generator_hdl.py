@@ -5,6 +5,14 @@
 #
 # N.B. Check hard-wired constants in TrackletGraph::populate_bitwidths()
 ################################################
+from __future__ import absolute_import
+from __future__ import print_function
+
+try:
+    from rich.traceback import install
+    install()
+except:
+    pass
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey, TrackletGraph
 from WriteHDLUtils import arrangeMemoriesByKey, \
                             writeModuleInstance
@@ -511,25 +519,25 @@ if __name__ == "__main__":
     fout_tcl.write(string_tcl)
 
     ###############
-    print "Output top file:", fname_top
-    print "Output test bench file:", fname_tb
-    print "Output HDL package:", fname_memUtil
-    print "Output tcl script:", fname_tcl
+    print("Output top file:", fname_top)
+    print("Output test bench file:", fname_tb)
+    print("Output HDL package:", fname_memUtil)
+    print("Output tcl script:", fname_tcl)
     
     ###############
     # Copy the necessary emulation memory printouts for test bench
     # make a local directory first
 #    if os.path.exists(args.memprint_dir):
-#        print "Creating a directory:", args.emData_dir
+#        print("Creating a directory:", args.emData_dir)
 #        subprocess.call(['mkdir','-p',args.emData_dir])
 #
-#        print "Start to copy emulation printouts locally"
+#        print("Start to copy emulation printouts locally")
 #        for filename in list_memprints:
 #            memdir = getMemPrintDirectory(filename)+'/'
 #            fullname = args.memprint_dir.rstrip('/')+'/'+memdir+filename
 #            subprocess.call(['cp', fullname, args.emData_dir+'/.'])
-#        print "Done copying emulation printouts"
+#        print("Done copying emulation printouts")
 #    else:
-#        print "Cannot find directory", args.memprint_dir
-#        print "No memory prinout files are copied."
+#        print("Cannot find directory", args.memprint_dir)
+#        print("No memory prinout files are copied.")
     

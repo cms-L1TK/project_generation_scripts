@@ -1,6 +1,10 @@
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
 import re
 import math
 import copy
+from builtins import range
 
 #######################################
 # Ordering of the processing steps
@@ -81,6 +85,8 @@ class MemModule(Node):
         self.has_numEntries_out = True # True if has numEntries out port.
     def keyName(self): # All mems with same keyName made in same VHDL "generate" loop.
         return self.mtype_short()+"_"+str(self.bitwidth)
+    def __lt__(self, other) : # py3 needs this explicitly for ordering
+        return self.inst < other.inst ### lexical sort on instance name
 
 class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
@@ -127,7 +133,7 @@ class MemTypeInfoByKey(object):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
         if self.mixedIO and self.is_initial:
-            print "ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT"
+            print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
             exit(1)
 
 
@@ -426,7 +432,7 @@ class TrackletGraph(object):
             p_dict: processing module dictionary
             m_dict: memory module dictionary
         """
-        for m in m_dict.keys():
+        for m in list(m_dict.keys()): # py3 doesn't make a copy of list of keys, like py2
             if not m.startswith("TF_"):
                 continue
             seed = m.split("_")[1]
@@ -584,7 +590,7 @@ class TrackletGraph(object):
             return self.__proc_dict[instance_name]
         else:
             if verbose:
-                print "WARNING!! Cannot find module", instance_name,"!!"
+                print("WARNING!! Cannot find module", instance_name,"!!")
             return None
 
     def get_all_module_units(self, module):
@@ -594,7 +600,7 @@ class TrackletGraph(object):
             if instance_name.startswith(module+"_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
-            print "WARNING!! Cannot find any modules", instance_name,"!!"
+            print("WARNING!! Cannot find any modules", instance_name,"!!")
         else:
             return modules
 
@@ -604,7 +610,7 @@ class TrackletGraph(object):
             return self.__mem_dict[instance_name]
         else:
             if verbose:
-                print "Cannot find module", instance_name
+                print("Cannot find module", instance_name)
             return None
     
     def get_module(self, instance_name):
@@ -614,9 +620,9 @@ class TrackletGraph(object):
         # if not, try memory modules
         if aModule is None:
             aModule = self.get_mem_module(instance_name, verbose=False)
-        # if still no, print warning
+        # if still no, print(warning)
         if aModule is None:
-            print "TrackletGraph: Cannot find module", instance_name
+            print("TrackletGraph: Cannot find module", instance_name)
 
         return aModule
     
@@ -982,5 +988,5 @@ class TrackletGraph(object):
         dyBox = 0.5/(math.log(maxnum)*10)
         textSize = 0.5/(math.log(maxnum)*10+1)
 
-        # print  pageWidth, pageHeight, dyBox, textSize, maxnum
+        # print( pageWidth, pageHeight, dyBox, textSize, maxnum)
         return int(pageWidth), int(pageHeight), dyBox, textSize

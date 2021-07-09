@@ -2,6 +2,9 @@
 ########################################
 # Utilities for writing Verilog code from Vivado HLS blocks
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
@@ -272,10 +275,10 @@ def getListsOfGroupedMemories(aProcModule):
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
     # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
-    zipped_list = zip(memList, portList)
-    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else int("".join([i for i in p if i.isdigit()]))) # sort by number
-    zipped_list.sort(key=lambda (m, p): 0 if 'vmstubout' else p[:p.index('PHI')]) # sort alphabetically
-    memList, portList = zip(*zipped_list) # unzip
+    zipped_list = list(zip(memList, portList))
+    zipped_list.sort(key=lambda m_p: 0 if 'vmstubout' else int("".join([i for i in m_p[1] if i.isdigit()]))) # sort by number
+    zipped_list.sort(key=lambda m_p1: 0 if 'vmstubout' else m_p1[1][:m_p1[1].index('PHI')]) # sort alphabetically
+    memList, portList = list(zip(*zipped_list)) # unzip
     memList, portList = list(memList), list(portList)
 
     return memList, portList
@@ -326,7 +329,7 @@ def matchArgPortNames_IR(argname, portname, memoryname):
     elif 'hPhBnWord' in argname or 'hLinkWord' in argname:
         return False
     else:
-        print "matchArgPortNames_IR: Unknown argument", argname
+        print("matchArgPortNames_IR: Unknown argument", argname)
         return False
 
 # Dictionary with the number of memories per layer/disk. Needed for the InputRouter
@@ -382,7 +385,7 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
     elif 'mask' in argname or 'Table' in argname:
         return False
     else:
-        print "matchArgPortNames_VMR: Unknown argument", argname
+        print("matchArgPortNames_VMR: Unknown argument", argname)
         return False
 
 ################################
@@ -402,7 +405,7 @@ def matchArgPortNames_TE(argname, portname, memoryname):
     elif argname == 'outstubpair':
         return portname == 'stubpairout' or 'stubPairs_' in portname
     else:
-        print "matchArgPortNames_TE: Unknown argument name", argname
+        print("matchArgPortNames_TE: Unknown argument name", argname)
         return False
 
 ################################
@@ -418,7 +421,7 @@ def writeTemplatePars_TC(aTCModule):
     NASMemOuter = 0  # number of outer allstub memories
     PhiLabelASInner = []
     PhiLabelASOuter = []
-    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
         if 'innerallstub' in portname:
             NASMemInner += 1
             # AS memory instance name example: AS_L1PHICn3
@@ -439,7 +442,7 @@ def writeTemplatePars_TC(aTCModule):
     # Count StubPair memories
     NSPMem = [[0,0],[0,0]]
 
-    for inmem, portname in zip(aTCModule.upstreams, aTCModule.input_port_names):
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
         if 'stubpair' in portname:
             sp_instance = inmem.inst
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
@@ -467,7 +470,7 @@ def writeTemplatePars_TC(aTCModule):
 
     TPROJMask = 0
     
-    for outmem, portname in zip(aTCModule.downstreams, aTCModule.output_port_names):
+    for outmem, portname in list(zip(aTCModule.downstreams, aTCModule.output_port_names)):
         if 'projout' in portname: # portname example: projoutL6PHID
             layer = portname[7:9] # L6
             phi = portname[-1] # D
@@ -516,7 +519,7 @@ def matchArgPortNames_TC(argname, portname, memoryname):
         elif destination == "2s":
             return portname[7:9] in ["L4", "L5", "L6"]
     else:
-        print "matchArgPortNames_TC: Unknown argument", argname
+        print("matchArgPortNames_TC: Unknown argument", argname)
         return False
 
 def decodeSeedIndex_TC(memoryname):
@@ -561,7 +564,7 @@ def decodeSeedIndex_TC(memoryname):
     elif ('D5PHID' in memoryname):
         return 19
     else:
-        print "decodeSeedIndex_TC: Unknown memory name", memoryname
+        print("decodeSeedIndex_TC: Unknown memory name", memoryname)
         return False
 
 
@@ -610,7 +613,7 @@ def matchArgPortNames_PR(argname, portname, memoryname):
     elif 'vmprojout' in argname:
         return 'vmprojout' in portname
     else:
-        print "matchArgPortNames_PR: Unknown argument", argname
+        print("matchArgPortNames_PR: Unknown argument", argname)
         return False
 
 ################################
@@ -651,7 +654,7 @@ def matchArgPortNames_ME(argname, portname, memoryname):
     elif argname == 'outputCandidateMatch':
         return portname == 'matchout'
     else:
-        print "matchArgPortNames_ME: Unknown argument name", argname
+        print("matchArgPortNames_ME: Unknown argument name", argname)
         return False
 
 ################################
@@ -699,7 +702,7 @@ def matchArgPortNames_MC(argname, portname, memoryname):
     elif 'match' in argname:
         return 'match' in portname and 'out' not in portname
     else:
-        print "matchArgPortNames_MC: Unknown argument name", argname
+        print("matchArgPortNames_MC: Unknown argument name", argname)
         return False
 
 # Temporary bodge to get the correct argname index for the fullmatch memories
@@ -721,7 +724,7 @@ def decodeSeedIndex_MC(memoryname):
     elif 'L2D1' in memoryname:
         return 7
     else:
-        print "decodeSeedIndex_MC: Unknown memory name", memoryname
+        print("decodeSeedIndex_MC: Unknown memory name", memoryname)
         return False
 
 ################################
@@ -760,7 +763,7 @@ def matchArgPortNames_TB(argname, portname, memoryname):
         return portname.startswith("barrelstub")
     if argname.startswith("diskStubWords"):
         return portname.startswith("diskstub")
-    print "matchArgPortNames_TB: Unknown argument name", argname
+    print("matchArgPortNames_TB: Unknown argument name", argname)
     return False
 
 ################################
@@ -837,7 +840,7 @@ def parseProcFunction(proc_name, fname_def):
     templ_pars_list = []
     
     if procfunc_str == "":
-        print "Cannot find processing function", proc_name, "in", fname_def
+        print("Cannot find processing function", proc_name, "in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     # get the argument lists
@@ -870,8 +873,8 @@ def parseProcFunction(proc_name, fname_def):
 
     # get the template parameter list
     if template_buffer == "":
-        print "No template parameters are found."
-        print "Please make sure the processing function", proc_name, "is templatized in", fname_def
+        print("No template parameters are found.")
+        print("Please make sure the processing function", proc_name, "is templatized in", fname_def)
         return arg_types_list, arg_names_list, templ_pars_list
     
     templPars_str = template_buffer.split("<")[1].split(">")[0]
@@ -938,7 +941,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     array_dict = {}
 
     # loop over the list of argument names from parsing the header file
-    for argtype, argname in zip(argtypes, argnames):
+    for argtype, argname in list(zip(argtypes, argnames)):
         # bunch crossing
         if argtype == "BXType":
             for mem in module.upstreams:
@@ -961,7 +964,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         else:
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
-            for memory, portname in zip(memModuleList, portNameList):
+            for memory, portname in list(zip(memModuleList, portNameList)):
                 # Check if the portname matches the argument name from function def
                 if f_matchArgPortNames is None:
                     # No matching rule provided, just check if the names are the same

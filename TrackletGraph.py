@@ -60,7 +60,7 @@ class Node(object):
         self.inst = instance_name
         # Bodge to prevent VHDL enums starting with a number, which is illegal.
         if (self.inst.startswith("DL_2S")):
-            self.inst = self.inst.replace("DL_2S","DL_SS")
+            self.inst = self.inst.replace("DL_2S","DL_twoS")
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
         self.index = i  # instance index from the configuration file

@@ -208,8 +208,8 @@ def writeMemoryUtil(memDict, memInfoDict):
         for mem in memList:
             newvar = mem.var()
             # Bodge explained in TrackletGraph::Node()
-            if (mem.inst.startswith("DL_SS")):
-                newvar = newvar.replace("SS","2S")
+            if (mem.inst.startswith("DL_twoS")):
+                newvar = newvar.replace("twoS","2S")
             ss += "       when "+mem.var()+" => return \""+newvar+"\";\n"
         ss += "    end case;\n"
         ss += "    return \"No conversion found.\";\n"

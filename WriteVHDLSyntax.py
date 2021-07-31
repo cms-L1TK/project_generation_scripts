@@ -206,7 +206,11 @@ def writeMemoryUtil(memDict, memInfoDict):
         ss += "  begin\n"
         ss += "    case val is\n"
         for mem in memList:
-            ss += "       when "+mem.var()+" => return \""+mem.var()+"\";\n"
+            newvar = mem.var()
+            # Bodge explained in TrackletGraph::Node()
+            if (mem.inst.startswith("DL_SS")):
+                newvar = newvar.replace("SS","2S")
+            ss += "       when "+mem.var()+" => return \""+newvar+"\";\n"
         ss += "    end case;\n"
         ss += "    return \"No conversion found.\";\n"
         ss += "  end memory_enum_to_string;\n\n"

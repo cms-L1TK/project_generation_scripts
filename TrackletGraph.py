@@ -58,6 +58,9 @@ class Node(object):
     def __init__(self, module_type, instance_name, i):
         self.mtype = module_type # Module type (e.g. "TrackletProjections")
         self.inst = instance_name
+        # Bodge to prevent VHDL enums starting with a number, which is illegal.
+        if (self.inst.startswith("DL_2S")):
+            self.inst = self.inst.replace("DL_2S","DL_twoS")
         self.upstreams = [] # list of pointers to upstream Nodes
         self.downstreams = [] # list of pointers to downstream Nodes
         self.index = i  # instance index from the configuration file
@@ -498,6 +501,9 @@ class TrackletGraph(object):
                     portname = "diskstub"
                     index = diskIndex
                     diskIndex += 1
+                # Avoid all SW having same index, as sorted by them later.
+                new_mem.index += 0.01*barrelIndex + 0.1*diskIndex;
+
                 m_dict[new_mem.inst] = new_mem
                 if up_p is not None:
                     up_p.downstreams.append(new_mem)

@@ -209,10 +209,10 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc):
         memInfo = memInfoDict[mtypeB]
 
         if memInfo.is_initial:
-            first_mem = True if initial_proc in memInfo.downstream_mtype_short else False # first memory of the chain
+            first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
             string_read += writeTBMemoryReadInstance(mtypeB, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
 
-            if first_mem and not found_first_mem: # Write start signal for the first memory in the chain
+            if first_mem: # Write start signal for the first memory in the chain
                 string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
                 string_read += "  -- first event starts being written to first memory in chain.\n"
                 string_read += "  START_FIRST_WRITE <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n" 

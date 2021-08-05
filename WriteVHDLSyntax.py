@@ -99,7 +99,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "          -- " + initial_proc + " should start one TM period after time when first event starting being \n"
     string_mem += "          -- written to first memory in chain, as it takes this long to write full event.\n"
     string_mem += "          " + initial_proc + "_START <= '1';\n"
-    string_mem += "          " + initial_proc + "_BX_IN <= std_logic_vector(to_unsigned(EVENT_COUNT, PR_BX_IN'length));\n\n"
+    string_mem += "          " + initial_proc + "_BX_IN <= std_logic_vector(to_unsigned(EVENT_COUNT, " + initial_proc + "_BX_IN'length));\n\n"
     string_mem += "          write(v_line, string'(\"=== Processing event \")); write(v_line,EVENT_COUNT); write(v_line, string'(\" at SIM time \")); write(v_line, NOW); writeline(output, v_line);\n"
     string_mem += "        end if;\n"
     string_mem += "        -- Releae\n"
@@ -126,7 +126,7 @@ def writeTBMemoryReadInstance(mtypeB, bxbitwidth, is_initial, is_binned):
     if "DL" in mtypeB: # Special case for DTC links that reads from FIFOs
         string_mem += "    read" + mtypeB + " : entity work.FileReaderFIFO\n"
         string_mem += "  generic map (\n"
-        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
+        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB.split("_")[0] + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
         string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
         string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
         string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
@@ -136,12 +136,12 @@ def writeTBMemoryReadInstance(mtypeB, bxbitwidth, is_initial, is_binned):
         string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
         string_mem += "      READ_EN".ljust(str_len) + "=> " + mtypeB + "_link_read(var),\n"
         string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_mem_AV_din(var),\n"
-        string_mem += "      START".ljust(str_len) + "=> START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "      START => open,\n"
+        string_mem += "      START".ljust(str_len) + "=> " + ("START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "open,\n")
         string_mem += "      EMPTY_NEG".ljust(str_len) + "=> " + mtypeB + "_link_empty_neg(var)\n"
     else:
         string_mem += "    read" + mtypeB + " : entity work.FileReader\n"
         string_mem += "  generic map (\n"
-        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
+        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB.split("_")[0] + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
         string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
         string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
         string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
@@ -488,13 +488,15 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         if memInfo.is_initial:
-            mem_dir = memInfo.mtype_long.replace("All", "") # FIX THIS
-            mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","") # FIX THIS
-            mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx
+            # Avoid duplicate constants, e.g. for VMSTE
+            if memInfo.mtype_short not in string_input_tmp:
+                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "") # FIX THIS
+                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "") # FIX THIS
+                mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx
 
-            string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
-            string_input_tmp += ("  constant FILE_IN_" + mtypeB).ljust(str_len) + ": string := emDataDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
-            string_debug_tmp += ("  constant FILE_OUT_" + memInfo.mtype_short + "_debug").ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
+                string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
+                string_input_tmp += ("  constant FILE_IN_" + memInfo.mtype_short).ljust(str_len) + ": string := emDataDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
+                string_debug_tmp += ("  constant FILE_OUT_" + memInfo.mtype_short + "_debug").ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
         else:
             string_output_tmp += ("  constant FILE_OUT_" + mtypeB).ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
     
@@ -636,7 +638,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
             string_output += ("        "+mtypeB+"_mem_A_enb").ljust(str_len) + "=> "+mtypeB+"_mem_A_enb,\n"
             string_output += ("        "+mtypeB+"_mem_AV_readaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_readaddr,\n"
             string_output += ("        "+mtypeB+"_mem_AV_dout").ljust(str_len) + "=> "+mtypeB+"_mem_AV_dout,\n"
-            string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent\n"
+            string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent,\n"
         else:
             string_debug += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
             string_debug += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
@@ -648,7 +650,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         string_fwblock_inst += "        -- Debug output data\n"
         string_fwblock_inst += string_debug
     string_fwblock_inst += "        -- Output data\n"
-    string_fwblock_inst += string_output
+    string_fwblock_inst += string_output[:-2]+"\n" # Remove the last comma
     
     string_fwblock_inst += "      );\n"
     string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs else "  end generate sectorProc;\n\n"

@@ -90,9 +90,8 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
     string_mem += "    if START_FIRST_WRITE = '1' then\n"
-    string_mem += "      if rising_edge(CLK) then"
+    string_mem += "      if rising_edge(CLK) then\n"
     string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
-    string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
     string_mem += "        else\n"
     string_mem += "          CLK_COUNT := 1;\n"
@@ -534,12 +533,12 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     string_ctrl_signals += "  -- ### UUT signals ###\n"
     string_ctrl_signals += "  signal clk".ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += "  signal reset".ljust(str_len)+": std_logic := '1';\n"
+    string_ctrl_signals += ("  signal "+initial_proc+"_start").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+initial_proc+"_idle").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+initial_proc+"_ready").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+initial_proc+"_bx_in").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
-        string_ctrl_signals += ("  signal "+mid_proc+"_start").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
@@ -656,12 +655,13 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
 
     return string_fwblock_inst
 
-def writeTBMemoryWriteInstance(mtypeB, proc, bxbitwidth, is_binned):
+def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
     """
     # Writes the loop that writes the output from the memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
+    #   proc_up:    the previous processing module (upstream). If proc is the initial module, then this is an empty string
     #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
     #   is_binned:  if the memory is binned or not.
     """
@@ -681,7 +681,7 @@ def writeTBMemoryWriteInstance(mtypeB, proc, bxbitwidth, is_binned):
     string_mem += "        ADDR".ljust(str_len)+"=> "+mtypeB+"_mem_AV_writeaddr(var),\n"
     string_mem += "        DATA".ljust(str_len)+"=> "+mtypeB+"_mem_AV_din(var),\n"
     string_mem += "        WRITE_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_wea(var),\n"
-    string_mem += "        START".ljust(str_len)+"=> "+proc+"_START,\n"
+    string_mem += "        START".ljust(str_len)+"=> "+(proc+"_START,\n" if not proc_up else proc_up+"_DONE,\n")
     string_mem += "        DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
     string_mem += "      );\n"
     string_mem += "    end generate "+mtypeB+"_loop;\n\n"

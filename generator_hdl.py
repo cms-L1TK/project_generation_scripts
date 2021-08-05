@@ -221,15 +221,6 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc):
     # string_read += "\n"
     return string_read
 
-def writeTBConnectStartDone(initial_proc, notfinal_procs):
-    # FIX ME ADD DESCRIPTIOne
-    
-    string_start = ""
-    for i in range(len(notfinal_procs)):
-        if i > 0:
-            string_start += "  " + notfinal_procs[i] + "_START <= " + notfinal_procs[i-1] + "_DONE;\n"
-    return string_start+"\n\n"
-
 def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs):
     """
     #   topfunc:        name of the top module
@@ -250,11 +241,12 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
     string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
     return string_instantiaion
 
-def writeTBMemoryWrites(memDict, memInfoDict):
+def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
     """
     #   memDict:      dictionary of memories organised by type 
     #                 & no. of bits (TPROJ_58 etc.)
     #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   notfinal_procs: a set of the names of processing modules not at the end of the chain
     """
 
     string_intermediate = ""
@@ -262,10 +254,13 @@ def writeTBMemoryWrites(memDict, memInfoDict):
     
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
+        proc = memInfo.upstream_mtype_short # Processing module that writes to mtypeB
+        up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
+
         if memInfo.is_final:
-            string_final += writeTBMemoryWriteRAMInstance(mtypeB, memInfo.upstream_mtype_short, memInfo.bxbitwidth)
+            string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth)
         elif not memInfo.is_initial: # intermediate memories
-            string_intermediate += writeTBMemoryWriteInstance(mtypeB, memInfo.upstream_mtype_short, memInfo.bxbitwidth, memInfo.is_binned)
+            string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"
@@ -314,12 +309,11 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_d
 
     string_begin = writeTBEntityBegin()
     string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc)
-    string_mem_stim = writeTBConnectStartDone(initial_proc, notfinal_procs)
-    string_mem_stim += writeTBMemoryStimulusProcess(initial_proc)
+    string_mem_stim = writeTBMemoryStimulusProcess(initial_proc)
 
     string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
 
-    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict)
+    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs)
 
     string_tb = ""
     string_tb += string_header

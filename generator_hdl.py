@@ -16,11 +16,11 @@ except:
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey, TrackletGraph
 from WriteHDLUtils import arrangeMemoriesByKey, \
                             writeModuleInstance
-from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBModuleCloser, \
-                            writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusInstance, writeTBMemoryReadInstance, \
+from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBEntityBegin, writeTBModuleCloser, \
+                            writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusProcess, writeTBMemoryReadInstance, writeTBMemoryWriteInstance, writeTBMemoryWriteRAMInstance, \
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
-                            writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBControlSignals, \
-                            writeFWBlockControlSignalPorts, writeFWBlockMemoryLHSPorts, writeFWBlockMemoryRHSPorts, writeTrackStreamRHSPorts_interface
+                            writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBConstants, writeTBControlSignals, \
+                            writeFWBlockInstance, writeTrackStreamRHSPorts_interface
 import os, subprocess
 
 ########################################
@@ -35,7 +35,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
-    #             & no. of bits (TPROJ_58b etc.)
+    #             & no. of bits (TPROJ_58 etc.)
     #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
     """
     string_wires = ""
@@ -93,7 +93,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     #                  only used to get the first and last processes in the block in order to
     #                  generate the bx signals. Seems a bit wasteful to pass the whole list)
     # memDict:         dictionary of memories organised by type 
-    #                  & no. of bits (TPROJ_58b etc.)
+    #                  & no. of bits (TPROJ_58 etc.)
     # memInfoDict:     dictionary of info (MemTypeInfoByKey) about each memory type.
     # streamIO:        controls whether the input to this firmware block is an hls::stream, rather
     #                  than a BRAM interface. This will be needed when the first processing block in the
@@ -153,7 +153,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
-    #             & no. of bits (TPROJ_58b etc.)
+    #             & no. of bits (TPROJ_58 etc.)
     #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
     """
     
@@ -187,119 +187,152 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     string_src += writeModulesPreamble()
     string_src += string_memModules
     string_src += string_procModules
-    string_src += writeTopModuleCloser(topfunc)
+    string_src += writeTopModuleCloser()
 
     return string_src
 
 ########################################
 # Test bench
 ########################################
-def writeTBMemoryStimuli(memories_list, emData_dir="", sector="04"):
+def writeTBMemoryReads(memDict, memInfoDict, initial_proc):
     """
-    # memories_list: list of input memories that the test bench has to initialize
-    # emData_dir:    directory where data for input memories is stored
-    # sector:        which sector nonant the emData is taken from
+    #   memDict:      dictionary of memories organised by type 
+    #                 & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   initial_proc: name of the first processing module of the chain
     """
 
-    string_mem = ""
-    for memModule in memories_list:
-        amem_str=""
-        amem_str = writeTBMemoryStimulusInstance(memModule)
-        string_mem += amem_str
-    string_mem += "\n"
-    return string_mem
+    found_first_mem = False # Found (one of) the first memory of the chain 
+    string_read = "  -- Get signals from input .txt files\n\n"
 
-def writeTBMemoryReads(memories_list, emData_dir="", sector="04"):
-    # memories_list: list of output memories that the test bench will have to read
-    # emData_dir:    directory where data for input memories is stored
-    # sector:        which sector nonant the emData is taken from
+    for mtypeB in memDict:
+        memInfo = memInfoDict[mtypeB]
 
-    string_mem = ""
-    for memModule in memories_list:
-        amem_str = writeTBMemoryReadInstance(memModule)
-        string_mem += amem_str
-    string_mem += "\n"
-    return string_mem
+        if memInfo.is_initial:
+            first_mem = True if initial_proc in memInfo.downstream_mtype_short else False # first memory of the chain
+            string_read += writeTBMemoryReadInstance(mtypeB, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
 
-def writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_proc):
-    string_inmems_ports = ""
+            if first_mem and not found_first_mem: # Write start signal for the first memory in the chain
+                string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
+                string_read += "  -- first event starts being written to first memory in chain.\n"
+                string_read += "  START_FIRST_WRITE <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n" 
+                found_first_mem = True
 
-    string_fwblock_ctrl = writeFWBlockControlSignalPorts(first_proc, last_proc)
+    # string_read += "\n"
+    return string_read
 
-    for memModule in memories_in:
-        string_inmems_ports += writeFWBlockMemoryLHSPorts(memModule)
+def writeTBConnectStartDone(initial_proc, notfinal_procs):
+    # FIX ME ADD DESCRIPTIOne
+    
+    string_start = ""
+    for i in range(len(notfinal_procs)):
+        if i > 0:
+            string_start += "  " + notfinal_procs[i] + "_START <= " + notfinal_procs[i-1] + "_DONE;\n"
+    return string_start+"\n\n"
 
-    string_outmems_ports = ""
-    for memModule in memories_out:
-        string_outmems_ports += writeFWBlockMemoryRHSPorts(memModule)
+def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs):
+    """
+    #   topfunc:        name of the top module
+    #   memDict:        dictionary of memories organised by type 
+    #                   & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   initial_proc:   name of the first processing module of the chain
+    #   final_proc:     name of the last processing module of the chain
+    #   notfinal_procs: a set of the names of processing modules not at the end of the chain
+    """
 
-    string_fwblock_inst = ""
-    string_fwblock_inst += topfunc+" "+topfunc+"_inst (\n"
-    string_fwblock_inst += string_fwblock_ctrl
-    string_fwblock_inst += string_inmems_ports
-    string_fwblock_inst += "\n"
-    string_fwblock_inst += string_outmems_ports
-    string_fwblock_inst = string_fwblock_inst.rstrip(",")
-    string_fwblock_inst += "\n);"
-    return string_fwblock_inst
+    string_instantiaion = "  -- ########################### Instantiation ###########################\n"
+    string_instantiaion += "  -- Instantiate the Unit Under Test (UUT)\n\n"
 
-def writeTestBench(topfunc, memDict, memInfoDict, emData_dir, sector="04"):
+    # Instantiate both the "normal" and the "Full"
+    topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
+    string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc)
+    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
+    return string_instantiaion
+
+def writeTBMemoryWrites(memDict, memInfoDict):
+    """
+    #   memDict:      dictionary of memories organised by type 
+    #                 & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
+    """
+
+    string_intermediate = ""
+    string_final = ""
+    
+    for mtypeB in memDict:
+        memInfo = memInfoDict[mtypeB]
+        if memInfo.is_final:
+            string_final += writeTBMemoryWriteRAMInstance(mtypeB, memInfo.upstream_mtype_short, memInfo.bxbitwidth)
+        elif not memInfo.is_initial: # intermediate memories
+            string_intermediate += writeTBMemoryWriteInstance(mtypeB, memInfo.upstream_mtype_short, memInfo.bxbitwidth, memInfo.is_binned)
+
+    string_write = "  -- Write signals to output .txt files\n\n"
+    string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"
+    string_write += "  begin\n\n"
+    string_write += "    -- This writes signals going to intermediate memories in chain.\n\n"
+    string_write += string_intermediate
+    string_write += "  end generate writeIntermediateRAMs;\n\n\n"
+    string_write += "  -- Write memories from end of chain.\n\n"
+    string_write += string_final
+
+    return string_write
+
+def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_dir, sector="04"):
     """
     # Inputs:
-    #   memDict = dictionary of memories organised by type 
-    #             & no. of bits (TPROJ_58b etc.)
-    #   memInfoDict = dictionary of info (MemTypeInfoByKey) about each memory type.
-    #   emData_dir =   directory where data for input memories is stored
-    #   sector =       which sector nonant the emData is taken from
+    #   tbfunc:       name of the testbench
+    #   topfunc:      name of the top module
+    #   process_list: list of all processing functions in the block (in this function, this list is
+    #                 only used to get the first and last processes in the block in order to
+    #                 generate the bx signals. Seems a bit wasteful to pass the whole list)
+    #   memDict:      dictionary of memories organised by type 
+    #                 & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   emData_dir:   directory where data for input memories is stored
+    #   sector:       which sector nonant the emData is taken from
     """
 
-    """
-    # THIS WAS THE OLD VERILOG CODE
-
-    # Find the first and last processing block in firmware chain
-    for memModule in memories_in:
-        if isinstance(memModule, list):
-            for module in memModule:
-                if module.downstreams[0].is_first:
-                    first_proc = module.downstreams[0].mtype_short()
-                    break
-        elif memModule.downstreams[0].is_first:
-            first_proc = memModule.downstreams[0].mtype_short()
-            break
-    
-    for memModule in memories_out:
-        if isinstance(memModule, list):
-            for module in memModule:
-                if module.downstreams[0].is_last:
-                    last_proc = module.upstreams[0].mtype_short()
-                    break
-        elif memModule.upstreams[0].is_last:
-            last_proc = memModule.upstreams[0].mtype_short()
-            break
+    # Find names of first & last processing modules in project
+    initial_proc = ""
+    final_proc = ""
+    notfinal_procs = []
+    sorted(process_list, key=lambda p: p.order) # Sort processing modules in the order they are in the chain
+    for proc in process_list:
+        if proc.is_first: initial_proc = proc.mtype_short()
+        if proc.is_last: final_proc = proc.mtype_short()
+        if not proc.is_last and proc.mtype_short() not in notfinal_procs:
+            notfinal_procs.append(proc.mtype_short())
 
     # Write test bench header
     string_header = ""
     string_header += writeTBPreamble()
-    string_header += writeTBOpener(topfunc)
+    string_header += writeTBOpener(tbfunc)
 
-    string_ctrl_signals = writeTBControlSignals(topfunc, first_proc, last_proc)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], emData_dir, sector)
+    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
 
-    string_memin = writeTBMemoryStimuli(memories_in, emData_dir, sector)
-    string_memout = writeTBMemoryReads(memories_out, emData_dir, sector)
+    string_begin = writeTBEntityBegin()
+    string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc)
+    string_mem_stim = writeTBConnectStartDone(initial_proc, notfinal_procs)
+    string_mem_stim += writeTBMemoryStimulusProcess(initial_proc)
 
-    string_fwblock_inst = writeFWBlockInstance(topfunc, memories_in, memories_out, first_proc, last_proc)
+    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
+
+    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict)
 
     string_tb = ""
     string_tb += string_header
+    string_tb += string_constants
     string_tb += string_ctrl_signals
-    string_tb += string_memin
-    string_tb += string_memout
+    string_tb += string_begin
+    string_tb += string_mem_read
+    string_tb += string_mem_stim
     string_tb += string_fwblock_inst
-    string_tb += writeTBModuleCloser(topfunc)
+    string_tb += string_mem_write
+    string_tb += writeTBModuleCloser()
     
-    return string_tb,""
-    """
-    return "NOT IMPLEMENTED\n",""
+    return string_tb
 
 ########################################
 # Tcl
@@ -374,7 +407,7 @@ if __name__ == "__main__":
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
 
-    parser.add_argument('--emData_dir', type=str, default="SectorProcessorTest",
+    parser.add_argument('--emData_dir', type=str, default="../../../../../../../../emData/MemPrints/",
                         help="Directory where emulation printouts are stored")
     parser.add_argument('--memprint_dir', type=str,
                         default="../fpga_emulation_longVM/MemPrints/",
@@ -493,8 +526,9 @@ if __name__ == "__main__":
 
     ###############
     # Test bench
-    string_testbench, list_memprints = writeTestBench(
-        topfunc, memDict, memInfoDict, args.emData_dir)
+    tb_name = "tb_tf_top"
+    string_testbench = writeTestBench(
+        tb_name, topfunc, process_list, memDict, memInfoDict, args.emData_dir)
                                       
     ###############
     # tcl
@@ -503,7 +537,7 @@ if __name__ == "__main__":
     # Write to disk
     fname_memUtil = "memUtil_pkg.vhd"
     fname_top = topfunc+".vhd"
-    fname_tb = topfunc+"_test.vhd"
+    fname_tb = tb_name+".vhd"
     fname_tcl = "script_"+args.projname+".tcl"
 
     fout_memUtil = open(fname_memUtil,"w")

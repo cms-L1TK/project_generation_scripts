@@ -18,14 +18,42 @@ def writeModulesPreamble():
     return string_preamble
 
 def writeTBPreamble():
-    return ""
+    string_preamble = "--! Standard library\n"
+    string_preamble += "library ieee;\n"
+    string_preamble += "--! Standard package\n"
+    string_preamble += "use ieee.std_logic_1164.all;\n"
+    string_preamble += "--! Signed/unsigned calculations\n"
+    string_preamble += "use ieee.numeric_std.all;\n"
+    string_preamble += "--! Math real\n"
+    string_preamble += "use ieee.math_real.all;\n"
+    string_preamble += "--! TextIO\n"
+    string_preamble += "use ieee.std_logic_textio.all;\n"
+    string_preamble += "--! Standard functions\n"
+    string_preamble += "library std;\n"
+    string_preamble += "--! Standard TextIO functions\n"
+    string_preamble += "use std.textio.all;\n"
+
+    string_preamble += "\n--! Xilinx library\n"
+    string_preamble += "library unisim;\n"
+    string_preamble += "--! Xilinx package\n"
+    string_preamble += "use unisim.vcomponents.all;\n"
+
+    string_preamble += "\n--! User packages\n"
+    string_preamble += "use work.tf_pkg.all;\n"
+    string_preamble += "use work.memUtil_pkg.all;\n\n"
+
+    return string_preamble
 
 def writeTopModuleOpener(topmodule_name):
     string_topmod_opener = "entity "+topmodule_name+" is\n  port(\n"
     return string_topmod_opener
 
 def writeTBOpener(topfunc):
-    string_tb_opener = "module " + topfunc + "_test();\n\n"
+    string_tb_opener = "--! @brief TB\n"
+    string_tb_opener += "entity " + topfunc + " is\n"
+    string_tb_opener += "end " + topfunc + ";\n\n"
+    string_tb_opener += "--! @brief TB\n"
+    string_tb_opener += "architecture behaviour of "+ topfunc +" is\n\n"
     return string_tb_opener
 
 def writeTopModuleEntityCloser(topmodule_name):
@@ -33,78 +61,106 @@ def writeTopModuleEntityCloser(topmodule_name):
     string_closer += "architecture rtl of "+topmodule_name+" is\n\n"
     return string_closer
 
-def writeTopModuleCloser(topmodule_name):
+def writeTBEntityBegin():
+    string_begin = "begin\n\n"
+    string_begin += "--! @brief Make clock ---------------------------------------\n"
+    string_begin += "  clk <= not clk after CLK_PERIOD/2;\n\n"
+    return string_begin
+
+def writeTopModuleCloser():
     string_closer = "\n\nend rtl;\n"
     return string_closer
 
-def writeTBModuleCloser(topmodule_name):
-    return "\n"
+def writeTBModuleCloser():
+    string_closer = "\nend behaviour;\n"
+    return string_closer
 
-def writeTBMemoryStimulusInstance(memModule):
+def writeTBMemoryStimulusProcess(initial_proc):
     """
-    # Verilog test-bench
-    # this will have to change, once Robert has a more sensible method for
-    # stimulating the initial memories. But this does work for now
+    # VHDL test-bench
+    # Stimulates reading and process start
     """
-    wirelist = ""
-    parameterlist = ""
-    portlist = ""
-    mem_str = ""
-    # Write wires
-    wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
-    wirelist += memModule.inst+"_mem_V_readaddr = 8'b00000000;\n"
-    wirelist += "reg["+str(6+memModule.bxbitwidth)+":0] "
-    wirelist += memModule.inst+"_mem_V_writeaddr = "
-    wirelist += memModule.inst+"_mem_V_readaddr - 2;\n"
-    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-    wirelist += memModule.inst+"_mem_V_dout;\n"
-    for i in range(0,2**memModule.bxbitwidth):
-        wirelist += "reg[6:0] "+memModule.inst+"_nentries_"
-        wirelist += str(i)+"_V_dout = 7'b1101100;\n"
-    wirelist += "always @(posedge clk) begin\n  "
-    wirelist += memModule.inst+"_mem_V_readaddr <= "
-    wirelist += memModule.inst+"_mem_V_readaddr + 1;\n"
-    wirelist += memModule.inst+"_mem_V_writeaddr <= "
-    wirelist += memModule.inst+"_mem_V_writeaddr + 1;\n"
-    wirelist += "end\n\n"
+# FIX ME SO IT CAN HANDLE IR
+    string_mem = "  procStart : process(CLK)\n"
+    string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
+    string_mem += "    -- Also releases reset flag.\n"
+    string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
+    string_mem += "    variable CLK_COUNT : natural := 1;\n"
+    string_mem += "    variable EVENT_COUNT : integer := -1;\n"
+    string_mem += "    variable v_line : line; -- Line for debug\n"
+    string_mem += "  begin\n\n"
+    string_mem += "    if START_FIRST_WRITE = '1' then\n"
+    string_mem += "      if rising_edge(CLK) then"
+    string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
+    string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
+    string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
+    string_mem += "        else\n"
+    string_mem += "          CLK_COUNT := 1;\n"
+    string_mem += "          EVENT_COUNT := EVENT_COUNT + 1;\n\n"
+    string_mem += "          -- " + initial_proc + " should start one TM period after time when first event starting being \n"
+    string_mem += "          -- written to first memory in chain, as it takes this long to write full event.\n"
+    string_mem += "          " + initial_proc + "_START <= '1';\n"
+    string_mem += "          " + initial_proc + "_BX_IN <= std_logic_vector(to_unsigned(EVENT_COUNT, PR_BX_IN'length));\n\n"
+    string_mem += "          write(v_line, string'(\"=== Processing event \")); write(v_line,EVENT_COUNT); write(v_line, string'(\" at SIM time \")); write(v_line, NOW); writeline(output, v_line);\n"
+    string_mem += "        end if;\n"
+    string_mem += "        -- Releae\n"
+    string_mem += "        if (CLK_COUNT = CLK_RESET) then \n"
+    string_mem += "          RESET <= '0';\n"
+    string_mem += "        end if;\n"
+    string_mem += "      end if;\n"
+    string_mem += "    end if;\n"
+    string_mem += "  end process procStart;\n\n"
 
-    # Write parameters
-    parameterlist += "  .RAM_WIDTH("+str(memModule.bitwidth)+"),\n"
-    parameterlist += "  .NUM_PAGES("+str(2**memModule.bxbitwidth)+"),\n"
-    parameterlist += "  .INIT_FILE(\"\"),\n"
-    parameterlist += "  .INIT_HEX(1),\n"
-    parameterlist += "  .RAM_PERFORMANCE(\"HIGH_PERFORMANCE\"),\n"
- 
-    # Write ports
-    portlist += "  .clka(clk),\n"
-    portlist += "  .clkb(clk),\n"
-    portlist += "  .enb(1'b1),\n"
-    portlist += "  .regceb(1'b1),\n"  
-    portlist += "  .addrb("+memModule.inst+"_mem_V_readaddr),\n"
-    portlist += "  .doutb("+memModule.inst+"_mem_V_dout),\n"
-    portlist += "  .sync_nent(1'b0),\n"
-  
-    mem_str += wirelist + "\n"+"tf_mem (\n"+parameterlist.rstrip(",\n")+"\n) "
-    mem_str += memModule.inst+" (\n"+portlist.rstrip(",\n")+"\n);\n\n"
+    return string_mem
 
-    return mem_str
+def writeTBMemoryReadInstance(mtypeB, bxbitwidth, is_initial, is_binned):
+    """
+    # VHDL test-bench
+    # Reads memory text files
+    """
+    str_len = 22 # length of string for formatting purposes
 
-def writeTBMemoryReadInstance(memModule):
-    """
-    # Verilog test-bench
-    # this will have to change, once Robert has a more sensible method for
-    # stimulating the initial memories. But this does work for now
-    """
-    wirelist = ""
-    # Write wires
-    wirelist += "wire "+memModule.inst+"_mem_V_enb;\n"
-    wirelist += "wire["+str(6+memModule.bxbitwidth)+":0] "
-    wirelist += memModule.inst+"_mem_V_readaddr;\n"
-    wirelist += "wire["+str(memModule.bitwidth-1)+":0] "
-    wirelist += memModule.inst+"_mem_V_dout;\n"
-    for i in range(0,2**memModule.bxbitwidth):
-        wirelist += "wire[6:0] "+memModule.inst+"_nentries_"+str(i)+"_V_dout;\n"
-    return wirelist
+    string_mem = ""
+    string_mem += "  " + mtypeB + "_loop : for var in enum_" + mtypeB + " generate\n"
+    string_mem += "  begin\n"
+    
+    if "DL" in mtypeB: # Special case for DTC links that reads from FIFOs
+        string_mem += "    read" + mtypeB + " : entity work.FileReaderFIFO\n"
+        string_mem += "  generic map (\n"
+        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
+        string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
+        string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
+        string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
+        string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_" + mtypeB.split("_")[0] + "_debug&memory_enum_to_string(var)&debugFileNameEnding\n"
+        string_mem += "    )\n"
+        string_mem += "    port map (\n"
+        string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
+        string_mem += "      READ_EN".ljust(str_len) + "=> " + mtypeB + "_link_read(var),\n"
+        string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_mem_AV_din(var),\n"
+        string_mem += "      START".ljust(str_len) + "=> START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "      START => open,\n"
+        string_mem += "      EMPTY_NEG".ljust(str_len) + "=> " + mtypeB + "_link_empty_neg(var)\n"
+    else:
+        string_mem += "    read" + mtypeB + " : entity work.FileReader\n"
+        string_mem += "  generic map (\n"
+        string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
+        string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
+        string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
+        string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
+        string_mem += "      NUM_BINS".ljust(str_len) + "=> 8,\n" if is_binned else "" # FIX ME 16 for MEDISK
+        string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
+        string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_" + mtypeB.split("_")[0] + "_debug&memory_enum_to_string(var)&debugFileNameEnding\n"
+        string_mem += "    )\n"
+        string_mem += "    port map (\n"
+        string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
+        string_mem += "      ADDR".ljust(str_len) + "=> " + mtypeB + "_mem_AV_writeaddr(var),\n"
+        string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_mem_AV_din(var),\n"
+        string_mem += "      START".ljust(str_len) + "=> START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "      START => open,\n"
+        string_mem += "      WRITE_EN".ljust(str_len) + "=> " + mtypeB + "_mem_A_wea(var)\n"
+
+    string_mem += "    );\n"
+    string_mem += "  end generate " + mtypeB + "_loop;\n\n"
+
+    return string_mem
 
 def writeMemoryUtil(memDict, memInfoDict):
     """
@@ -112,7 +168,7 @@ def writeMemoryUtil(memDict, memInfoDict):
     # to current chain.
     # Inputs:
     #   memDict = dictionary of memories organised by type 
-    #             & no. of bits (TPROJ_58b etc.)
+    #             & no. of bits (TPROJ_58 etc.)
     #   memInfoDict = dictionary of info about each memory type.
     """
     ss = writeTopPreamble(False)
@@ -223,7 +279,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
-    #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
+    #   mTypeB  = memory type & its bits width (TPROJ_58 etc.)
     #   memList = list of memories of given type & bit width
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
@@ -371,7 +427,7 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo):
     """
     # Top-level interface: output memories' ports.
     # Inputs:
-    #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
+    #   mTypeB  = memory type & its bits width (TPROJ_58 etc.)
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
 
@@ -398,7 +454,7 @@ def writeTrackStreamRHSPorts_interface(mtypeB):
     """
     # Top-level interface: output track stream ports.
     # Inputs:
-    #   mTypeB  = memory type & its bits width (TPROJ_58b etc.)
+    #   mTypeB  = memory type & its bits width (TPROJ_58 etc.)
     """
     string_output_mems = ""
     string_output_mems += "    "+mtypeB+"_stream_AV_din       : out t_arr_"+mtypeB+"_DATA;\n"
@@ -407,92 +463,260 @@ def writeTrackStreamRHSPorts_interface(mtypeB):
 
     return string_output_mems
 
-def writeTBControlSignals(topfunc, first_proc, last_proc):
+def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
+    # FIX ME ADD DESCRIPTION
+    str_len = 32 # length of string for formatting purposes
+
+    string_constants = ""
+    string_constants += "  -- ########################### Constant Definitions ###########################\n"
+    string_constants += "  -- ############ Please change the constants in this section ###################\n\n"
+    string_constants += "  --=========================================================================\n"
+    string_constants += "  -- Specify version of chain to run from TB:\n"
+    string_constants += "  --    0 = SectorProcessor.vhd from python script.\n"
+    string_constants += "  --    1 = SectorProcessorFull.vhd from python script (gives intermediate MemPrints).\n"
+    string_constants += "  --    N.B. Change this also in makeProject.tcl !\n"
+    string_constants += "  constant INST_TOP_TF".ljust(str_len) + ": integer := 1; \n"
+    string_constants += "  --=========================================================================\n\n"
+    string_constants += "  constant CLK_PERIOD".ljust(str_len) + ": time    := 4 ns;       --! 250 MHz\n"
+    string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := false;      --! Debug off/on\n"
+ 
+    # Write delay and input/output file name signals
+    string_input_tmp = "  -- File directories and the start of the file names that memories have in common\n"
+    string_input_tmp += "  -- Input files\n"
+    string_output_tmp = "  -- Output files\n"
+    string_debug_tmp = "  -- Debug output files to check input was correctly read.\n"
+
+    for mtypeB in memDict:
+        memInfo = memInfoDict[mtypeB]
+        if memInfo.is_initial:
+            mem_dir = memInfo.mtype_long.replace("All", "") # FIX THIS
+            mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","") # FIX THIS
+            mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx
+
+            string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
+            string_input_tmp += ("  constant FILE_IN_" + mtypeB).ljust(str_len) + ": string := emDataDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
+            string_debug_tmp += ("  constant FILE_OUT_" + memInfo.mtype_short + "_debug").ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
+        else:
+            string_output_tmp += ("  constant FILE_OUT_" + mtypeB).ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
+    
+    string_constants += "\n  -- Paths of data files specified relative to Vivado project's xsim directory.\n"
+    string_constants += "  -- e.g. IntegrationTests/PRMEMC/script/Work/Work.sim/sim_1/behav/xsim/\n"
+    string_constants += "  constant emDataDir".ljust(str_len) + ": string := \"" + emData_dir + "\";\n"
+    string_constants += "  constant dataOutDir".ljust(str_len) + ": string := \"../../../../../dataOut/\";\n\n"
+
+    string_constants += string_input_tmp
+    string_constants += string_output_tmp
+    string_constants += string_debug_tmp
+    
+    string_constants += "\n  -- File name endings\n"
+    string_constants += "  constant inputFileNameEnding".ljust(str_len) + ": string := \"_" + sector + ".dat\"; -- " + sector + " specifies the nonant/sector the testvectors represent\n"
+    string_constants += "  constant outputFileNameEnding".ljust(str_len) + ": string := \".txt\";\n"
+    string_constants += "  constant debugFileNameEnding".ljust(str_len) + ": string := \".debug.txt\";\n\n"
+
+    return string_constants
+
+def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs):
     """
-    # Verilog test bench: control signals
+    # VHDL test bench: write control signals
+    # Inputs:
+    #   memDict:        dictionary of memories organised by type 
+    #                   & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   initial_proc:   name of the first processing module of the chain
+    #   final_proc:     name of the last processing module of the chain
+    #   notfinal_procs: a set of the names of processing modules not at the end of the chain
     """
-    string_header = ""
-    string_header += "reg clk;\n"
-    string_header += "reg reset;\n\n"
 
-    string_header += "initial begin\n"
-    string_header += "  reset = 1'b1;\n"
-    string_header += "  clk   = 1'b1;\n"
-    string_header += "end\n\n"
+    str_len = 36 # length of string for formatting purposes
+    str_len2 = 21
 
-    string_header += "initial begin\n"
-    string_header += "  #5400\n"
-    string_header += "  reset = 1'b0;\n"
-    string_header += "end\n\n"
+    string_ctrl_signals = "\n  -- ########################### Signals ###########################\n"
+    string_ctrl_signals += "  -- ### UUT signals ###\n"
+    string_ctrl_signals += "  signal clk".ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += "  signal reset".ljust(str_len)+": std_logic := '1';\n"
+    string_ctrl_signals += ("  signal "+initial_proc+"_idle").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+initial_proc+"_ready").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+initial_proc+"_bx_in").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
+    # Extra output ports if debug info must be sent to test-bench.
+    for mid_proc in notfinal_procs:
+        string_ctrl_signals += ("  signal "+mid_proc+"_start").ljust(str_len)+": std_logic := '0';\n"
+        string_ctrl_signals += ("  signal "+mid_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
+        string_ctrl_signals += ("  signal "+mid_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
+        string_ctrl_signals += ("  signal "+mid_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+final_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
+    string_ctrl_signals += ("  signal "+final_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+final_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
 
-    string_header += "reg "+first_proc+"_start = 1'b0;\n"
-    string_header += "always @(posedge clk) begin\n"
-    string_header += "  if (reset) "+first_proc+"_start = 1'b0;\n"
-    string_header += "  else       "+first_proc+"_start = 1'b1;\n"
-    string_header += "end\n\n"
+    first_mem = "" # The first memory of the chain
+    found_first_mem = False
 
-    string_header += "always begin\n"
-    string_header += "  #2.5 clk = ~clk;\n"
-    string_header += "end\n\n"
+    # Loop over all memory types
+    string_ctrl_signals += "\n  -- Signals matching ports of top-level VHDL\n"
+    for mtypeB in memDict:
+        
+        memInfo = memInfoDict[mtypeB]
 
-    string_header += "reg[2:0] bx_in_"+first_proc+";\n"
-    string_header += "initial bx_in_"+first_proc+" = 3'b110;\n"
-    string_header += "always begin\n"
-    string_header += "  #540 bx_in_"+first_proc+" <= bx_in_"
-    string_header += first_proc+" + 1'b1;\n"
-    string_header += "end\n"
-    string_header += "wire[2:0] bx_out_"+last_proc+";\n\n"
-    return string_header
+        if initial_proc in memInfo.downstream_mtype_short and not found_first_mem:
+            first_mem = mtypeB
+            found_first_mem = True
 
-def writeFWBlockControlSignalPorts(first_proc, last_proc):
-    """
-    # Verilog test bench: send control signals to top-level
-    """
-    string_fwblock_ctrl = ""
-    string_fwblock_ctrl += "  .clk(clk),\n"
-    string_fwblock_ctrl += "  .reset(reset),\n"
-    string_fwblock_ctrl += "  ."+first_proc+"_start("+first_proc+"_start),\n"
-    string_fwblock_ctrl += "  .bx_in_"+first_proc
-    string_fwblock_ctrl += "(bx_in_"+first_proc+"),\n"
-    string_fwblock_ctrl += "  .bx_out_"+last_proc
-    string_fwblock_ctrl += "(bx_out_"+last_proc+"),\n"
-
-    return string_fwblock_ctrl
-
-def writeFWBlockMemoryLHSPorts(memModule):
-    """
-    # Verilog test bench: send memories to top-level.
-    """
-    string_input_mems = ""
-    string_input_mems += "  ."+memModule.inst+"_mem_A_wea(1'b1),\n"
-    string_input_mems += "  ."+memModule.inst+"_mem_AV_writeaddr("
-    string_input_mems += memModule.inst+"_mem_V_writeaddr),\n"
-    string_input_mems += "  ."+memModule.inst+"_mem_AV_din("
-    string_input_mems += memModule.inst+"_mem_V_dout),\n"
-
-    return string_input_mems
-
-def writeFWBlockMemoryRHSPorts(memModule):
-    """
-    # Verilog test bench: returned memories from top-level.
-    """
-    string_output_mems = ""
-    string_output_mems += "  ."+memModule.inst+"_mem_A_enb("
-    string_output_mems += memModule.inst+"_mem_A_enb),\n"
-    string_output_mems += "  ."+memModule.inst+"_mem_AV_readaddr("
-    string_output_mems += memModule.inst+"_mem_AV_readaddr),\n"
-    string_output_mems += "  ."+memModule.inst+"_mem_AV_dout("
-    string_output_mems += memModule.inst+"_mem_AV_dout),\n"
-    if memModule.has_numEntries_out:
-        for i in range(0,2**memModule.bxbitwidth):
-            if memModule.is_binned:
-                string_output_mems += "  ."+memModule.inst+"_mem_"+str(i)+"_AAAV_dout_nent("
-                string_output_mems += memModule.inst+"_mem_"+str(i)+"_AAAV_dout_nent),\n"
+        if memInfo.is_final:
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_enb").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_readaddr").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_ADDR").ljust(str_len2)+":= (others => (others => '0'));\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_dout").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
+            # Add nentries signal if last memory of the chain
+            if memInfo.is_binned:
+                string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAAV_dout_nent").ljust(str_len)+": "
+                string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => (others => '0')))); -- (#page)(#bin)\n"
             else:
-                string_output_mems += "  ."+memModule.inst+"_mem_"+str(i)+"_AAV_dout_nent("
-                string_output_mems += memModule.inst+"_mem_"+str(i)+"_AAV_dout_nent),\n"
+                string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len)+": "
+                string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)\n"
+        else:
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_wea").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_writeaddr").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_ADDR").ljust(str_len2)+":= (others => (others => '0'));\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_din").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
 
-    return string_output_mems
+    string_ctrl_signals += "\n  -- Indicates that writing of the initial memories of the first event has started.\n"
+    string_ctrl_signals += "  signal START_FIRST_WRITE : std_logic := '0';\n"
+    string_ctrl_signals += "  signal START_" + first_mem.split("_")[0] + " : t_arr_" + first_mem + "_1b" + " := (others => '0');\n\n"
+
+    return string_ctrl_signals
+
+def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs = []):
+    """
+    # Writes the instantiation of the top level SectorProcessor FW
+    # Inputs:
+    #   topfunc:        name of the top module
+    #   memDict:        dictionary of memories organised by type 
+    #                   & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   initial_proc:   name of the first processing module of the chain
+    #   final_proc:     name of the last processing module of the chain
+    #   notfinal_procs: a set of the names of processing modules not at the end of the chain
+    """
+    str_len = 34 # length of string for formatting purposes
+
+    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs else "  sectorProc : if INST_TOP_TF = 0 generate\n"
+    string_fwblock_inst += "  begin\n"
+    string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
+    string_fwblock_inst += "      port map(\n"
+    string_fwblock_inst += "        clk".ljust(str_len) + "=> clk,\n"
+    string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
+    string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
+    string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
+    string_fwblock_inst += ("        " + final_proc + "_bx_out").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
+    string_fwblock_inst += ("        " + final_proc + "_bx_out_vld").ljust(str_len) + "=> " + final_proc + "_bx_out_vld,\n"
+    string_fwblock_inst += ("        " + final_proc + "_done").ljust(str_len) + "=> " + final_proc + "_done,\n"
+
+    # Add debug signals if considering intermediate memories
+    if notfinal_procs:
+        string_fwblock_inst += "        -- Debug control signals\n"
+        for mid_proc in notfinal_procs:
+            string_fwblock_inst += ("        " + mid_proc + "_bx_out").ljust(str_len) + "=> " + mid_proc + "_bx_out,\n"
+            string_fwblock_inst += ("        " + mid_proc + "_bx_out_vld").ljust(str_len) + "=> " + mid_proc + "_bx_out_vld,\n"
+            string_fwblock_inst += ("        " + mid_proc + "_done").ljust(str_len) + "=> " + mid_proc + "_done,\n"
+
+    # Memory input/output/debug signals
+    string_input = ""
+    string_output = ""
+    string_debug = ""
+
+    for mtypeB in memDict:
+        memInfo = memInfoDict[mtypeB]
+        if memInfo.is_initial:
+            string_input += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
+            string_input += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
+            string_input += ("        "+mtypeB+"_mem_AV_din").ljust(str_len) + "=> "+mtypeB+"_mem_AV_din,\n"
+        elif memInfo.is_final:
+            string_output += ("        "+mtypeB+"_mem_A_enb").ljust(str_len) + "=> "+mtypeB+"_mem_A_enb,\n"
+            string_output += ("        "+mtypeB+"_mem_AV_readaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_readaddr,\n"
+            string_output += ("        "+mtypeB+"_mem_AV_dout").ljust(str_len) + "=> "+mtypeB+"_mem_AV_dout,\n"
+            string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent\n"
+        else:
+            string_debug += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
+            string_debug += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
+            string_debug += ("        "+mtypeB+"_mem_AV_din").ljust(str_len) + "=> "+mtypeB+"_mem_AV_din,\n"
+
+    string_fwblock_inst += "        -- Input data\n"
+    string_fwblock_inst += string_input
+    if notfinal_procs:
+        string_fwblock_inst += "        -- Debug output data\n"
+        string_fwblock_inst += string_debug
+    string_fwblock_inst += "        -- Output data\n"
+    string_fwblock_inst += string_output
+    
+    string_fwblock_inst += "      );\n"
+    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs else "  end generate sectorProc;\n\n"
+
+    return string_fwblock_inst
+
+def writeTBMemoryWriteInstance(mtypeB, proc, bxbitwidth, is_binned):
+    """
+    # Writes the loop that writes the output from the memories to text files
+    # Inputs:
+    #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
+    #   proc:       the processing module that writes to this memory.
+    #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
+    #   is_binned:  if the memory is binned or not.
+    """
+    # FIX ME BINNED FOR ME DISK?!
+    str_len = 18 # length of string for formatting purposes
+
+    string_mem = "    "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
+    string_mem += "    begin\n"
+    string_mem += "      write"+mtypeB+" : entity work.FileWriter" + ("Binned\n" if is_binned else "\n")
+    string_mem += "      generic map (\n"
+    string_mem += "        FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
+    string_mem += "        RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
+    string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
+    string_mem += "      )\n"
+    string_mem += "      port map (\n"
+    string_mem += "        CLK".ljust(str_len)+"=> CLK,\n"
+    string_mem += "        ADDR".ljust(str_len)+"=> "+mtypeB+"_mem_AV_writeaddr(var),\n"
+    string_mem += "        DATA".ljust(str_len)+"=> "+mtypeB+"_mem_AV_din(var),\n"
+    string_mem += "        WRITE_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_wea(var),\n"
+    string_mem += "        START".ljust(str_len)+"=> "+proc+"_START,\n"
+    string_mem += "        DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
+    string_mem += "      );\n"
+    string_mem += "    end generate "+mtypeB+"_loop;\n\n"
+    
+    return string_mem
+
+def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth):
+    """
+    # Writes the loop that writes the output from the end of the chain to text files
+    # Inputs:
+    #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
+    #   proc:       the processing module that writes to this memory.
+    #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
+    """
+    str_len = 16 # length of string for formatting purposes
+
+    string_mem = "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
+    string_mem += "  begin\n"
+    string_mem += "    write"+mtypeB+" : entity work.FileWriterFromRAM\n" # FIX ME BINNED
+    string_mem += "    generic map (\n"
+    string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
+    string_mem += "      RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
+    string_mem += "      NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
+    string_mem += "    )\n"
+    string_mem += "    port map (\n"
+    string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+    string_mem += "      ADDR".ljust(str_len)+"=> "+mtypeB+"_mem_AV_readaddr(var),\n"
+    string_mem += "      DATA".ljust(str_len)+"=> "+mtypeB+"_mem_AV_dout(var),\n"
+    string_mem += "      READ_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_enb(var),\n"
+    string_mem += "      NENT_ARR".ljust(str_len)+"=> "+mtypeB+"_mem_AAV_dout_nent(var),\n"
+    string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
+    string_mem += "    );\n"
+    string_mem += "  end generate "+mtypeB+"_loop;\n\n"
+
+    return string_mem 
 
 def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
     """

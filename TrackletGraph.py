@@ -8,16 +8,18 @@ from builtins import range
 
 #######################################
 # Ordering of the processing steps
-#ProcOrder_dict = {
-#    'VMRouter':1,
-#    'TrackletEngine':2,
-#    'TrackletCalculator':3,
-#    'ProjectionRouter':4,
-#    'MatchEngine':5,
-#    'MatchCalculator':6,
-#    'FitTrack':7,
-#    'PurgeDuplicate':8
-#}
+ProcOrder_dict = {
+   'InputRouter':0,
+   'VMRouter':1,
+   'TrackletEngine':2,
+   'TrackletCalculator':3,
+   'ProjectionRouter':4,
+   'MatchEngine':5,
+   'MatchCalculator':6,
+   'FitTrack':7,
+   'PurgeDuplicate':8,
+   'TrackBuilder':9
+}
 # TODO: Should be able to generate this from the wiring
 #######################################
 # Drawing parameters
@@ -95,7 +97,7 @@ class ProcModule(Node):
     def __init__(self, module_type, instance_name, index):
         Node.__init__(self, module_type, instance_name, index)
         self.parameters = {} # dictionary of parameters
-        #self.order = ProcOrder_dict[module_type]
+        self.order = ProcOrder_dict[module_type]
         self.input_port_names = []
         self.output_port_names = []
         self.is_first = False
@@ -109,7 +111,8 @@ class MemTypeInfoByKey(object):
     def __init__(self, memList):        
         # Input: list of all memory objects of a given key type
         assert(len(memList) > 0)
-        self.mtype_short = memList[0].mtype_short() 
+        self.mtype_short = memList[0].mtype_short()
+        self.mtype_long = memList[0].mtype
         self.bitwidth   = memList[0].bitwidth
         self.bxbitwidth = memList[0].bxbitwidth
         self.is_binned  = memList[0].is_binned

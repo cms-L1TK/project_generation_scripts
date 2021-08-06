@@ -214,8 +214,12 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc):
 
             if first_mem: # Write start signal for the first memory in the chain
                 string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
-                string_read += "  -- first event starts being written to first memory in chain.\n"
-                string_read += "  START_FIRST_WRITE <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n" 
+                if "DL" in memInfo.mtype_short: 
+                    string_read += "  -- first event starts being read from the first link in the chain.\n"
+                    string_read += "  START_FIRST_LINK <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n"
+                else:
+                    string_read += "  -- first event starts being written to first memory in chain.\n"
+                    string_read += "  START_FIRST_WRITE <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n" 
                 found_first_mem = True
 
     # string_read += "\n"
@@ -258,7 +262,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
         up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
 
         if memInfo.is_final:
-            string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth)
+            string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned)
 

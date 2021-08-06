@@ -85,25 +85,25 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
     string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
-    string_mem += "    variable CLK_COUNT : natural := 1;\n"
+    string_mem += "    variable CLK_COUNT : natural := 1;\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
-    string_mem += "    if START_FIRST_WRITE = '1' then\n"
+    string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + "= '1' then\n"
     string_mem += "      if rising_edge(CLK) then\n"
     string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
     string_mem += "        else\n"
     string_mem += "          CLK_COUNT := 1;\n"
     string_mem += "          EVENT_COUNT := EVENT_COUNT + 1;\n\n"
-    string_mem += "          -- " + initial_proc + " should start one TM period after time when first event starting being \n"
-    string_mem += "          -- written to first memory in chain, as it takes this long to write full event.\n"
+    string_mem += "          -- " + initial_proc + " should start one TM period after time when first event starting being \n" if "IR" not in initial_proc else ""
+    string_mem += "          -- written to first memory in chain, as it takes this long to write full event.\n" if "IR" not in initial_proc else ""
     string_mem += "          " + initial_proc + "_START <= '1';\n"
     string_mem += "          " + initial_proc + "_BX_IN <= std_logic_vector(to_unsigned(EVENT_COUNT, " + initial_proc + "_BX_IN'length));\n\n"
     string_mem += "          write(v_line, string'(\"=== Processing event \")); write(v_line,EVENT_COUNT); write(v_line, string'(\" at SIM time \")); write(v_line, NOW); writeline(output, v_line);\n"
     string_mem += "        end if;\n"
     string_mem += "        -- Releae\n"
-    string_mem += "        if (CLK_COUNT = CLK_RESET) then \n"
+    string_mem += "        if (CLK_COUNT = " + ("CLK_RESET" if "IR" not in initial_proc else "MAX_ENTRIES") + ") then \n"
     string_mem += "          RESET <= '0';\n"
     string_mem += "        end if;\n"
     string_mem += "      end if;\n"
@@ -135,7 +135,7 @@ def writeTBMemoryReadInstance(mtypeB, bxbitwidth, is_initial, is_binned):
         string_mem += "    port map (\n"
         string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
         string_mem += "      READ_EN".ljust(str_len) + "=> " + mtypeB + "_link_read(var),\n"
-        string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_mem_AV_din(var),\n"
+        string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_link_AV_dout(var),\n"
         string_mem += "      START".ljust(str_len) + "=> " + ("START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "open,\n")
         string_mem += "      EMPTY_NEG".ljust(str_len) + "=> " + mtypeB + "_link_empty_neg(var)\n"
     else:
@@ -490,8 +490,8 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
         if memInfo.is_initial:
             # Avoid duplicate constants, e.g. for VMSTE
             if memInfo.mtype_short not in string_input_tmp:
-                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "") # FIX THIS
-                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "") # FIX THIS
+                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs") # FIX THIS
+                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "") # FIX THIS
                 mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx
 
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
@@ -575,6 +575,13 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             else:
                 string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len)+": "
                 string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)\n"
+        elif "DL" in mtypeB: # Special case for DTCLink as it has a FIFO interface
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_read").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_empty_neg").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_AV_dout").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
         else:
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_wea").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
@@ -583,8 +590,12 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_din").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
 
-    string_ctrl_signals += "\n  -- Indicates that writing of the initial memories of the first event has started.\n"
-    string_ctrl_signals += "  signal START_FIRST_WRITE : std_logic := '0';\n"
+    if "DL" in first_mem:
+        string_ctrl_signals += "\n  -- Indicates that reading of DL of first event has started.\n"
+        string_ctrl_signals += "  signal START_FIRST_LINK : std_logic := '0';\n"
+    else:
+        string_ctrl_signals += "\n  -- Indicates that writing of the initial memories of the first event has started.\n"
+        string_ctrl_signals += "  signal START_FIRST_WRITE : std_logic := '0';\n"
     string_ctrl_signals += "  signal START_" + first_mem.split("_")[0] + " : t_arr_" + first_mem + "_1b" + " := (others => '0');\n\n"
 
     return string_ctrl_signals
@@ -601,7 +612,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     #   final_proc:     name of the last processing module of the chain
     #   notfinal_procs: a set of the names of processing modules not at the end of the chain
     """
-    str_len = 34 # length of string for formatting purposes
+    str_len = 35 # length of string for formatting purposes
 
     string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs else "  sectorProc : if INST_TOP_TF = 0 generate\n"
     string_fwblock_inst += "  begin\n"
@@ -631,14 +642,22 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         if memInfo.is_initial:
-            string_input += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
-            string_input += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
-            string_input += ("        "+mtypeB+"_mem_AV_din").ljust(str_len) + "=> "+mtypeB+"_mem_AV_din,\n"
+            if "DL" in mtypeB: # Special case for DTCLink as it has FIFO interface
+                string_input += ("        "+mtypeB+"_link_AV_dout").ljust(str_len) + "=> "+mtypeB+"_link_AV_dout,\n"
+                string_input += ("        "+mtypeB+"_link_empty_neg").ljust(str_len) + "=> "+mtypeB+"_link_empty_neg,\n"
+                string_input += ("        "+mtypeB+"_link_read").ljust(str_len) + "=> "+mtypeB+"_link_read,\n"
+            else:
+                string_input += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
+                string_input += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
+                string_input += ("        "+mtypeB+"_mem_AV_din").ljust(str_len) + "=> "+mtypeB+"_mem_AV_din,\n"
         elif memInfo.is_final:
             string_output += ("        "+mtypeB+"_mem_A_enb").ljust(str_len) + "=> "+mtypeB+"_mem_A_enb,\n"
             string_output += ("        "+mtypeB+"_mem_AV_readaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_readaddr,\n"
             string_output += ("        "+mtypeB+"_mem_AV_dout").ljust(str_len) + "=> "+mtypeB+"_mem_AV_dout,\n"
-            string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent,\n"
+            if memInfo.is_binned:
+                string_output += ("        "+mtypeB+"_mem_AAAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAAV_dout_nent,\n"
+            else:
+                string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent,\n"
         else:
             string_debug += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
             string_debug += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
@@ -672,7 +691,7 @@ def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
 
     string_mem = "    "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
     string_mem += "    begin\n"
-    string_mem += "      write"+mtypeB+" : entity work.FileWriter" + ("Binned\n" if is_binned else "\n")
+    string_mem += "      write"+mtypeB+" : entity work.FileWriter\n"
     string_mem += "      generic map (\n"
     string_mem += "        FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
     string_mem += "        RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
@@ -690,19 +709,20 @@ def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
     
     return string_mem
 
-def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth):
+def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     """
     # Writes the loop that writes the output from the end of the chain to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
     #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
+    #   is_binned:  if the memory is binned or not.
     """
     str_len = 16 # length of string for formatting purposes
-
+    # FIX ME FOR ME DISK WHERE THE BIN SIZE IS DIFFERENT?!
     string_mem = "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
     string_mem += "  begin\n"
-    string_mem += "    write"+mtypeB+" : entity work.FileWriterFromRAM\n" # FIX ME BINNED
+    string_mem += "    write"+mtypeB+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
     string_mem += "    generic map (\n"
     string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
     string_mem += "      RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
@@ -713,7 +733,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth):
     string_mem += "      ADDR".ljust(str_len)+"=> "+mtypeB+"_mem_AV_readaddr(var),\n"
     string_mem += "      DATA".ljust(str_len)+"=> "+mtypeB+"_mem_AV_dout(var),\n"
     string_mem += "      READ_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_enb(var),\n"
-    string_mem += "      NENT_ARR".ljust(str_len)+"=> "+mtypeB+"_mem_AAV_dout_nent(var),\n"
+    string_mem += "      NENT_ARR".ljust(str_len)+"=> "+mtypeB+"_mem_AA" + ("A" if is_binned else "") + "V_dout_nent(var),\n"
     string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
     string_mem += "    );\n"
     string_mem += "  end generate "+mtypeB+"_loop;\n\n"

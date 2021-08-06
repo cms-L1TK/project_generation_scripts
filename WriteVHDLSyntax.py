@@ -614,7 +614,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     """
     str_len = 35 # length of string for formatting purposes
 
-    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs else "  sectorProc : if INST_TOP_TF = 0 generate\n"
+    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs or final_proc == initial_proc else "  sectorProc : if INST_TOP_TF = 0 generate\n"
     string_fwblock_inst += "  begin\n"
     string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
     string_fwblock_inst += "      port map(\n"
@@ -672,7 +672,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += string_output[:-2]+"\n" # Remove the last comma
     
     string_fwblock_inst += "      );\n"
-    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs else "  end generate sectorProc;\n\n"
+    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs or final_proc == initial_proc else "  end generate sectorProc;\n\n"
 
     return string_fwblock_inst
 

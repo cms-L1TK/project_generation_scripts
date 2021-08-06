@@ -241,7 +241,8 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
 
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
-    string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc)
+    if initial_proc not in final_proc: # For a single module the normal and the full are the same
+        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc)
     string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
     return string_instantiaion
 
@@ -259,7 +260,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         proc = memInfo.upstream_mtype_short # Processing module that writes to mtypeB
-        up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
+        up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if notfinal_procs and proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
 
         if memInfo.is_final:
             string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)

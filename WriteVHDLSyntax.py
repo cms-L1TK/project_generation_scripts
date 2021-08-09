@@ -80,7 +80,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     # VHDL test-bench
     # Stimulates reading and process start
     """
-# FIX ME SO IT CAN HANDLE IR
+
     string_mem = "  procStart : process(CLK)\n"
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
@@ -463,7 +463,17 @@ def writeTrackStreamRHSPorts_interface(mtypeB):
     return string_output_mems
 
 def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
-    # FIX ME ADD DESCRIPTION
+    """
+    # VHDL test-bench: write the constants used by the test-bench
+    # Inputs:
+    #   memDict:        dictionary of memories organised by type 
+    #                   & no. of bits (TPROJ_58 etc.)
+    #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
+    #   procs:          list of processes in the order that they are positioned in the chain
+    #   emData_dir:     the directory for the emData/ folder
+    #   sector:         the sector/nonant number
+    """
+
     str_len = 32 # length of string for formatting purposes
 
     string_constants = ""
@@ -490,9 +500,9 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
         if memInfo.is_initial:
             # Avoid duplicate constants, e.g. for VMSTE
             if memInfo.mtype_short not in string_input_tmp:
-                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs") # FIX THIS
-                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "") # FIX THIS
-                mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx
+                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs") # Directory name for the memory testvectors. FIX ME, make this prettier?!
+                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "") # Testvector file name start. FIX ME, make this prettier?!
+                mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
                 string_input_tmp += ("  constant FILE_IN_" + memInfo.mtype_short).ljust(str_len) + ": string := emDataDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
@@ -602,7 +612,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
 
 def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs = []):
     """
-    # Writes the instantiation of the top level SectorProcessor FW
+    # VHDL test bench: write the instantiation of the top level SectorProcessor FW
     # Inputs:
     #   topfunc:        name of the top module
     #   memDict:        dictionary of memories organised by type 
@@ -678,7 +688,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
 
 def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
     """
-    # Writes the loop that writes the output from the memories to text files
+    # VHDL test bench: write the loop that writes the output from the memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
@@ -686,7 +696,7 @@ def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
     #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
     #   is_binned:  if the memory is binned or not.
     """
-    # FIX ME BINNED FOR ME DISK?!
+
     str_len = 18 # length of string for formatting purposes
 
     string_mem = "    "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
@@ -711,7 +721,7 @@ def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
 
 def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     """
-    # Writes the loop that writes the output from the end of the chain to text files
+    # VHDL test bench: write the loop that writes the output from the end of the chain to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
@@ -719,7 +729,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     #   is_binned:  if the memory is binned or not.
     """
     str_len = 16 # length of string for formatting purposes
-    # FIX ME FOR ME DISK WHERE THE BIN SIZE IS DIFFERENT?!
+
     string_mem = "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
     string_mem += "  begin\n"
     string_mem += "    write"+mtypeB+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
@@ -727,6 +737,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
     string_mem += "      RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
     string_mem += "      NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
+    string_mem += "      NUM_BINS".ljust(str_len)+"=> " + str(8) + "\n" if "VMSME" in mtypeB else ""     # FIX ME change number of bins for ME DISK?! from 8 to 16
     string_mem += "    )\n"
     string_mem += "    port map (\n"
     string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"

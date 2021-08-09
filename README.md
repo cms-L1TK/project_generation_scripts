@@ -47,7 +47,7 @@ Example for IR-VMR chain:
 ```
 Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
 ```
-generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
+./generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
 ```
 *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 

@@ -729,15 +729,18 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     #   is_binned:  if the memory is binned or not.
     """
     str_len = 16 # length of string for formatting purposes
+    string_mem = ""
 
-    string_mem = "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
+    # FIX ME change number of bins from default 8 to 16 for VMSME Disk memories
+    string_mem += "  -- FIX ME change number of bins from default 8 to 16 for VMSME Disk memories!!!\n" if "VMSME" in mtypeB else ""
+
+    string_mem += "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
     string_mem += "  begin\n"
     string_mem += "    write"+mtypeB+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
     string_mem += "    generic map (\n"
     string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
     string_mem += "      RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
     string_mem += "      NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
-    string_mem += "      NUM_BINS".ljust(str_len)+"=> " + str(8) + "\n" if "VMSME" in mtypeB else ""     # FIX ME change number of bins for ME DISK?! from 8 to 16
     string_mem += "    )\n"
     string_mem += "    port map (\n"
     string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"

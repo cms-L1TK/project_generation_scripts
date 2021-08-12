@@ -500,8 +500,8 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
         if memInfo.is_initial:
             # Avoid duplicate constants, e.g. for VMSTE
             if memInfo.mtype_short not in string_input_tmp:
-                mem_dir = memInfo.mtype_long.replace("All", "").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs") # Directory name for the memory testvectors. FIX ME, make this prettier?!
-                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "") # Testvector file name start. FIX ME, make this prettier?!
+                mem_dir = memInfo.mtype_long.replace("AllStubs", "Stubs").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs").replace("InputLink", "InputStubs").replace("FullMatch", "Matches").replace("AllProj", "TrackletProjections").replace("CandidateMatch", "Matches") # Directory name for the memory testvectors. FIX ME, make this prettier?!
+                mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "").replace("InputLink", "InputStubs").replace("FullMatch", "FullMatches").replace("CandidateMatch", "CandidateMatches") # Testvector file name start. FIX ME, make this prettier?!
                 mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"

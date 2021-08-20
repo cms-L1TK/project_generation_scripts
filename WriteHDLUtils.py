@@ -340,7 +340,7 @@ def dictOfMemoriesPerLayer(module):
     # Count memories per layer/disk
     for memory in list(module.downstreams):
         layerID = memory.inst.split('_')[1][0:2] # L1, L2, etc.
-        phiID = ord(memory.inst.split('PHI')[1][0]) - ord("A") # Turn the phi regions into integers, A = 1 etc.
+        phiID = ord(memory.inst.split('PHI')[1][0]) - ord("A") # Turn the phi regions into integers, A = 0 etc.
         if layerID in numMemories:
             tmpPhiBinWord = list(numMemories[layerID]) # Convert string to temporary list
         else: 

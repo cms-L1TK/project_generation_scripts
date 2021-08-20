@@ -970,11 +970,11 @@ def writeInputLinkPhiBinsPort(memoriesPerLayer):
     """
     phiBinWord = ""
 
-    # Loop through the layers and write the number of memories as three bits to phiBinWord
+    # Loop through the layers and write the memories used as 8 bits to phiBinWord
     for layer in memoriesPerLayer:
-        phiBinWord = '{0:03b}'.format(memoriesPerLayer[layer]) + phiBinWord
+        phiBinWord = memoriesPerLayer[layer] + phiBinWord
     
-    phiBinWord = phiBinWord.zfill(12) # Pad with zeros so it contains 12 bits
+    phiBinWord = phiBinWord.zfill(32) # Pad with zeros so it contains 32 bits
 
     string_phibin_port = "      hPhBnWord_V => \""+phiBinWord+"\",\n"
 

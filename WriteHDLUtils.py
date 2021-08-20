@@ -332,16 +332,21 @@ def matchArgPortNames_IR(argname, portname, memoryname):
         print("matchArgPortNames_IR: Unknown argument", argname)
         return False
 
-# Dictionary with the number of memories per layer/disk. Needed for the InputRouter
-def numberOfMemoriesPerLayer(module):
+# Dictionary with the memories used per layer/disk. 
+# Maximum 8 memories/phi regions/bins per layer, each memory used is represented by a "1". 
+# Phi region "A" is the first bit and so forth. Needed for the InputRouter.
+def dictOfMemoriesPerLayer(module):
     numMemories = OrderedDict() # Dictionary that keeps track of number of memories per layer (minus one)
     # Count memories per layer/disk
     for memory in list(module.downstreams):
         layerID = memory.inst.split('_')[1][0:2] # L1, L2, etc.
+        phiID = ord(memory.inst.split('PHI')[1][0]) - ord("A") # Turn the phi regions into integers, A = 1 etc.
         if layerID in numMemories:
-            numMemories[layerID] += 1
-        else:
-            numMemories[layerID] = 0
+            tmpPhiBinWord = list(numMemories[layerID]) # Convert string to temporary list
+        else: 
+            tmpPhiBinWord = ["0"] * 8 # Temporary list with 8 zeros, each bit represents a phi region
+        tmpPhiBinWord[len(tmpPhiBinWord) - phiID - 1] = "1" # Memory corresponding to phiID is being used  
+        numMemories[layerID] = "".join(tmpPhiBinWord) # Convert back to string
     return numMemories
 
 ################################
@@ -1089,8 +1094,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # External LUTs
     string_luts = ""
     if module.mtype == "InputRouter": # Might be temporary
-        string_luts += writeInputLinkWordPort(module.inst, numberOfMemoriesPerLayer(module))
-        string_luts += writeInputLinkPhiBinsPort(numberOfMemoriesPerLayer(module))
+        string_luts += writeInputLinkWordPort(module.inst, dictOfMemoriesPerLayer(module))
+        string_luts += writeInputLinkPhiBinsPort(dictOfMemoriesPerLayer(module))
 
     # Add all ports together
     string_ports = ""

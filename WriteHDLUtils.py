@@ -336,7 +336,7 @@ def matchArgPortNames_IR(argname, portname, memoryname):
 # Maximum 8 memories/phi regions/bins per layer, each memory used is represented by a "1". 
 # Phi region "A" is the first bit and so forth. Needed for the InputRouter.
 def dictOfMemoriesPerLayer(module):
-    numMemories = OrderedDict() # Dictionary that keeps track of number of memories per layer (minus one)
+    numMemories = OrderedDict() # Dictionary that keeps track of number of memories per layer
     # Count memories per layer/disk
     for memory in list(module.downstreams):
         layerID = memory.inst.split('_')[1][0:2] # L1, L2, etc.

@@ -967,6 +967,8 @@ def writeInputLinkWordPort(module_instance, memoriesPerLayer):
 def writeInputLinkPhiBinsPort(memoriesPerLayer):
     """
     # Processing module port assignment: InputRouter kNPhiBns/hPhBnWord port
+    # 32 bits per phibin word: 8 bits per layer, where each bit represent if a 
+    # memories is used. First memory represents phi region A etc.
     """
     phiBinWord = ""
 

@@ -55,17 +55,18 @@ Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
 
   Optional arguments include:
   
-      -h, --help          For help
-      -f, --topfunc       Top function name
+      -h, --help          For help & to see default option values
+      -f, --topfunc       Top function name of generated FW
       -n, --projname      Project name
       -p, --procconfig    Name of the processing module configuration .dat file
       -m, --memconfig     Name of the memory module configuration .dat file
       -w, --wireconfig    Name of the wiring configuration .dat file
       --memprint_dir      Directory to search for memory printouts produced by the emulation
       --emData_dir        Directory into which the memory printout files are copied for the HLS project
-      --graph/--no-graph  Enable/disable making of the diagram. If disabled (not default) ROOT is not required.
+      -ng, --no_graph     Disable making of wiring diagram. If disabled, then ROOT is not required.
       
  For generating a partial project:
+
  
       -r, --region        Detector region of the generated project.
       		              Choose from A(all), L(barrel), D(disk).
@@ -80,7 +81,7 @@ Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
   This script parses the three .dat files from the previous step and instantiates a *TrackletGraph* object (defined in TrackletGraph.py). The TrackletGraph object is a representation of the project configuration, containing all processing and memory objects as well as their inter-connections.
 
   The other part of this script takes the TrackletGraph object as input and writes out relevant files for the top level project.
-  In order to generate correct and up-to-date functions for requested processing steps, the script parses the function definition of each step in the corresponding header file in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
+  In order to generate correct and up-to-date functions for requested processing steps, the script parses the (templated) function definition of each step in the corresponding header file in L1Trk HLS repo (https://github.com/cms-tracklet/firmware-hls/tree/master/TrackletAlgorithm).
 
   The final product of this script includes a top-level VHDL module which instantiates all the relevant HLS IP cores and HDL memory modules, as well as an VHDL test bench, (which should ultimately read the memory printout files made by the C++ emulation). In the future, the script will generate a tcl script needed to generate the project.
 

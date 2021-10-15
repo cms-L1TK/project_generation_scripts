@@ -28,5 +28,6 @@ jobs:
     - name: Lint with pylint
       run: |
         # Identify coding style issues.
-        pylint *.py
+        pylint generator_hdl.py
+        pylint makeReducedConfig.py
 

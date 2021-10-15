@@ -788,7 +788,6 @@ def splitByComma(aString):
     # but ignores commas that are between balanced angular brackets "<...,...>".
     """
     ignore = 0
-    word = ''
     aList = ['']
     for x in aString:
         split = False

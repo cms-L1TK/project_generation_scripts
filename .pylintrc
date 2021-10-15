@@ -1,5 +1,8 @@
 # https://pylint.pycqa.org/en/latest/user_guide/message-control.html 
-# Print only errors identified in code. Suppress warnings.
 
 [MESSAGES CONTROL]
-disable=W,C,R
+
+# Print only errors identified in code. Suppress warnings.
+# And suppress errors about inability to import ROOT or rich.traceback
+disable=W,C,R,E0401
+

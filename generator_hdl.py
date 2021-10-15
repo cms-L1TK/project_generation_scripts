@@ -73,8 +73,6 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
     # (needed for things like routing bx ports, done signals, etc.)
     proc_type_list = []
 
-    print "HELLO"
-
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports)

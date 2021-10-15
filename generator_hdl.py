@@ -53,6 +53,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
+    print "HELLO"
     return string_wires, string_mem
 
 ########################################

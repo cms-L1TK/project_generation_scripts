@@ -1,0 +1,5 @@
+# https://pylint.pycqa.org/en/latest/user_guide/message-control.html 
+# Print only errors identified in code. Suppress warnings.
+
+[MESSAGES CONTROL]
+disable=W,C,R

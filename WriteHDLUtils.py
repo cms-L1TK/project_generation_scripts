@@ -778,14 +778,42 @@ def matchArgPortNames_PD(argname, portname, memoryname):
     raise ValueError("DuplicateRemoval is not implemented yet!")
     return False
 
+################################
+# Parse HLS code
+################################
+
+def splitByComma(aString):
+    """
+    # Splits a string by comma delimiter into a list,
+    # but ignores commas that are between balanced angular brackets "<...,...>".
+    """
+    ignore = 0
+    aList = ['']
+    for x in aString:
+        split = False
+        if x == '<':
+            ignore += 1;
+        elif x == '>':
+            ignore -= 1;
+        elif x == ',' and ignore == 0:
+            split = True
+
+        if split:
+          aList.append('')  
+        elif x != ' ' or len(aList[-1]) > 0: # Skip spaces after commas
+         aList[-1] += x
+    return aList
+
+
 def parseProcFunction(proc_name, fname_def):
     """
     # Parse the definition of the processing function in the HLS header file
     # Assume all processing functions are templatized
-    # Return a list of function argument types, argument names,
+    # Typical inputs: (MatchCalculator, somepath/MatchCalculator.h)
+    # Return: a list of function argument types, argument names,
     # and template parameters
     """
-    
+ 
     # Open the header file
     file_proc_hh = open(fname_def)
 
@@ -847,7 +875,8 @@ def parseProcFunction(proc_name, fname_def):
     arguments_str = procfunc_str.partition("(")[2].rpartition(")")[0].strip()
 
     # Split by comma, ignoring commas inside template brackets <...>.
-    args_list = re.split(', *(?![^<]*>)', arguments_str)
+    args_list = splitByComma(arguments_str)
+
     for args in args_list:
         # get rid of 'const' 
         args = args.replace("const","").strip()
@@ -1035,12 +1064,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
-
-                            # Two sets of input FullMatch ports are generated
-                            # because the TrackBuilder performs two reads per
-                            # iteration
-                            if "FM" in memory.inst:
-                                string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,1)
 
                     if portname.replace("outer","").find("out") != -1:
                         if "TW" in memory.inst or "BW" in memory.inst or "DW" in memory.inst:

@@ -7,6 +7,7 @@
 ################################################
 from __future__ import absolute_import
 from __future__ import print_function
+from collections import OrderedDict
 
 try:
     from rich.traceback import install
@@ -106,12 +107,14 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     # Find names of first & last processing modules in project
     initial_proc = ""
     final_proc = ""
-    notfinal_procs = set()
+    notfinal_procs_tmp = OrderedDict() # OrderedSet() doesn't exist ...
+
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
         if proc.is_last: final_proc = proc.mtype_short()
         if extraports and (not proc.is_last):
-            notfinal_procs.add(proc.mtype_short())
+            notfinal_procs_tmp[proc.mtype_short()] = None # Use dictionary as set
+    notfinal_procs = notfinal_procs_tmp.keys()
 
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
@@ -377,7 +380,7 @@ if __name__ == "__main__":
     
     import argparse
     
-    parser = argparse.ArgumentParser(description="Script to generate HLS top function for Tracklet project")
+    parser = argparse.ArgumentParser(description="Script to generate HLS top function for Tracklet project", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('hls_dir', type=str, nargs='?',
                         default="../firmware-hls/",
                         help="HLS firmware project directory")
@@ -411,11 +414,8 @@ if __name__ == "__main__":
     parser.add_argument('--memprint_dir', type=str,
                         default="../fpga_emulation_longVM/MemPrints/",
                         help="Directory of emulation memory printouts")
-    parser.add_argument('--graph', dest='graph', action='store_true',
-                        help="Make graph. Requires ROOT")
-    parser.add_argument('--no-graph', dest='graph', action='store_false',
-                        help="Do not make graph. Disable ROOT")
-    parser.set_defaults(graph=True)
+    parser.add_argument('-ng','--no_graph', action='store_true',
+                        help="Don't make TrackletProject.pdf, so ROOT not required")
     args = parser.parse_args()
 
     if args.extraports:
@@ -510,7 +510,7 @@ if __name__ == "__main__":
     ########################################
     #  Plot graph
     ########################################
-    if ( args.graph == True ) :
+    if ( args.no_graph == False ) :
         import ROOT
         pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(process_list)
         ROOT.gROOT.SetBatch(True)

@@ -27,8 +27,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Lint with pylint
       run: |
-        # only python3 errors 
-        pylint --py3k *.py
-        # all other errors
-        # pylint *.py
+        # Identify coding style issues.
+        pylint generator_hdl.py
+        pylint makeReducedConfig.py
 

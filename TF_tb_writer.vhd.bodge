@@ -1,0 +1,19 @@
+  -- A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
+  -- (Needed to compare with emData/).
+  TF_464_loop : for var in enum_TW_84 generate
+  begin
+    writeTF_464 : entity work.FileWriterFIFO
+    generic map (
+      FILE_NAME  => FILE_OUT_TF_464&memory_enum_to_string(var)&outputFileNameEnding,
+      FIFO_WIDTH  => 464
+    )
+    port map (
+      CLK => CLK,
+      DONE => FT_DONE,
+      WRITE_EN => TW_84_stream_A_write(var),
+      FULL_NEG => TW_84_stream_A_full_neg(var),
+      DATA => TW_84_stream_AV_din(var)&BW_46_stream_AV_din(L1L2_L3)&BW_46_stream_AV_din(L1L2_L4)&BW_46_stream_AV_din
+(L1L2_L5)&BW_46_stream_AV_din(L1L2_L6)&emptyDiskStub&emptyDiskStub&emptyDiskStub&emptyDiskStub
+    );
+  end generate TF_464_loop;
+

@@ -18,7 +18,7 @@ from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey, TrackletGraph
 from WriteHDLUtils import arrangeMemoriesByKey, \
                             writeModuleInstance
 from WriteVHDLSyntax import writeTopModuleOpener, writeTBOpener, writeTopModuleCloser, writeTopModuleEntityCloser, writeTBEntityBegin, writeTBModuleCloser, \
-                            writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusProcess, writeTBMemoryReadInstance, writeTBMemoryWriteInstance, writeTBMemoryWriteRAMInstance, \
+                            writeTopPreamble, writeModulesPreamble, writeTBPreamble, writeTBMemoryStimulusProcess, writeTBMemoryReadInstance, writeTBMemoryWriteInstance, writeTBMemoryWriteRAMInstance, writeTBMemoryWriteFIFOInstance, \
                             writeMemoryUtil, writeTopLevelMemoryType, writeControlSignals_interface, \
                             writeMemoryLHSPorts_interface, writeDTCLinkLHSPorts_interface, writeMemoryRHSPorts_interface, writeTBConstants, writeTBControlSignals, \
                             writeFWBlockInstance, writeTrackStreamRHSPorts_interface
@@ -43,12 +43,11 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
     string_mem = ""
     # Loop over memory type
     for mtypeB in memDict:
-        # no memories for DTC links or output track streams
-        if "DL" in mtypeB \
-           or "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
-            continue
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
+        # FIFO memories are not instantiated in top-level (at end of chain?)
+        if memInfo.isFIFO:
+            continue
         string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
@@ -134,7 +133,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
         elif memInfo.is_final:
             # Output arguments
-            if "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
+            if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB)
             else:
                 string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
@@ -265,10 +264,24 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
         proc = memInfo.upstream_mtype_short # Processing module that writes to mtypeB
         up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if notfinal_procs and proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
 
+        if memInfo.isFIFO:
+            string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, proc, memInfo.bxbitwidth)
+            # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
+            # (Needed to compare with emData/).
+            if mtypeB == 'TW_84': 
+                fileTF = open("TF_tb_writer.vhd.bodge")
+                string_tmp += fileTF.read();
+
         if memInfo.is_final:
-            string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)
+            if memInfo.isFIFO:
+              string_final += string_tmp
+            else:
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
-            string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned)
+            if memInfo.isFIFO:
+              string_intermediate += string_tmp
+            else:
+              string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"
@@ -313,6 +326,12 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_d
     string_header += writeTBOpener(tbfunc)
 
     string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], emData_dir, sector)
+    # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
+    # (Needed to compare with emData/).
+    if 'TW_84' in memInfoDict.keys():
+      fileTF = open("TF_tb_constants.vhd.bodge")
+      string_constants += fileTF.read();
+
     string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)
 
     string_begin = writeTBEntityBegin()

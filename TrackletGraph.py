@@ -88,8 +88,12 @@ class MemModule(Node):
         self.bxbitwidth = 0
         self.is_binned = False
         self.has_numEntries_out = True # True if has numEntries out port.
+
     def keyName(self): # All mems with same keyName made in same VHDL "generate" loop.
         return self.mtype_short()+"_"+str(self.bitwidth)
+    def isFIFO(self): # Is FIFO rather than BRAM memory
+        mts = self.mtype_short()
+        return (mts == "DL" or mts == "TW" or mts == "BW" or mts == "DW") 
     def __lt__(self, other) : # py3 needs this explicitly for ordering
         return self.inst < other.inst ### lexical sort on instance name
 
@@ -117,6 +121,7 @@ class MemTypeInfoByKey(object):
         self.bxbitwidth = memList[0].bxbitwidth
         self.is_binned  = memList[0].is_binned
         self.has_numEntries_out = memList[0].has_numEntries_out
+        self.isFIFO     = memList[0].isFIFO()
         # At least one memory of this type is initial.
         self.is_initial = any(m.is_initial for m in memList)
         # All memories of this type is final.

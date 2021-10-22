@@ -1019,9 +1019,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         #  no more than two dimensions
                         argname_is_2d_array = (tmp_argname.find('][') != -1) # Check if two-dimensional array
 
-                        # BarrelWords and DiskWords are treated differently
-                        # because they are currently streams
-                        if "BW" in memory.inst or "DW" in memory.inst:
+                        # FIFO (streams) such as BarrelWords & DiskWords are treated differently
+                        if memory.isFIFO():
                             argname_is_2d_array = False
 
                         tmp_argname = tmp_argname.split('[')[0] # Remove "[...]"
@@ -1066,7 +1065,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
                     if portname.replace("outer","").find("out") != -1:
-                        if "TW" in memory.inst or "BW" in memory.inst or "DW" in memory.inst:
+                        if memory.isFIFO():
                             string_mem_ports += writeProcTrackStreamLHSPorts(tmp_argname,memory)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)

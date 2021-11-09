@@ -138,7 +138,7 @@ def writeTBMemoryReadInstance(mtypeB, bxbitwidth, is_initial, is_binned):
         string_mem += "      DATA".ljust(str_len) + "=> " + mtypeB + "_link_AV_dout(var),\n"
         string_mem += "      START".ljust(str_len) + "=> " + ("START_" + mtypeB.split("_")[0] + "(var),\n" if is_initial else "open,\n")
         string_mem += "      EMPTY_NEG".ljust(str_len) + "=> " + mtypeB + "_link_empty_neg(var)\n"
-    else:
+    else:             # Standard case for BRAM 
         string_mem += "    read" + mtypeB + " : entity work.FileReader\n"
         string_mem += "  generic map (\n"
         string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB.split("_")[0] + "&memory_enum_to_string(var)&inputFileNameEnding,\n"
@@ -220,8 +220,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
         # address and nentries types not needed for DTC links or output track
         # streams
-        if "DL" in mtypeB \
-           or "TW" in mtypeB or "BW" in mtypeB or "DW" in mtypeB:
+        if memInfo.isFIFO: 
             arrName = "t_arr_"+mtypeB+"_1b"
             ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n"
 
@@ -571,7 +570,22 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             first_mem = mtypeB
             found_first_mem = True
 
-        if memInfo.is_final:
+        if "DL" in mtypeB: # Special case for DTCLink as it has a FIFO read interface
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_read").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_empty_neg").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_link_AV_dout").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
+        elif memInfo.isFIFO: # Special case for FIFO write
+            string_ctrl_signals += ("  signal "+mtypeB+"_stream_A_write").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_stream_A_full_neg").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
+            string_ctrl_signals += ("  signal "+mtypeB+"_stream_AV_din").ljust(str_len)+": "
+            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
+
+        elif memInfo.is_final: # RAM read interface
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_enb").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_readaddr").ljust(str_len)+": "
@@ -585,14 +599,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             else:
                 string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len)+": "
                 string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)\n"
-        elif "DL" in mtypeB: # Special case for DTCLink as it has a FIFO interface
-            string_ctrl_signals += ("  signal "+mtypeB+"_link_read").ljust(str_len)+": "
-            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
-            string_ctrl_signals += ("  signal "+mtypeB+"_link_empty_neg").ljust(str_len)+": "
-            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
-            string_ctrl_signals += ("  signal "+mtypeB+"_link_AV_dout").ljust(str_len)+": "
-            string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
-        else:
+        else: # RAM write interface
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_wea").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_writeaddr").ljust(str_len)+": "
@@ -652,7 +659,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         if memInfo.is_initial:
-            if "DL" in mtypeB: # Special case for DTCLink as it has FIFO interface
+            if "DL" in mtypeB: # Special case for DTCLink as it has FIFO input
                 string_input += ("        "+mtypeB+"_link_AV_dout").ljust(str_len) + "=> "+mtypeB+"_link_AV_dout,\n"
                 string_input += ("        "+mtypeB+"_link_empty_neg").ljust(str_len) + "=> "+mtypeB+"_link_empty_neg,\n"
                 string_input += ("        "+mtypeB+"_link_read").ljust(str_len) + "=> "+mtypeB+"_link_read,\n"
@@ -660,6 +667,14 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                 string_input += ("        "+mtypeB+"_mem_A_wea").ljust(str_len) + "=> "+mtypeB+"_mem_A_wea,\n"
                 string_input += ("        "+mtypeB+"_mem_AV_writeaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_writeaddr,\n"
                 string_input += ("        "+mtypeB+"_mem_AV_din").ljust(str_len) + "=> "+mtypeB+"_mem_AV_din,\n"
+        elif memInfo.isFIFO: # Special case FIFO output
+            string_tmp = ("        "+mtypeB+"_stream_AV_din").ljust(str_len) + "=> "+mtypeB+"_stream_AV_din,\n"
+            string_tmp += ("        "+mtypeB+"_stream_A_full_neg").ljust(str_len) + "=> "+mtypeB+"_stream_A_full_neg,\n"
+            string_tmp += ("        "+mtypeB+"_stream_A_write").ljust(str_len) + "=> "+mtypeB+"_stream_A_write,\n"
+            if memInfo.is_final:
+                string_output += string_tmp
+            else:
+                string_debug  += string_tmp
         elif memInfo.is_final:
             string_output += ("        "+mtypeB+"_mem_A_enb").ljust(str_len) + "=> "+mtypeB+"_mem_A_enb,\n"
             string_output += ("        "+mtypeB+"_mem_AV_readaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_readaddr,\n"
@@ -688,7 +703,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
 
 def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
     """
-    # VHDL test bench: write the loop that writes the output from the memories to text files
+    # VHDL test bench: write the loop that writes the input to the intermediate RAM memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
@@ -721,7 +736,7 @@ def writeTBMemoryWriteInstance(mtypeB, proc, proc_up, bxbitwidth, is_binned):
 
 def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     """
-    # VHDL test bench: write the loop that writes the output from the end of the chain to text files
+    # VHDL test bench: write the loop that writes the output from the end-of-chain BRAM memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
@@ -749,6 +764,35 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     string_mem += "      READ_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_enb(var),\n"
     string_mem += "      NENT_ARR".ljust(str_len)+"=> "+mtypeB+"_mem_AA" + ("A" if is_binned else "") + "V_dout_nent(var),\n"
     string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
+    string_mem += "    );\n"
+    string_mem += "  end generate "+mtypeB+"_loop;\n\n"
+
+    return string_mem 
+
+
+def writeTBMemoryWriteFIFOInstance(mtypeB, proc, bxbitwidth):
+    """
+    # VHDL test bench: write the loop that writes the input to all FIFO memories to text files
+    # Inputs:
+    #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
+    #   proc:       the processing module that writes to this memory.
+    #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
+    """
+    str_len = 16 # length of string for formatting purposes
+    string_mem = ""
+    string_mem += "  "+mtypeB+"_loop : for var in enum_"+mtypeB+" generate\n"
+    string_mem += "  begin\n"
+    string_mem += "    write"+mtypeB+" : entity work.FileWriterFIFO\n"
+    string_mem += "    generic map (\n"
+    string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&memory_enum_to_string(var)&outputFileNameEnding,\n"
+    string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + "\n"
+    string_mem += "    )\n"
+    string_mem += "    port map (\n"
+    string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+    string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE,\n"
+    string_mem += "      WRITE_EN".ljust(str_len)+"=> "+mtypeB+"_stream_A_write(var),\n"
+    string_mem += "      FULL_NEG".ljust(str_len)+"=> "+mtypeB+"_stream_A_full_neg(var),\n"
+    string_mem += "      DATA".ljust(str_len)+"=> "+mtypeB+"_stream_AV_din(var)\n"
     string_mem += "    );\n"
     string_mem += "  end generate "+mtypeB+"_loop;\n\n"
 

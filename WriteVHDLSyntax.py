@@ -834,7 +834,13 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False):
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
 
-    int_ctrl_func = "  "+mtype_down+"_start <= '1' when "+mtype+"_done = '1';\n\n"
+    int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
+    int_ctrl_func += "    port map (\n"
+    int_ctrl_func += "      clk   => clk,\n"
+    int_ctrl_func += "      reset => reset,\n"
+    int_ctrl_func += "      done  => "+mtype+"_done,\n"
+    int_ctrl_func += "      start => "+mtype_down+"_start\n"
+    int_ctrl_func += "  );\n\n"
 
     return int_ctrl_wire,int_ctrl_func
 
@@ -924,11 +930,11 @@ def writeLUTParameters(argname, lut):
     if "in" in argname:
         width = 1
         depth = 8
-        parameterlist += "      lut_file  => "+"getDirEMDATA & \"LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
+        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
     elif "out" in argname:
         width = 1
         depth = 8
-        parameterlist += "      lut_file  => "+"getDirEMDATA & \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
+        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
     parameterlist += "      lut_width => "+str(width)+",\n"
     parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     

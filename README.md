@@ -33,7 +33,7 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
   1) Checkout the project generation scripts: `git clone git@github.com:cms-L1TK/project_generation_scripts.git`
   1) Checkout L1Trk HLS code: `git clone https://github.com/cms-tracklet/firmware-hls`
   1) Download the wiring files: `cd firmware-hls/emData/ ; ./download.sh -t; cd ../..`
-  1) Copy the wiring files to the project generation area: `cd firmware-hls/; cp ../firmware-hls/emData/LUTs/*.dat .`
+  1) Copy the wiring files to the project generation area: `cd project_generation_scripts/; cp ../firmware-hls/emData/LUTs/*.dat .`
   1) Ensure ROOT is in your PATH.
   1) Make top-level VHDL - example for PR-ME-MC chain: 
 ```
@@ -47,8 +47,9 @@ Example for IR-VMR chain:
 ```
 ./generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
 ```
-Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
+Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB summer chain
 ```
+./makeReducedConfig.py
 ./generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
 ```
 *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
@@ -91,7 +92,7 @@ Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB chain
 
 ### makeReducedConfig.py
 
-This script takes an input wires.dat, modules.dat, and memories.dat file, and allows you to make a reduced configuration centered around one module (currently explicitly set to be one TC). The script takes the phi sector of the TC, and chooses phi sectors for the layers that line up with it, then recursively searches for TC inputs and outputs within those phi regions. It outputs a new set of wires, modules, and memories files including only these files.
+This script takes an input wires.dat, modules.dat, and memories.dat file, and allows you to make a reduced summer chain configuration centered around one module (currently explicitly set to be one TC). The script takes the phi sector of the TC, and chooses phi sectors for the layers that line up with it, then recursively searches for TC inputs and outputs within those phi regions. It outputs a new set of wires, modules, and memories files including only these files.
 
 By default the script will run starting with *TC_L1L2F*, and produced files called *reduced_wires.dat*, etc., but it can be modified with these options:
   

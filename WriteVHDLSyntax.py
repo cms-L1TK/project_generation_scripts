@@ -89,7 +89,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
-    string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + "= '1' then\n"
+    string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + " = '1' then\n"
     string_mem += "      if rising_edge(CLK) then\n"
     string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"

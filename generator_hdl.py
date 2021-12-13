@@ -294,7 +294,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
 
     return string_write
 
-def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memprint_dir, sector="04"):
+def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrintsDir, sector="04"):
     """
     # Inputs:
     #   tbfunc:       name of the testbench
@@ -305,7 +305,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memprint
     #   memDict:      dictionary of memories organised by type 
     #                 & no. of bits (TPROJ_58 etc.)
     #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
-    #   memprint_dir:   directory where data for input memories is stored
+    #   memPrintsDir:   directory where data for input memories is stored
     #   sector:       which sector nonant the emData is taken from
     """
 
@@ -325,7 +325,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memprint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memprint_dir, sector)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memPrintsDir, sector)
     # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_84' in memInfoDict.keys():
@@ -358,7 +358,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memprint
 ########################################
 # Tcl
 ########################################
-def writeTcl(projname, topfunc, memprint_dir):
+def writeTcl(projname, topfunc, memPrintsDir):
     string_tcl = "Not yet implemented!\n"
     return string_tcl
 
@@ -428,7 +428,7 @@ if __name__ == "__main__":
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
 
-    parser.add_argument('--memprint_dir', type=str, default="../../../../../MemPrints/",
+    parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
     parser.add_argument('-ng','--no_graph', action='store_true',
                         help="Don't make TrackletProject.pdf, so ROOT not required")
@@ -543,11 +543,11 @@ if __name__ == "__main__":
     # Test bench
     tb_name = "tb_tf_top"
     string_testbench = writeTestBench(
-        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprint_dir)
+        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprints_dir)
                                       
     ###############
     # tcl
-    string_tcl = writeTcl(args.projname, topfunc, args.memprint_dir)
+    string_tcl = writeTcl(args.projname, topfunc, args.memprints_dir)
     
     # Write to disk
     fname_memUtil = "memUtil_pkg.vhd"
@@ -576,17 +576,17 @@ if __name__ == "__main__":
     ###############
     # Copy the necessary emulation memory printouts for test bench
     # make a local directory first
-#    if os.path.exists(args.memprint_dir):
+#    if os.path.exists(args.memprints_dir):
 #        print("Creating a directory:", args.emData_dir)
 #        subprocess.call(['mkdir','-p',args.emData_dir])
 #
 #        print("Start to copy emulation printouts locally")
 #        for filename in list_memprints:
 #            memdir = getMemPrintDirectory(filename)+'/'
-#            fullname = args.memprint_dir.rstrip('/')+'/'+memdir+filename
+#            fullname = args.memprints_dir.rstrip('/')+'/'+memdir+filename
 #            subprocess.call(['cp', fullname, args.emData_dir+'/.'])
 #        print("Done copying emulation printouts")
 #    else:
-#        print("Cannot find directory", args.memprint_dir)
+#        print("Cannot find directory", args.memprints_dir)
 #        print("No memory prinout files are copied.")
     

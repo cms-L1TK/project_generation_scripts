@@ -294,7 +294,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
 
     return string_write
 
-def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_dir, sector="04"):
+def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memprint_dir, sector="04"):
     """
     # Inputs:
     #   tbfunc:       name of the testbench
@@ -305,7 +305,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_d
     #   memDict:      dictionary of memories organised by type 
     #                 & no. of bits (TPROJ_58 etc.)
     #   memInfoDict:  dictionary of info (MemTypeInfoByKey) about each memory type.
-    #   emData_dir:   directory where data for input memories is stored
+    #   memprint_dir:   directory where data for input memories is stored
     #   sector:       which sector nonant the emData is taken from
     """
 
@@ -325,7 +325,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_d
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], emData_dir, sector)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memprint_dir, sector)
     # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_84' in memInfoDict.keys():
@@ -358,7 +358,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, emData_d
 ########################################
 # Tcl
 ########################################
-def writeTcl(projname, topfunc, emData_dir):
+def writeTcl(projname, topfunc, memprint_dir):
     string_tcl = "Not yet implemented!\n"
     return string_tcl
 
@@ -428,11 +428,8 @@ if __name__ == "__main__":
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
 
-    parser.add_argument('--emData_dir', type=str, default="../../../../../../../../emData/MemPrints/",
+    parser.add_argument('--memprint_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
-    parser.add_argument('--memprint_dir', type=str,
-                        default="../fpga_emulation_longVM/MemPrints/",
-                        help="Directory of emulation memory printouts")
     parser.add_argument('-ng','--no_graph', action='store_true',
                         help="Don't make TrackletProject.pdf, so ROOT not required")
     args = parser.parse_args()
@@ -546,11 +543,11 @@ if __name__ == "__main__":
     # Test bench
     tb_name = "tb_tf_top"
     string_testbench = writeTestBench(
-        tb_name, topfunc, process_list, memDict, memInfoDict, args.emData_dir)
+        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprint_dir)
                                       
     ###############
     # tcl
-    string_tcl = writeTcl(args.projname, topfunc, args.emData_dir)
+    string_tcl = writeTcl(args.projname, topfunc, args.memprint_dir)
     
     # Write to disk
     fname_memUtil = "memUtil_pkg.vhd"

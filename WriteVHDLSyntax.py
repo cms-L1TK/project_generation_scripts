@@ -89,7 +89,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
-    string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + "= '1' then\n"
+    string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + " = '1' then\n"
     string_mem += "      if rising_edge(CLK) then\n"
     string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
@@ -504,14 +504,14 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
                 mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
-                string_input_tmp += ("  constant FILE_IN_" + memInfo.mtype_short).ljust(str_len) + ": string := emDataDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
+                string_input_tmp += ("  constant FILE_IN_" + memInfo.mtype_short).ljust(str_len) + ": string := memPrintsDir&\"" + mem_dir + "/" + mem_file_start + "_" + memInfo.mtype_short + "_\";\n"
                 string_debug_tmp += ("  constant FILE_OUT_" + memInfo.mtype_short + "_debug").ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
         else:
             string_output_tmp += ("  constant FILE_OUT_" + mtypeB).ljust(str_len) + ": string := dataOutDir&\"" + memInfo.mtype_short + "_\";\n"
     
     string_constants += "\n  -- Paths of data files specified relative to Vivado project's xsim directory.\n"
     string_constants += "  -- e.g. IntegrationTests/PRMEMC/script/Work/Work.sim/sim_1/behav/xsim/\n"
-    string_constants += "  constant emDataDir".ljust(str_len) + ": string := \"" + emData_dir + "\";\n"
+    string_constants += "  constant memPrintsDir".ljust(str_len) + ": string := \"" + emData_dir + "\";\n"
     string_constants += "  constant dataOutDir".ljust(str_len) + ": string := \"../../../../../dataOut/\";\n\n"
 
     string_constants += string_input_tmp

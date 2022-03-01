@@ -453,6 +453,18 @@ def writeTemplatePars_TC(aTCModule):
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
+
+            # PHII-PHIL corresponds to AS memories PHIA-PHID
+            # (only used for L2L3 seed)
+            innerphilabel = innerphilabel.replace("PHII", "PHIA")
+            innerphilabel = innerphilabel.replace("PHIJ", "PHIB")
+            innerphilabel = innerphilabel.replace("PHIK", "PHIC")
+            innerphilabel = innerphilabel.replace("PHIL", "PHID")
+            outerphilabel = outerphilabel.replace("PHII", "PHIA")
+            outerphilabel = outerphilabel.replace("PHIJ", "PHIB")
+            outerphilabel = outerphilabel.replace("PHIK", "PHIC")
+            outerphilabel = outerphilabel.replace("PHIL", "PHID")
+
             assert(innerphilabel in PhiLabelASInner)
             innerindex = PhiLabelASInner.index(innerphilabel)
 

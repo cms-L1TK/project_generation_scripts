@@ -52,6 +52,11 @@ Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB summer chain
 ./makeReducedConfig.py
 ./generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
 ```
+Example for barrel-only IR-VMR-TE-TC-PR-ME-MC-TB chain
+```
+./makeBarrelConfig.py
+./generator_hdl.py --mut IR -u 0 -d 7 -w barrel_wires.dat -p barrel_processingmodules.dat -m barrel_memorymodules.dat
+```
 *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
 (Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).

@@ -942,11 +942,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     argtypes,argnames,templpars = parseProcFunction(module.mtype,fname_def)
 
     ####
-    # Determine function template parameters
-    templpars_str = f_writeTemplatePars(module)
-    templpars_str = templpars_str.replace(",","_");
-
-    ####
     # Write ports
     memModuleList, portNameList = getListsOfGroupedMemories(module)
 
@@ -1095,8 +1090,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str += writeProcCombination(module, str_ctrl_func, 
-                                      templpars_str, string_ports)
+    module_str += writeProcCombination(module, str_ctrl_func, string_ports)
     return str_ctrl_wire,module_str
 
 ################################

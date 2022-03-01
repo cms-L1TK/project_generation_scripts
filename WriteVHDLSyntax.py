@@ -798,7 +798,7 @@ def writeTBMemoryWriteFIFOInstance(mtypeB, proc, bxbitwidth):
 
     return string_mem 
 
-def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
+def writeProcCombination(module, str_ctrl_func, str_ports):
     """
     # Instantiation of processing module within top-level.
     # FIXME needs fixing to include template parameters for generic proc module writing

@@ -2,8 +2,6 @@
 
 Basic instructions to run the project generation for the Vivado HLS project with hourglass configuration
 
-**These scripts are currently consistent with the [reduced_config_pr branch of the firmware-hls repository](https://github.com/cms-L1TK/firmware-hls/tree/reduced_config_pr), which is in the process of being merged into the master branch.**
-
 ## Overview of code for producing wiring files.
 
 (More technical details about the internal operation of the scripts can be found at end of this document).

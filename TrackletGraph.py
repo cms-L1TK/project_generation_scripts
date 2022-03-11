@@ -291,7 +291,14 @@ class TrackletGraph(object):
             # e.g., "ME_D5PHIC11"
             proc.IPname = proc.inst[:5]
         elif proc.mtype == 'TrackletEngine':
-            proc.IPname = proc.inst[:5]+proc.inst.split("_")[2][:2]
+            innerPS = ("_L1" in proc.inst and "_L2" in proc.inst) \
+                   or ("_L2" in proc.inst and "_L3" in proc.inst) \
+                   or ("_L3" in proc.inst and "_L4" in proc.inst)
+            outerPS = ("_L1" in proc.inst and "_L2" in proc.inst) \
+                   or ("_L2" in proc.inst and "_L3" in proc.inst)
+            proc.IPname = "TE_"
+            proc.IPname += "PS_" if innerPS else "2S_"
+            proc.IPname += "PS" if outerPS else "2S"
         else:
             # FIX: check for other processing modules steps.
             proc.IPname = proc.inst

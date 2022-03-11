@@ -287,9 +287,9 @@ class TrackletGraph(object):
     #  they share a single IP core).
 
         if proc.mtype == 'MatchEngine':
-            # Final number unimportant in typical name "ME_D5PHIC11" 
-            # (Can probably drop phi region too).
-            proc.IPname = proc.inst[:9]
+            # Final number and phi region unimportant in typical name,
+            # e.g., "ME_D5PHIC11"
+            proc.IPname = proc.inst[:5]
         elif proc.mtype == 'TrackletEngine':
             proc.IPname = proc.inst[:5]+proc.inst.split("_")[2][:2]
         else:

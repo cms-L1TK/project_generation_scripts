@@ -975,10 +975,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
         elif "table" in argname: # For TE
+            innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
+                   or ("_L2" in module.inst and "_L3" in module.inst) \
+                   or ("_L3" in module.inst and "_L4" in module.inst)
+            outerPS = ("_L1" in module.inst and "_L2" in module.inst) \
+                   or ("_L2" in module.inst and "_L3" in module.inst)
             string_ports = writeLUTPorts(argname, module)
-            string_parameters = writeLUTParameters(argname, module)
+            string_parameters = writeLUTParameters(argname, module, innerPS, outerPS)
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
-            str_ctrl_wire += writeLUTWires(argname, module)
+            str_ctrl_wire += writeLUTWires(argname, module, innerPS, outerPS)
             string_mem_ports += writeLUTMemPorts(argname, module)
         else:
             # Given argument name, search for the matched port name in the mem lists

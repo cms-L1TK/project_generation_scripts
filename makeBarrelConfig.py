@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
-import sys
+import argparse
 
-if len(sys.argv) < 2:
-    print("Usage: " + sys.argv[0] + " WIRES_FILE")
-    sys.exit(1)
+# Parse options
+parser = argparse.ArgumentParser(description="Make a barrel-only configuration of the track finder.")
+parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
+parser.add_argument("-p", "--process", type=str, default="processingmodules.dat", help="Reference processingmodules.dat file (from full config)")
+parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", help="Reference memorymodules.dat file (from full config)")
+args = parser.parse_args()
 
-wiresFileName = sys.argv[1]
-fin = open(wiresFileName)
+# First extract all the modules and wires for a barrel-only project
+fin = open(args.wires)
 outputWires = []
 processingModules = []
 memoryModules = []
@@ -24,20 +27,20 @@ for line in fin:
         inputModule = splitLine[2].split(".")[0]
         outputModule = splitLine[4].split(".")[0]
     else:
-        if splitLine[-1] == "output=>":
+        if splitLine[-1] == "output=>": # output track memory
             inputModule = splitLine[2].split(".")[0]
-        else:
+        else: # input link
             outputModule = splitLine[-1].split(".")[0]
 
+    # Count the number of barrel-only InputRouters for each DTC and continue if
+    # this line is not barrel-only
     dtc = None
     if inputModule is not None and inputModule.startswith("IR_"):
         assert(memName.startswith("IL_"))
         dtc = inputModule[3:]
         if dtc not in dtcs:
             dtcs[dtc] = 0
-        else:
-            dtcs[dtc] += 1
-
+        dtcs[dtc] += 1
     if "_D" in line or "L1D1" in line or "L2D1" in line:
         if dtc is not None:
             dtcs[dtc] -= 1
@@ -49,16 +52,38 @@ for line in fin:
         processingModules.append(inputModule)
     if outputModule is not None:
         processingModules.append(outputModule)
-
 fin.close()
 
+# Next extract the processing module labels from the existing file
+fin = open(args.process)
+processLabels = {}
+for line in fin:
+    splitLine = line.split()
+    assert(len(splitLine) == 2)
+
+    prefix = splitLine[1].split("_")[0]
+    processLabels[prefix] = splitLine[0]
+fin.close()
+
+# Then extract the memory module labels and sizes from the existing file
+fin = open(args.memories)
+memoryLabels = {}
+memorySizes = {}
+for line in fin:
+    splitLine = line.split()
+    assert(len(splitLine) == 3)
+
+    prefix = splitLine[1].split("_")[0]
+    memoryLabels[prefix] = splitLine[0]
+    memorySizes[prefix] = splitLine[2]
+fin.close()
+
+# Write the barrel-only wires file
 fout = open("barrel_wires.dat", "w")
 for line in outputWires:
     output = True
     for dtc in dtcs:
-        if dtcs[dtc] > 0:
-            continue
-        if dtc in line:
+        if dtcs[dtc] == 0 and dtc in line:
             output = False
             break
     if not output:
@@ -66,74 +91,30 @@ for line in outputWires:
     fout.write(line)
 fout.close()
 
+# Write the barrel-only processing modules file
 fout = open("barrel_processingmodules.dat", "w")
 for p in sorted(set(processingModules)):
     output = True
     for dtc in dtcs:
-        if dtcs[dtc] > 0:
-            continue
-        if dtc in p:
+        if dtcs[dtc] == 0 and dtc in p:
             output = False
             break
     if not output:
         continue
-    if p.startswith("IR_"):
-        fout.write("InputRouter: " + p + "\n")
-    elif p.startswith("VMR_"):
-        fout.write("VMRouter: " + p + "\n")
-    elif p.startswith("TE_"):
-        fout.write("TrackletEngine: " + p + "\n")
-    elif p.startswith("TC_"):
-        fout.write("TrackletCalculator: " + p + "\n")
-    elif p.startswith("PR_"):
-        fout.write("ProjectionRouter: " + p + "\n")
-    elif p.startswith("ME_"):
-        fout.write("MatchEngine: " + p + "\n")
-    elif p.startswith("MC_"):
-        fout.write("MatchCalculator: " + p + "\n")
-    elif p.startswith("FT_"):
-        fout.write("FitTrack: " + p + "\n")
-    elif p.startswith("PD"):
-        fout.write("PurgeDuplicate: " + p + "\n")
+    prefix = p.split("_")[0]
+    fout.write(processLabels[prefix] + " " + p + "\n")
 fout.close()
 
+# Write the barrel-only memory modules file
 fout = open("barrel_memorymodules.dat", "w")
 for m in sorted(set(memoryModules)):
     output = True
     for dtc in dtcs:
-        if dtcs[dtc] > 0:
-            continue
-        if dtc in m:
+        if dtcs[dtc] == 0 and dtc in m:
             output = False
             break
     if not output:
         continue
-    if m.startswith("AP_"):
-        fout.write("AllProj: " + m + " [56]\n")
-    elif m.startswith("AS_"):
-        fout.write("AllStubs: " + m + " [42]\n")
-    elif m.startswith("CM_"):
-        fout.write("CandidateMatch: " + m + " [12]\n")
-    elif m.startswith("CT_"):
-        fout.write("CleanTrack: " + m + " [126]\n")
-    elif m.startswith("DL_"):
-        fout.write("DTCLink: " + m + " [36]\n")
-    elif m.startswith("FM_"):
-        fout.write("FullMatch: " + m + " [36]\n")
-    elif m.startswith("IL_"):
-        fout.write("InputLink: " + m + " [36]\n")
-    elif m.startswith("SP_"):
-        fout.write("StubPairs: " + m + " [12]\n")
-    elif m.startswith("TF_"):
-        fout.write("TrackFit: " + m + " [126]\n")
-    elif m.startswith("TPAR_"):
-        fout.write("TrackletParameters: " + m + " [56]\n")
-    elif m.startswith("TPROJ_"):
-        fout.write("TrackletProjections: " + m + " [54]\n")
-    elif m.startswith("VMPROJ_"):
-        fout.write("VMProjections: " + m + " [13]\n")
-    elif m.startswith("VMSME_"):
-        fout.write("VMStubsME: " + m + " [18]\n")
-    elif m.startswith("VMSTE_"):
-        fout.write("VMStubsTE: " + m + " [18]\n")
+    prefix = m.split("_")[0]
+    fout.write(memoryLabels[prefix] + " " + m + " " + memorySizes[prefix] + "\n")
 fout.close()

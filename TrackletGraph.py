@@ -376,22 +376,19 @@ class TrackletGraph(object):
                     isbarrel = True
                 if diskseed.search(mem_inst):
                     isdisk = True
-            elif mem_type in ['DTCLink']: # DTCLinks are technically not memories
-                if barrelstr.search(mem_inst):
-                    isbarrel = True
-                if diskstr.search(mem_inst):
-                    isdisk = True
-                #continue
+            elif mem_type in ['DTCLink']: # Dont try to assign DTC to barrel/disk
+                isbarrel = True
+                isdisk = True
             else:
                 raise ValueError("Unknown memory type: "+mem_type)
 
             #assert(isbarrel or isdisk)
             
             if region == 'L': # barrel project
-                if not isbarrel or isdisk:
+                if not isbarrel:
                     continue
             elif region == 'D': # disk project
-                if not isdisk or isbarrel:
+                if not isdisk:
                     continue
 
             if mem_type == 'VMStubsTE':

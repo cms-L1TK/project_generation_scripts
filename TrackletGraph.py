@@ -287,11 +287,18 @@ class TrackletGraph(object):
     #  they share a single IP core).
 
         if proc.mtype == 'MatchEngine':
-            # Final number unimportant in typical name "ME_D5PHIC11" 
-            # (Can probably drop phi region too).
-            proc.IPname = proc.inst[:9]
+            # Final number and phi region unimportant in typical name,
+            # e.g., "ME_D5PHIC11"
+            proc.IPname = proc.inst[:5]
         elif proc.mtype == 'TrackletEngine':
-            proc.IPname = proc.inst[:5]+proc.inst.split("_")[2][:2]
+            innerPS = ("_L1" in proc.inst and "_L2" in proc.inst) \
+                   or ("_L2" in proc.inst and "_L3" in proc.inst) \
+                   or ("_L3" in proc.inst and "_L4" in proc.inst)
+            outerPS = ("_L1" in proc.inst and "_L2" in proc.inst) \
+                   or ("_L2" in proc.inst and "_L3" in proc.inst)
+            proc.IPname = "TE_"
+            proc.IPname += "PS_" if innerPS else "2S_"
+            proc.IPname += "PS" if outerPS else "2S"
         else:
             # FIX: check for other processing modules steps.
             proc.IPname = proc.inst
@@ -369,22 +376,19 @@ class TrackletGraph(object):
                     isbarrel = True
                 if diskseed.search(mem_inst):
                     isdisk = True
-            elif mem_type in ['DTCLink']: # DTCLinks are technically not memories
-                if barrelstr.search(mem_inst):
-                    isbarrel = True
-                if diskstr.search(mem_inst):
-                    isdisk = True
-                #continue
+            elif mem_type in ['DTCLink']: # Dont try to assign DTC to barrel/disk
+                isbarrel = True
+                isdisk = True
             else:
                 raise ValueError("Unknown memory type: "+mem_type)
 
             #assert(isbarrel or isdisk)
             
             if region == 'L': # barrel project
-                if not isbarrel or isdisk:
+                if not isbarrel:
                     continue
             elif region == 'D': # disk project
-                if not isdisk or isbarrel:
+                if not isdisk:
                     continue
 
             if mem_type == 'VMStubsTE':
@@ -614,7 +618,7 @@ class TrackletGraph(object):
             if instance_name.startswith(module+"_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
-            print("WARNING!! Cannot find any modules", instance_name,"!!")
+            print("WARNING!! Cannot find any modules with name starting with", module,"!!")
         else:
             return modules
 

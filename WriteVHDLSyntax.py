@@ -798,7 +798,7 @@ def writeTBMemoryWriteFIFOInstance(mtypeB, proc, bxbitwidth):
 
     return string_mem 
 
-def writeProcCombination(module, str_ctrl_func, templpars_str, str_ports):
+def writeProcCombination(module, str_ctrl_func, str_ports):
     """
     # Instantiation of processing module within top-level.
     # FIXME needs fixing to include template parameters for generic proc module writing
@@ -924,32 +924,32 @@ def writeLUTPorts(argname,lut):
 
     return string_lut_ports
 
-def writeLUTParameters(argname, lut):
+def writeLUTParameters(argname, lut, innerPS, outerPS):
     parameterlist = ""
     width = 0
     if "in" in argname:
         width = 1
-        depth = 8
+        depth = 8 if innerPS else 9
         parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
     elif "out" in argname:
         width = 1
-        depth = 8
+        depth = 8 if outerPS else 9
         parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
     parameterlist += "      lut_width => "+str(width)+",\n"
     parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     
     return parameterlist
 
-def writeLUTWires(argname, lut):
+def writeLUTWires(argname, lut, innerPS, outerPS):
     wirelist = ""
     argname = argname.split("[")[0]
     depth = 0
     width = 0
     if "in" in argname:
-        depth = 8
+        depth = 8 if innerPS else 9
         width = 1
     elif "out" in argname:
-        depth = 8
+        depth = 8 if outerPS else 9
         width = 1
     wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
     wirelist += "std_logic_vector("+str(depth-1)+" downto 0);\n"

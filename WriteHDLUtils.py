@@ -453,6 +453,18 @@ def writeTemplatePars_TC(aTCModule):
             # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7
             innerphilabel = sp_instance.split('_')[1][0:6]
             outerphilabel = sp_instance.split('_')[2][0:6]
+
+            # PHII-PHIL corresponds to AS memories PHIA-PHID
+            # (only used for L2L3 seed)
+            innerphilabel = innerphilabel.replace("PHII", "PHIA")
+            innerphilabel = innerphilabel.replace("PHIJ", "PHIB")
+            innerphilabel = innerphilabel.replace("PHIK", "PHIC")
+            innerphilabel = innerphilabel.replace("PHIL", "PHID")
+            outerphilabel = outerphilabel.replace("PHII", "PHIA")
+            outerphilabel = outerphilabel.replace("PHIJ", "PHIB")
+            outerphilabel = outerphilabel.replace("PHIK", "PHIC")
+            outerphilabel = outerphilabel.replace("PHIL", "PHID")
+
             assert(innerphilabel in PhiLabelASInner)
             innerindex = PhiLabelASInner.index(innerphilabel)
 
@@ -930,11 +942,6 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     argtypes,argnames,templpars = parseProcFunction(module.mtype,fname_def)
 
     ####
-    # Determine function template parameters
-    templpars_str = f_writeTemplatePars(module)
-    templpars_str = templpars_str.replace(",","_");
-
-    ####
     # Write ports
     memModuleList, portNameList = getListsOfGroupedMemories(module)
 
@@ -968,10 +975,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             if first_of_type:
                 string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
         elif "table" in argname: # For TE
+            innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
+                   or ("_L2" in module.inst and "_L3" in module.inst) \
+                   or ("_L3" in module.inst and "_L4" in module.inst)
+            outerPS = ("_L1" in module.inst and "_L2" in module.inst) \
+                   or ("_L2" in module.inst and "_L3" in module.inst)
             string_ports = writeLUTPorts(argname, module)
-            string_parameters = writeLUTParameters(argname, module)
+            string_parameters = writeLUTParameters(argname, module, innerPS, outerPS)
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
-            str_ctrl_wire += writeLUTWires(argname, module)
+            str_ctrl_wire += writeLUTWires(argname, module, innerPS, outerPS)
             string_mem_ports += writeLUTMemPorts(argname, module)
         else:
             # Given argument name, search for the matched port name in the mem lists
@@ -1083,8 +1095,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     ####
     # Put ingredients togther
-    module_str += writeProcCombination(module, str_ctrl_func, 
-                                      templpars_str, string_ports)
+    module_str += writeProcCombination(module, str_ctrl_func, string_ports)
     return str_ctrl_wire,module_str
 
 ################################

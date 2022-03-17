@@ -2,8 +2,6 @@
 
 Basic instructions to run the project generation for the Vivado HLS project with hourglass configuration
 
-**These scripts are currently consistent with the [reduced_config_pr branch of the firmware-hls repository](https://github.com/cms-L1TK/firmware-hls/tree/reduced_config_pr), which is in the process of being merged into the master branch.**
-
 ## Overview of code for producing wiring files.
 
 (More technical details about the internal operation of the scripts can be found at end of this document).
@@ -51,6 +49,11 @@ Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB summer chain
 ```
 ./makeReducedConfig.py
 ./generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat
+```
+Example for barrel-only IR-VMR-TE-TC-PR-ME-MC-TB chain
+```
+./makeBarrelConfig.py
+./generator_hdl.py --mut IR -u 0 -d 7 -w barrel_wires.dat -p barrel_processingmodules.dat -m barrel_memorymodules.dat
 ```
 *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 

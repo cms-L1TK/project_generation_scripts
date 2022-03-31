@@ -8,11 +8,14 @@ from builtins import range
 ProcOrder_dict = {
    'InputRouter':0,
    'VMRouter':1,
+   'VMRouterCM':1,
    'TrackletEngine':2,
+   'TrackletProcessor':2,
    'TrackletCalculator':3,
    'ProjectionRouter':4,
    'MatchEngine':5,
    'MatchCalculator':6,
+   'MatchProcessor':3,
    'FitTrack':7,
    'PurgeDuplicate':8,
    'TrackBuilder':9
@@ -26,6 +29,7 @@ ModuleDrawWidth_dict = {'DTCLink':2.0,
                         'VMStubsTEOuter':3.0,
                         'VMStubsME':3.0,
                         'AllStubs':3.0,
+                        'AllInnerStubs':3.0,
                         'StubPairs':4.0,
                         'TrackletParameters':3.0,
                         'TrackletProjections':4.0,
@@ -41,11 +45,14 @@ ModuleDrawWidth_dict = {'DTCLink':2.0,
                         ###################
                         'InputRouter':2.0,
                         'VMRouter':2.0,
+                        'VMRouterCM':2.0,
                         'TrackletEngine':4.0,
                         'TrackletCalculator':2.5,
+                        'TrackletProcessor':2.5,
                         'ProjectionRouter':2.5,
                         'MatchEngine':3.0,
                         'MatchCalculator':2.5,
+                        'MatchProcessor':2.5,
                         'FitTrack':2.0,
                         'TrackBuilder':2.0,
                         'PurgeDuplicate':2.0,
@@ -200,6 +207,8 @@ class TrackletGraph(object):
             else: mem.bitwidth = 16
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
+        elif mem.mtype == "AllInnerStubs":
+            mem.bitwidth = 51 # FIXME - only correct for barrel PS
         elif mem.mtype == "DTCLink":
             mem.bitwidth = 39
         elif mem.mtype == "StubPairs":
@@ -234,11 +243,13 @@ class TrackletGraph(object):
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
                or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
-               or mem.mtype == "InputLink" or mem.mtype == "DTCLink"):
+                  or mem.mtype == "InputLink" or mem.mtype == "DTCLink" or mem.mtype == "AllInnerStubs"):
             mem.bxbitwidth = 1
         elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
+            if (mem.mtype == "VMStubsME" and  mem.downstreams[0].inst[0:2] == "MP") : 
+                mem.bxbitwidth = 2
         elif (    mem.mtype == "TrackWord"
                or mem.mtype == "BarrelStubWord" or mem.mtype == "DiskStubWord"):
             mem.bxbitwidth = 0 # FIFO memories
@@ -358,7 +369,7 @@ class TrackletGraph(object):
             isdisk = False
 
             if mem_type in ['InputLink','VMStubsTE','VMStubsME','StubPairs',
-                            'AllStubs','VMProjections','CandidateMatch','AllProj']:
+                            'AllStubs','AllInnerStubs','VMProjections','CandidateMatch','AllProj']:
                 if barrelstr.search(mem_inst):
                     isbarrel = True
                 if diskstr.search(mem_inst):
@@ -744,8 +755,8 @@ class TrackletGraph(object):
         if aMemModule is None:
             return ProcList, MemList
 
-        # A few special cases: stop further expanding them upstream
-        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
+        # A few special cases: stop further expanding them upstream  - Not clear why we do this (Ryd)
+        if aMemModule.mtype in ['VMStubsME','TrackletParameters','AllProj']:
             aMemModule.is_initial = True
             return ProcList, MemList
 
@@ -774,7 +785,7 @@ class TrackletGraph(object):
             return ProcList, MemList
         
         # A few special cases: stop further expanding them downstream
-        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
+        if aMemModule.mtype in ['VMStubsME','TrackletParameters','AllProj']:
             aMemModule.is_final = True
             return ProcList, MemList
 

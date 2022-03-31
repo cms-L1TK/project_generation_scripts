@@ -390,6 +390,52 @@ def matchArgPortNames_VMR(argname, portname, memoryname):
         print("matchArgPortNames_VMR: Unknown argument", argname)
         return False
 
+
+################################                                                                                                                                      
+# VMRouterCM                                                                                                                                                          
+################################                                                                                                                                      
+def writeTemplatePars_VMRCM(aVMRModule):
+    #VMRouterCM template parameters are not implemented. Add if necessary.                                                                                            
+    return ""
+
+def matchArgPortNames_VMRCM(argname, portname, memoryname):
+    # argname and portname does not contain enough information to determine matches                                                                                   
+    phi_region = memoryname.split("PHI")[1][0]
+    position = memoryname.split("_")[1][0:2]
+    overlap_phi_regions = ['Q','R','S','T','W','X','Y','Z']
+
+    print("Here770 argname:",argname," portname:",portname," memoryname:",memoryname)
+
+    # DISK2S memories has a seperate array                                                                                                                            
+    if 'inputStubsDisk2S' in argname:
+        return ('stubin' in portname) and ('D' in position) and ('2S' in memoryname)
+    # Non-DISK2S inputs                                                                                                                                               
+    elif 'inputStubs' in argname:
+        if ('L' in position):
+            return 'stubin' in portname
+        else:
+            return ('stubin' in portname) and ('PS' in memoryname)
+    # AllInnerStub memories                                                                                                                                           
+    elif 'memoriesASInner' in argname:
+        return 'allinnerstubout' in portname
+    # Allstub memories                                                                                                                                                
+    elif 'memoriesAS' in argname:
+        return 'allstubout' in portname
+    # ME and TE memories use the same portnames, thereof an extra check                                                                                               
+    elif 'memoryME'  in argname:
+        return 'vmstuboutPHI' in portname
+    # TE outer                                                                                                                                                        
+    elif 'memoriesTEO' in argname:
+        return 'vmstubout_seed' in portname
+    # Known arguments that should not be matched to any ports                                                                                                         
+    elif 'mask' in argname or 'Table' in argname:
+        return False
+    else:
+        print("matchArgPortNames_VMRCM: Unknown argument", argname)
+        return False
+
+
+
 ################################
 # TrackletEngine
 ################################
@@ -582,6 +628,125 @@ def decodeSeedIndex_TC(memoryname):
         return False
 
 
+################################                                                                                                                                      
+# TrackletProcessor                                                                                                                                                   
+################################                                                                                                                                      
+def writeTemplatePars_TP(aTCModule):
+    instance_name = aTCModule.inst
+    # e.g. TC_L3L4C                                                                                                                                                   
+    iTC = 'TC::'+instance_name[-1]
+
+    # Count AllStub memories                                                                                                                                          
+    NASMemInner = 0  # number of inner allstub memories                                                                                                               
+    NASMemOuter = 0  # number of outer allstub memories                                                                                                               
+    PhiLabelASInner = []
+    PhiLabelASOuter = []
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
+        if 'innerallstub' in portname:
+            NASMemInner += 1
+            # AS memory instance name example: AS_L1PHICn3                                                                                                            
+            philabel = inmem.inst.split('_')[1][0:6]  # e.g. L1PHIC                                                                                                   
+            PhiLabelASInner.append(philabel)
+        elif 'outerallstub' in portname:
+            NASMemOuter += 1
+            philabel = inmem.inst.split('_')[1][0:6]
+            PhiLabelASOuter.append(philabel)
+
+    # sort the phi label list alphabetically                                                                                                                          
+    PhiLabelASInner.sort()
+    PhiLabelASOuter.sort()
+
+    #assert(NASMemInner<=2)                                                                                                                                           
+    #assert(NASMemOuter<=2)                                                                                                                                           
+
+    # Count StubPair memories                                                                                                                                         
+    NSPMem = [[0,0],[0,0]]
+
+    for inmem, portname in list(zip(aTCModule.upstreams, aTCModule.input_port_names)):
+        if 'stubpair' in portname:
+            sp_instance = inmem.inst
+            # stubpair memory instance name example: SP_L1PHIB8_L2PHIA7                                                                                               
+            innerphilabel = sp_instance.split('_')[1][0:6]
+            outerphilabel = sp_instance.split('_')[2][0:6]
+            assert(innerphilabel in PhiLabelASInner)
+            innerindex = PhiLabelASInner.index(innerphilabel)
+
+            assert(outerphilabel in PhiLabelASOuter)
+            outerindex = PhiLabelASOuter.index(outerphilabel)
+
+            NSPMem[innerindex][outerindex] += 1
+
+    template_str = iTC+','+str(NASMemInner)+','+str(NASMemOuter)+','+str(NSPMem[0][0])+','+str(NSPMem[0][1])+','+str(NSPMem[1][0])+','+str(NSPMem[1][1])+','
+    # Count connected TProj memories and compute the TPROJMask parameter                                                                                              
+
+    # list of layers/disks the seeds projecting to for a given seeding                                                                                                
+    ProjLayers_List = ['L1','L2','L3','L4','L5','L6','D1','D2','D3','D4','D5']
+    # remove the ones if they are seeding layers/disks                                                                                                                
+    TCSeed = instance_name.split('_')[-1][0:4]
+    seed1 = TCSeed[0:2]
+    seed2 = TCSeed[2:4]
+    ProjLayers_List.remove(seed1)
+    ProjLayers_List.remove(seed2)
+
+    TPROJMask = 0
+
+    for outmem, portname in list(zip(aTCModule.downstreams, aTCModule.output_port_names)):
+        if 'projout' in portname: # portname example: projoutL6PHID                                                                                                   
+            layer = portname[7:9] # L6                                                                                                                                
+            phi = portname[-1] # D                                                                                                                                    
+
+            assert(layer in ProjLayers_List)
+            index = ProjLayers_List.index(layer)
+
+            mask = 0
+            if phi == 'A':
+                mask = 1
+            elif phi == 'B':
+                mask = 2
+            elif phi == 'C':
+                mask = 4
+            elif phi == 'D':
+                mask = 8
+            assert(mask > 0)
+
+            TPROJMask += mask << (index * 4)
+
+    template_str += hex(TPROJMask)+','
+
+    # truncation parameter                                                                                                                                            
+    template_str += 'kMaxProc'
+
+    return template_str
+
+
+def matchArgPortNames_TP(argname, portname, memoryname):
+    if 'innerStubs' in argname:
+        return 'innerallstub' in portname
+    elif 'outerStubs' in argname:
+        return 'outerallstub' in portname
+    elif 'outerVMStubs' in argname:
+        return 'outervmstubin' in portname
+    elif 'trackletParameters' in argname:
+        return 'trackpar' in portname
+    elif 'projout' in argname:
+        # e.g. "projout_disk[TC::N_PROJOUT_DISK]"                                                                                                                     
+        destination = argname.strip().split('_')[-1][:-2]
+        print("matchArgPortNames_TP:",argname,memoryname)
+        if 'projout' not in portname:
+            return False
+        if "projout_disk" in argname:
+            return "projoutD" in portname
+        elif "projout_barrel_ps" in argname:
+            return portname[7:9] in ["L1", "L2", "L3"]
+        elif "projout_barrel_2s" in argname:
+            return portname[7:9] in ["L4", "L5", "L6"]
+    elif 'lut' in argname:
+        return False
+    else:
+        print("matchArgPortNames_TP: Unknown argument", argname)
+        return False
+
+
 ################################
 # ProjectionRouter
 ################################
@@ -718,6 +883,62 @@ def matchArgPortNames_MC(argname, portname, memoryname):
     else:
         print("matchArgPortNames_MC: Unknown argument name", argname)
         return False
+
+
+################################                                                                                                                                      
+# MatchProcessor                                                                                                                                                      
+################################                                                                                                                                      
+
+def writeTemplatePars_MP(aMPModule):
+    instance_name = aMPModule.inst
+    # e.g. MP_L2PHID                                                                                                                                                  
+    pos = instance_name.split('_')[1][0:2]
+    ASTYPE = ''
+    APTYPE = ''
+    FMTYPE = ''
+    LAYER = '0'
+    DISK = '0'
+    if pos in ['L1','L2','L3']:
+        LAYER = pos[1]
+        FMTYPE = 'BARREL'
+        APTYPE = 'BARRELPS'
+        ASTYPE = 'BARRELPS'
+    elif pos in ['L4','L5','L6']:
+        LAYER = pos[1]
+        FMTYPE = 'BARREL'
+        APTYPE = 'BARREL2S'
+        ASTYPE = 'BARREL2S'
+    else: # Disk                                                                                                                                                      
+        DISK = pos[1]
+        FMTYPE = 'DISK'
+        APTYPE = 'DISK'
+        # FIXME here after the allstubs are seperated for disk ps and 2s in the configs                                                                               
+        ASTYPE = 'DISKPS' # all ps for now                                                                                                                            
+
+    # FIXME                                                                                                                                                           
+    PHISEC = '2'  # PHISEC??                                                                                                                                          
+
+    templpars_str = ASTYPE+','+APTYPE+','+FMTYPE+','+LAYER+','+DISK+','+PHISEC
+
+    return templpars_str
+
+
+def matchArgPortNames_MP(argname, portname, memoryname):
+    if argname in ['allstub','allproj']:
+        return portname == argname+'in'
+    elif 'fullmatch' in argname:
+        return 'matchout' in portname
+    elif 'projin' in argname:
+        return 'projin' in portname
+    elif 'instubdata' in argname:
+        return 'vmstubin' in portname
+    else:
+        print("matchArgPortNames_MP: Unknown argument name", argname)
+        return False
+
+
+
+
 
 ################################
 # FitTrack
@@ -910,9 +1131,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type, extraports):
     ####
     # function name
-    assert(module.mtype in ['InputRouter', 'VMRouter','TrackletEngine','TrackletCalculator',
-                            'ProjectionRouter','MatchEngine','MatchCalculator',
-                            'FitTrack','TrackBuilder','PurgeDuplicate'])
+    assert(module.mtype in ['InputRouter', 'VMRouter', 'VMRouterCM', 'TrackletEngine', 'TrackletCalculator',
+                            'TrackletProcessor', 'ProjectionRouter', 'MatchEngine', 'MatchCalculator',
+                            'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
 
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
@@ -981,6 +1202,12 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             string_parameters = writeLUTParameters(argname, module, innerPS, outerPS)
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
             str_ctrl_wire += writeLUTWires(argname, module, innerPS, outerPS)
+            string_mem_ports += writeLUTMemPorts(argname, module)
+        elif "lut" in argname: # For TP
+            string_ports = writeLUTPorts(argname, module)
+            string_parameters = writeLUTParameters(argname, module)
+            module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
+            str_ctrl_wire += writeLUTWires(argname, module)
             string_mem_ports += writeLUTMemPorts(argname, module)
         else:
             # Given argument name, search for the matched port name in the mem lists
@@ -1059,7 +1286,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             string_mem_ports += writeProcTrackStreamLHSPorts(tmp_argname,memory)
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
-                    if portname.find("trackpar") != -1 and module.mtype == "TrackletCalculator":
+                    if portname.find("trackpar") != -1 and (module.mtype == "TrackletCalculator" or module.mtype == "TrackletProcessor"):
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
                         string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
@@ -1107,10 +1334,20 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
                                          writeTemplatePars_VMR,
                                          matchArgPortNames_VMR,
                                          first_of_type, extraports)
+    elif module.mtype == 'VMRouterCM':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_VMRCM,
+                                         matchArgPortNames_VMRCM,
+                                         first_of_type, extraports)
     elif module.mtype == 'TrackletEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TE,
                                          matchArgPortNames_TE,
+                                         first_of_type, extraports)
+    elif module.mtype == 'TrackletProcessor':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_TP,
+                                         matchArgPortNames_TP,
                                          first_of_type, extraports)
     elif module.mtype == 'TrackletCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
@@ -1131,6 +1368,11 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports):
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_MC,
                                          matchArgPortNames_MC,
+                                         first_of_type, extraports)
+    elif module.mtype == 'MatchProcessor':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_MP,
+                                         matchArgPortNames_MP,
                                          first_of_type, extraports)
     elif module.mtype == 'FitTrack':
         return writeModuleInst_generic(module, hls_src_dir,

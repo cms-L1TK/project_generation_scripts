@@ -407,8 +407,6 @@ def matchArgPortNames_VMRCM(argname, portname, memoryname):
     position = memoryname.split("_")[1][0:2]
     overlap_phi_regions = ['Q','R','S','T','W','X','Y','Z']
 
-    print("Here770 argname:",argname," portname:",portname," memoryname:",memoryname)
-
     # DISK2S memories has a seperate array                                                                                                                            
     if 'inputStubsDisk2S' in argname:
         return ('stubin' in portname) and ('D' in position) and ('2S' in memoryname)
@@ -734,7 +732,6 @@ def matchArgPortNames_TP(argname, portname, memoryname):
     elif 'projout' in argname:
         # e.g. "projout_disk[TC::N_PROJOUT_DISK]"                                                                                                                     
         destination = argname.strip().split('_')[-1][:-2]
-        print("matchArgPortNames_TP:",argname,memoryname)
         if 'projout' not in portname:
             return False
         if "projout_disk" in argname:

@@ -965,16 +965,12 @@ def writeProcMemoryLHSPorts(argname,mem):
             string_mem_ports += "      "+argname+"_dataarray_"+str(imem)+"_data_V_d0        => "
             string_mem_ports += mem.keyName()+"_mem"+str(imem)+"_AV_din("+mem.var()+"),\n"
     else:
-        argnametmp = argname 
-        #if argnametmp == "fullmatch_0" :
-        #    argnametmp = "fullmatch"
-
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_ce0       => open,\n"
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_we0       => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
         string_mem_ports += mem.keyName()+"_mem_A_wea("+mem.var()+"),\n"
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_address0  => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
         string_mem_ports += mem.keyName()+"_mem_AV_writeaddr("+mem.var()+"),\n"
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_d0        => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
         string_mem_ports += mem.keyName()+"_mem_AV_din("+mem.var()+"),\n"
 
 
@@ -984,13 +980,6 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
     """
     # Processing module port assignment: inputs from memories
     """
-    #HACK - don't understand why index _0_ is dropped
-    argnametmp =  argname
-
-    #Hack
-    ##if argnametmp == "innerStubs_0" :
-    ##    argnametmp = "innerStubs"
-
     if mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME": #FIXME hack for combined modules
         string_mem_ports = ""
         nmem = 5
@@ -998,26 +987,26 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
             nmem = 4
         for instance in range(0,nmem):
             if mem.mtype == "VMStubsTEOuter" :
-                string_mem_ports += "      "+argnametmp+"_dataarray_data_V_"+str(instance)+"_ce"+str(portindex)+"       => "
+                string_mem_ports += "      "+argname+"_dataarray_data_V_"+str(instance)+"_ce"+str(portindex)+"       => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_A_enb("+mem.var()+"),\n"
-                string_mem_ports += "      "+argnametmp+"_dataarray_data_V_"+str(instance)+"_address"+str(portindex)+"  => "
+                string_mem_ports += "      "+argname+"_dataarray_data_V_"+str(instance)+"_address"+str(portindex)+"  => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_AV_readaddr("+mem.var()+"),\n"
-                string_mem_ports += "      "+argnametmp+"_dataarray_data_V_"+str(instance)+"_q"+str(portindex)+"        => "
+                string_mem_ports += "      "+argname+"_dataarray_data_V_"+str(instance)+"_q"+str(portindex)+"        => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_AV_dout("+mem.var()+"),\n"
             else:
-                string_mem_ports += "      "+argnametmp+"_dataarray_"+str(instance)+"_data_V_ce"+str(portindex)+"       => "
+                string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_ce"+str(portindex)+"       => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_A_enb("+mem.var()+"),\n"
-                string_mem_ports += "      "+argnametmp+"_dataarray_"+str(instance)+"_data_V_address"+str(portindex)+"  => "
+                string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_address"+str(portindex)+"  => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_AV_readaddr("+mem.var()+"),\n"
-                string_mem_ports += "      "+argnametmp+"_dataarray_"+str(instance)+"_data_V_q"+str(portindex)+"        => "
+                string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_q"+str(portindex)+"        => "
                 string_mem_ports += mem.keyName()+"_mem"+str(instance)+"_AV_dout("+mem.var()+"),\n"
     else:
         string_mem_ports = ""
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_ce"+str(portindex)+"       => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_ce"+str(portindex)+"       => "
         string_mem_ports += mem.keyName()+"_mem_A_enb("+mem.var()+"),\n"
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_address"+str(portindex)+"  => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_address"+str(portindex)+"  => "
         string_mem_ports += mem.keyName()+"_mem_AV_readaddr("+mem.var()+"),\n"
-        string_mem_ports += "      "+argnametmp+"_dataarray_data_V_q"+str(portindex)+"        => "
+        string_mem_ports += "      "+argname+"_dataarray_data_V_q"+str(portindex)+"        => "
         string_mem_ports += mem.keyName()+"_mem_AV_dout("+mem.var()+"),\n"
 
     if mem.has_numEntries_out and portindex == 0:

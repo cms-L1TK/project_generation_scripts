@@ -218,6 +218,8 @@ def writeMemoryUtil(memDict, memInfoDict):
         bitwidth = int(mtypeB.split("_")[1]);
         num_pages = 2**memInfo.bxbitwidth
 
+        combined = False
+
         if memInfo.is_binned:
             combined =  memInfo.downstream_mtype_short in ("TP", "MP")
 
@@ -228,16 +230,16 @@ def writeMemoryUtil(memDict, memInfoDict):
             ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n"
 
             arrName = "t_arr_"+mtypeB+"_DATA"
-            if combined:
-                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(9+memInfo.bxbitwidth)+" downto 0);\n" 
-            else:
-                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n"
         else:
             arrName = "t_arr_"+mtypeB+"_1b"
             ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
 
             arrName = "t_arr_"+mtypeB+"_ADDR"
-            ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+            if combined:
+                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(9+memInfo.bxbitwidth)+" downto 0);\n" 
+            else:
+                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
 
             arrName = "t_arr_"+mtypeB+"_DATA"
             ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 

@@ -965,8 +965,8 @@ def writeProcMemoryLHSPorts(argname,mem):
             string_mem_ports += mem.keyName()+"_mem"+str(imem)+"_AV_din("+mem.var()+"),\n"
     else:
         argnametmp = argname 
-        if argnametmp == "fullmatch_0" :
-            argnametmp = "fullmatch"
+        #if argnametmp == "fullmatch_0" :
+        #    argnametmp = "fullmatch"
 
         string_mem_ports += "      "+argnametmp+"_dataarray_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argnametmp+"_dataarray_data_V_we0       => "
@@ -987,8 +987,8 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
     argnametmp =  argname
 
     #Hack
-    if argnametmp == "innerStubs_0" :
-        argnametmp = "innerStubs"
+    ##if argnametmp == "innerStubs_0" :
+    ##    argnametmp = "innerStubs"
 
     if mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME": #FIXME hack for combined modules
         string_mem_ports = ""

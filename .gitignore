@@ -1,6 +1,9 @@
 *.dat
 *.*~
 *.pyc
+*.pdf
+*.vhd
+*.tcl
 
 test.txt
 wires.reduced

@@ -135,8 +135,6 @@ after running the Wires.py script by doing
 This code is compatible with python 3.  All new code should be compatible with python 3; since python 2 has ended support in 2020.
 
 Some of the code also depends on ROOT and its python interface (last tested with version 6.10.00), though this can be disabled via the `--no-graph` option.
-
-The 'future' package is required (i.e., `conda install future` if you use anaconda python distribution.)
 -----------------------------------------------------------------
 
 ## Technical details of scripts for producing wiring files.

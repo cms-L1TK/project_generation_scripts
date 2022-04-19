@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import absolute_import
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from ROOT import TH1I, TCanvas, gPad
 import argparse

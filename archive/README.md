@@ -42,6 +42,85 @@ should no longer be used, as they produce out-of-date wiring files.
 
   (*FIXME*: for memorymodules.dat, there is a third column (e.g. "[36]") that is supposed to indicate the data width of the memory. This number is hardcoded and is likely out of date. It is not used in the later steps for generating top level project, but is used to estimate RAM useage. It may be less confusing if we either remove it or update the numbers or link it to the corresponding HLS memory header files.)
 
+	### ./Wires.py
+
+	N.B. HourGlassConfig.py ensures that no output memory is written by > 1 proc module, to avoid conflicts. However, it doesn't ensure that no input memory is read by > 1 proc module, so this must be fixed by Wires.py. It does this by cloning the memories if they are read by > 1 proc module, (appending "n1", "n2" etc. to their name to identify each clone); and then using several output pins of the proc module that writes to this memory, with each pin writing to one clone of the memory. Furthermore, as wires.input.hourglassExtended indicates that each proc block reads/writes several memories, and a different pin of proc block must be used for each, this script names the pins (after "." in the module name).
+
+	a) Reads file wires.input.hourglassExtended (written by HourGlassConfig.py) showing which processing blocks are connected to which input & output memories.
+
+	b) Writes file processingmodules_inputs.dat (never used!?) showing number of input memories connected to each proc step. e.g.
+
+	VMR_D3PHIB  has 6 inputs
+
+	gives #inputs to VMRouter "D3PHIB" (naming convention given above under HourGlassConfig.py).
+
+	c) Writes file processingmodules.dat listing all processing blocks, and the generic algo step each corresponds to. e.g.
+
+	VMRouter: VMR_D3PHIB
+
+	d) Writes file memorymodules.dat.
+
+	VMStubsTE: VMSTE_L5PHIA1n1 [18]
+	VMStubsTE: VMSTE_L5PHIA1n2 [18]
+
+	listing all input memories (naming convention given above under HourGlassConfig.py) with "n2" etc. appended to their names, if multuple copies of a given memory are needed (to avoid conflicts if it is read by multiple proc blocks) indicating which copy it is. The string "VMEStubsTE:" just indicates the generic memory type (e.g. VM memory to be used by TE). The string "[18]" indicates assumed the data word width, hard-wired in the script, which should correspond to https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat .
+
+	e) Writes file wires.dat.
+
+	VMSTE_L1PHIA4n2 input=> VMR_L1PHIA.vmstuboutPHIA4n2  output=> TE_L1PHIA4_L2PHIA3.innervmstubin
+
+	e.g. The VM memory "4" in coarse phi region "A" VMSTE_L1PHIA4 is written by VM router algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts). The I/O pins of the proc blocks are ".vmstuboutphiA4n2" & ".innervmstubin", whose names include "in" or "out" to distinguish read or write, and also include parts of the names of the memories they connect to, so make clear what sort of data the internal logic of the proc block must read/write to the pin. (These pin names appear in the HLS code interface).
+
+### ./Wires.py
+
+N.B. HourGlassConfig.py ensures that no output memory is written by > 1 proc module, to avoid conflicts. However, it doesn't ensure that no input memory is read by > 1 proc module, so this must be fixed by Wires.py. It does this by cloning the memories if they are read by > 1 proc module, (appending "n1", "n2" etc. to their name to identify each clone); and then using several output pins of the proc module that writes to this memory, with each pin writing to one clone of the memory. Furthermore, as wires.input.hourglassExtended indicates that each proc block reads/writes several memories, and a different pin of proc block must be used for each, this script names the pins (after "." in the module name).
+
+a) Reads file wires.input.hourglassExtended (written by HourGlassConfig.py) showing which processing blocks are connected to which input & output memories.
+
+b) Writes file processingmodules_inputs.dat (never used!?) showing number of input memories connected to each proc step. e.g.
+
+VMR_D3PHIB  has 6 inputs
+
+gives #inputs to VMRouter "D3PHIB" (naming convention given above under HourGlassConfig.py).
+
+c) Writes file processingmodules.dat listing all processing blocks, and the generic algo step each corresponds to. e.g.
+
+VMRouter: VMR_D3PHIB
+
+d) Writes file memorymodules.dat.
+
+VMStubsTE: VMSTE_L5PHIA1n1 [18]
+VMStubsTE: VMSTE_L5PHIA1n2 [18]
+
+listing all input memories (naming convention given above under HourGlassConfig.py) with "n2" etc. appended to their names, if multuple copies of a given memory are needed (to avoid conflicts if it is read by multiple proc blocks) indicating which copy it is. The string "VMEStubsTE:" just indicates the generic memory type (e.g. VM memory to be used by TE). The string "[18]" indicates assumed the data word width, hard-wired in the script, which should correspond to https://twiki.cern.ch/twiki/bin/view/CMS/HybridDataFormat .
+
+e) Writes file wires.dat.
+
+VMSTE_L1PHIA4n2 input=> VMR_L1PHIA.vmstuboutPHIA4n2  output=> TE_L1PHIA4_L2PHIA3.innervmstubin
+
+e.g. The VM memory "4" in coarse phi region "A" VMSTE_L1PHIA4 is written by VM router algo step VMR_L1PHIA (naming convention given above under HourGlassConfig.py). Here "n2" in memory name indicates that this is the second copy of the memory (where multiple copies used to avoid conflicts). The I/O pins of the proc blocks are ".vmstuboutphiA4n2" & ".innervmstubin", whose names include "in" or "out" to distinguish read or write, and also include parts of the names of the memories they connect to, so make clear what sort of data the internal logic of the proc block must read/write to the pin. (These pin names appear in the HLS code interface).
+
+-----------------------------------------------------------------
+
+## Scripts for plotting wiring diagram:
+
+To (re)make the wiring diagram in root:
+
+      root -l
+      root[0] .L DrawTrackletProject.C
+      root[1] DrawTrackletProject()
+
+This processes file *diagram.dat*, which you can obtain in two ways:
+
+1) From *generate_hdl.py* -- corresponds to subset of wiring pertaining to generated VHDL.
+
+2) From *Graph.py* (after running Wires.py) -- corresponds to entire L1 track chain.
+
+You can make other 'zoomed in' views of all the processing modules
+after running the Wires.py script by doing
+
+      ./generatesubgraphs
+
 -----------------------------------------------------------------
 
 ## Python version and other dependencies

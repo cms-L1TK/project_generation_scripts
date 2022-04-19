@@ -2,6 +2,8 @@
 
 Basic instructions to run the project generation for the Vivado HLS project with hourglass configuration
 
+Script *generator_vhls.py* is abandoned attempt at using HLS for top-level.
+
 ## Historic: Overview of scripts for producing wiring files.
 
 This documents the python scripts that were historically used to

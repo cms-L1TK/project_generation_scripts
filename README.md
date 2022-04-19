@@ -57,8 +57,6 @@ Example for barrel-only IR-VMR-TE-TC-PR-ME-MC-TB chain
 ```
 *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
-(Script *generator_vhls.py* is abandoned attempt at using HLS for top-level).
-
   Optional arguments include:
   
       -h, --help          For help & to see default option values
@@ -115,7 +113,7 @@ By default the script will run starting with *TC_L1L2F*, and produced files call
 To (re)make the wiring diagram in root:
 
       root -l
-      root[0] .L DrawTrackletProject.C++
+      root[0] .L DrawTrackletProject.C
       root[1] DrawTrackletProject()
 
 This processes file *diagram.dat*, which you can obtain in two ways:

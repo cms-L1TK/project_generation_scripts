@@ -29,7 +29,6 @@ jobs:
       run: |
         # Identify coding style issues.
         pylint generator_hdl.py
-        pylint generator_vhls.py
         pylint GraphAnalyzer.py
         pylint Graph.py
         pylint makeBarrelConfig.py

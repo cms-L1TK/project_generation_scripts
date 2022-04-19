@@ -54,21 +54,28 @@ for line in fin:
         processingModules.append(outputModule)
 fin.close()
 
-# Next extract the processing module labels from the existing file
+# Next extract the processing module labels from the existing file; the order
+# of the module types is recorded in the processPrefixes list, which is used to
+# sort the output file
 fin = open(args.process)
 processLabels = {}
+processPrefixes = []
 for line in fin:
     splitLine = line.split()
     assert(len(splitLine) == 2)
 
     prefix = splitLine[1].split("_")[0]
     processLabels[prefix] = splitLine[0]
+    processPrefixes.append(prefix)
 fin.close()
 
-# Then extract the memory module labels and sizes from the existing file
+# Then extract the memory module labels and sizes from the existing file; the
+# order of the module types is recorded in the memoryPrefixes list, which is
+# used to sort the output file
 fin = open(args.memories)
 memoryLabels = {}
 memorySizes = {}
+memoryPrefixes = []
 for line in fin:
     splitLine = line.split()
     assert(len(splitLine) == 3)
@@ -76,6 +83,7 @@ for line in fin:
     prefix = splitLine[1].split("_")[0]
     memoryLabels[prefix] = splitLine[0]
     memorySizes[prefix] = splitLine[2]
+    memoryPrefixes.append(prefix)
 fin.close()
 
 # Write the barrel-only wires file
@@ -93,7 +101,7 @@ fout.close()
 
 # Write the barrel-only processing modules file
 fout = open("barrel_processingmodules.dat", "w")
-for p in sorted(set(processingModules)):
+for p in sorted(set(processingModules), key = lambda p : processPrefixes.index(p.split("_")[0])):
     output = True
     for dtc in dtcs:
         if dtcs[dtc] == 0 and dtc in p:
@@ -107,7 +115,7 @@ fout.close()
 
 # Write the barrel-only memory modules file
 fout = open("barrel_memorymodules.dat", "w")
-for m in sorted(set(memoryModules)):
+for m in sorted(set(memoryModules), key = lambda m : memoryPrefixes.index(m.split("_")[0])):
     output = True
     for dtc in dtcs:
         if dtcs[dtc] == 0 and dtc in m:

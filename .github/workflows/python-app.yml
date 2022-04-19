@@ -39,4 +39,3 @@ jobs:
         pylint WriteHDLUtils.py
         pylint WriteHLSUtils.py
         pylint WriteVHDLSyntax.py
-        pylint WriteVLOGSyntax.py

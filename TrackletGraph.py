@@ -645,7 +645,7 @@ class TrackletGraph(object):
         """ Reset all the is_initial and is_final flags of the MemModule objects 
             based on the connections
         """
-        for imem in self.get_memory_modules():
+        for imem in self.get_all_memory_modules():
             
             assert(len(imem.upstreams)==1 and len(imem.downstreams)==1)
 

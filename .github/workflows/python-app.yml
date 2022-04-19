@@ -30,10 +30,8 @@ jobs:
         # Identify coding style issues.
         pylint generator_hdl.py
         pylint GraphAnalyzer.py
-        pylint Graph.py
         pylint makeBarrelConfig.py
         pylint makeReducedConfig.py
-        pylint SubGraph.py
         pylint TrackletGraph.py
         pylint WriteHDLUtils.py
         pylint WriteHLSUtils.py

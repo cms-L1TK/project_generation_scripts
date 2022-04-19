@@ -373,7 +373,7 @@ if __name__ == "__main__":
     #  Plot graph
     ########################################
     width, height, dy, textsize = tracklet.draw_graph(process_list)
-    os.system("root -b <<EOF \"DrawTrackletProject.C+("+str(width)+","+str(height)+","+str(dy)+","+str(textsize)+")\"")
+    os.system("root -b <<EOF \"DrawTrackletProject.C("+str(width)+","+str(height)+","+str(dy)+","+str(textsize)+")\"")
         
     ########################################
     #  Write HLS top function

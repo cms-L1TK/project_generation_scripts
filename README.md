@@ -33,7 +33,7 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
   1) Download the wiring files: `cd firmware-hls/emData/ ; ./download.sh -t; cd ../..`
   1) Copy the wiring files to the project generation area: `cd project_generation_scripts/; cp ../firmware-hls/emData/LUTs/*.dat .`
   1) Ensure ROOT is in your PATH.
-  1) Make top-level VHDL - `./generator_hdl.py (dirHLS)`, *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
+  1) Make top-level VHDL: `./generator_hdl.py (dirHLS)`, *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
 Example for PR-ME-MC chain: 
 ```
@@ -47,7 +47,7 @@ Example for IR-VMR chain:
 ```
 ./generator_hdl.py --uut VMR_L2PHIA -u 1 -d 0
 ```
-Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB summer chain
+Example for "reduced" IR-VMR-TE-TC-PR-ME-MC-TB skinny chain
 ```
 ./makeReducedConfig.py
 ./generator_hdl.py --mut IR -u 0 -d 7 -w reduced_wires.dat -p reduced_processingmodules.dat -m reduced_memorymodules.dat

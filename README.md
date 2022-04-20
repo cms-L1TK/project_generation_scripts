@@ -33,13 +33,15 @@ https://github.com/cms-L1TK/firmware-hls in directory emData/ .
   1) Download the wiring files: `cd firmware-hls/emData/ ; ./download.sh -t; cd ../..`
   1) Copy the wiring files to the project generation area: `cd project_generation_scripts/; cp ../firmware-hls/emData/LUTs/*.dat .`
   1) Ensure ROOT is in your PATH.
-  1) Make top-level VHDL - example for PR-ME-MC chain: 
+  1) Make top-level VHDL - `./generator_hdl.py (dirHLS)`, *dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
+
+Example for PR-ME-MC chain: 
 ```
-./generator_hdl.py (dirHLS) --uut PR_L3PHIC -u 0 -d 2
+./generator_hdl.py --uut PR_L3PHIC -u 0 -d 2
 ```      
 Example for TE-TC chain:
  ```     
-./generator_hdl.py (dirHLS) --uut TC_L1L2E -u 1 -d 0
+./generator_hdl.py --uut TC_L1L2E -u 1 -d 0
 ```
 Example for IR-VMR chain:
 ```
@@ -55,7 +57,6 @@ Example for barrel-only IR-VMR-TE-TC-PR-ME-MC-TB chain
 ./makeBarrelConfig.py
 ./generator_hdl.py --mut IR -u 0 -d 7 -w barrel_wires.dat -p barrel_processingmodules.dat -m barrel_memorymodules.dat
 ```
-*dirHLS* is the location of the HLS code, which defaults to "../firmware-hls".
 
   Optional arguments include:
   
@@ -116,9 +117,7 @@ To (re)make the wiring diagram in root:
       root[0] .L DrawTrackletProject.C
       root[1] DrawTrackletProject()
 
-This processes file *diagram.dat*, which you can obtain from:
-
-1) *generate_hdl.py* -- corresponds to subset of wiring pertaining to generated VHDL.
+This processes file *diagram.dat*, which you can obtain from *generate_hdl.py* -- corresponds to subset of wiring pertaining to generated VHDL.
 
 -----------------------------------------------------------------
 

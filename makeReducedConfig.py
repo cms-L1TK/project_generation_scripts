@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-
-from __future__ import absolute_import
-from __future__ import print_function
-from __future__ import division
+#!/usr/bin/env python3
 
 from TrackletGraph import TrackletGraph
 import argparse

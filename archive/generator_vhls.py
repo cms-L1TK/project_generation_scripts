@@ -1,7 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from __future__ import absolute_import
-from __future__ import print_function
 from TrackletGraph import MemModule, ProcModule, TrackletGraph
 from WriteHLSUtils import getHLSMemoryClassName, groupAllConnectedMemories, writeMemoryInstance, writeProcFunction
 import os, subprocess
@@ -375,7 +373,7 @@ if __name__ == "__main__":
     #  Plot graph
     ########################################
     width, height, dy, textsize = tracklet.draw_graph(process_list)
-    os.system("root -b <<EOF \"DrawTrackletProject.C+("+str(width)+","+str(height)+","+str(dy)+","+str(textsize)+")\"")
+    os.system("root -b <<EOF \"DrawTrackletProject.C("+str(width)+","+str(height)+","+str(dy)+","+str(textsize)+")\"")
         
     ########################################
     #  Write HLS top function

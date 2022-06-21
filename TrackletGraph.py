@@ -756,7 +756,7 @@ class TrackletGraph(object):
             return ProcList, MemList
 
         # A few special cases: stop further expanding them upstream  - Not clear why we do this (Ryd)
-        if aMemModule.mtype in ['VMStubsME','TrackletParameters','AllProj']:
+        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
             aMemModule.is_initial = True
             return ProcList, MemList
 
@@ -785,7 +785,7 @@ class TrackletGraph(object):
             return ProcList, MemList
         
         # A few special cases: stop further expanding them downstream
-        if aMemModule.mtype in ['VMStubsME','TrackletParameters','AllProj']:
+        if aMemModule.mtype in ['VMStubsME','AllStubs','TrackletParameters','AllProj']:
             aMemModule.is_final = True
             return ProcList, MemList
 

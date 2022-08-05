@@ -1089,19 +1089,19 @@ def writeLUTParameters(argname, lut, innerPS, outerPS):
     if "in" in argname:
         width = 1
         depth = 8 if innerPS else 9
-        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
+        parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_stubptinnercut.tab\",\n"
     elif "out" in argname:
         width = 1
         depth = 8 if outerPS else 9
-        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
+        parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
     elif "regionlut" in argname: #For TP
         width = 8
         depth = 11
-        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst+"_usereg.dat\",\n"
+        parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_usereg.dat\",\n"
     elif "lut" in argname: #For TP
         width = 10
         depth = 11
-        parameterlist += "      lut_file  => "+"getDirSCRIPT & \"LUTs/"+lut.inst[:-1]+".dat\",\n" #remove the last character
+        parameterlist += "      lut_file  => \"LUTs/"+lut.inst[:-1]+".dat\",\n" #remove the last character
     parameterlist += "      lut_width => "+str(width)+",\n"
     parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     

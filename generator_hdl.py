@@ -280,7 +280,8 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             if memInfo.isFIFO:
               string_intermediate += string_tmp
             else:
-              string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned)
+              is_cm = memInfo.downstream_mtype_short in ("TP", "MP")
+              string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"

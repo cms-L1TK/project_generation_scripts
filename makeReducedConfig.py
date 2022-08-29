@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from TrackletGraph import TrackletGraph
-import argparse
+import argparse, sys
 from collections import OrderedDict
 
-# Creates a reduced configuration when given a TC phi region
+# Creates a reduced configuration when given a TC/TP phi region
 # Takes a full configuration as input
 
 # Example line from input wires.dat
@@ -12,6 +12,7 @@ from collections import OrderedDict
 # AS_L1PHICn4 input=> VMR_L1PHIC.allstubout output=> TC_L1L2E.innerallstubin
 
 verbose = False
+module_type = "TC"
 
 class node:
     def __init__(self, name):
@@ -160,7 +161,7 @@ class project:
         lxphis = ["A", "B", "C", "D"]
 
         if tc.upper() not in tcs:
-            print("Bad TC index, not adding.")
+            print("Bad " + module_type + " index, not adding.")
             return
 
         # Store whether or not we're including negative eta inputs
@@ -174,8 +175,8 @@ class project:
         phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
         phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
 
-        print("Adding regions to project: TC_%s%s, L1PHI%s, LxPHI%s"%(tcs[tc_i], layers, l1phis[phi1_i], lxphis[phix_i]))
-        self.tcs.append("TC_%s%s"%(layers,tcs[tc_i]))
+        print("Adding regions to project: %s_%s%s, L1PHI%s, LxPHI%s"%(module_type, layers, tcs[tc_i], l1phis[phi1_i], lxphis[phix_i]))
+        self.tcs.append("%s_%s%s"%(module_type, layers, tcs[tc_i]))
         self.l1phis.append(l1phis[phi1_i])
         self.lxphis.append(lxphis[phix_i])
 
@@ -183,8 +184,8 @@ class project:
         # Starting with e.g. TC_L1L2F and moving up and down the chain
         # For each node it adds, will check for all inputs and outputs of that node
 
-        print("Starting with node TC_%s%s"%(layers,tcs[tc_i]))
-        n = node("TC_%s%s"%(layers,tcs[tc_i]))
+        print("Starting with node %s_%s%s"%(module_type,layers,tcs[tc_i]))
+        n = node("%s_%s%s"%(module_type,layers,tcs[tc_i]))
         self.addNode(n)
         print("Finding inputs...")
         self.findInputConnections(n, ref_p)
@@ -252,7 +253,7 @@ class project:
             if not n.name.startswith("FT_%s%s"%(self.seed_layers[0], self.seed_layers[1])): return False
 
         # Only include the phi slice we care about
-        if n.name.startswith("TC_"):
+        if n.name.startswith(module_type + "_"):
             for tc in self.tcs:
                 if n.name == tc: return True
             return False
@@ -286,14 +287,20 @@ parser = argparse.ArgumentParser(description="Make a reduced configuration to ru
 parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
 parser.add_argument("-p", "--process", type=str, default="processingmodules.dat", help="Reference processingmodules.dat file (from full config)")
 parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", help="Reference memorymodules.dat file (from full config)")
-parser.add_argument("-s", "--sector", type=str, default="F", help="TC phi sector from which to create the reduced config")
+parser.add_argument("-s", "--sector", type=str, default="F", help="TC/TP phi sector from which to create the reduced config")
 parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 parser.add_argument("-n", "--noneg", type=bool, default=True, help="Remove all negative eta modules from the config")
+parser.add_argument("-t", "--module_type", type=str, default="TC", help="Type of module to build chain around (TC or TP)")
 parser.add_argument('--graph', dest='graph', action='store_true', help="Make graph. Requires ROOT")
 parser.add_argument('--no-graph', dest='graph', action='store_false', help="Do not make graph. Disable ROOT")
 parser.set_defaults(graph=True)
 args = parser.parse_args()
+
+module_type = args.module_type
+if module_type != "TC" and module_type != "TP":
+    print("Invalid module type \"" + module_type + "\".")
+    sys.exit(1)
 
 # Load in full project
 print("Loading full wire project...")

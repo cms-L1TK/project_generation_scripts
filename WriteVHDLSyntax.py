@@ -367,8 +367,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
 
         if memInfo.has_numEntries_out:
             if memInfo.is_binned:
-                wirelist += "  signal "+mtypeB+"_mem_AAV_dout_mask : "
-                wirelist += "t_arr_"+mtypeB+"_MASK; -- (#page)(#bin)\n"
+                if combined:
+                    wirelist += "  signal "+mtypeB+"_mem_AAV_dout_mask : "
+                    wirelist += "t_arr_"+mtypeB+"_MASK; -- (#page)(#bin)\n"
                 wirelist += "  signal "+mtypeB+"_mem_AAAV_dout_nent : "
                 wirelist += "t_arr_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
             else:
@@ -414,7 +415,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     if memList[0].has_numEntries_out:
         if memList[0].is_binned:
             portlist += "        nent_o    => "+mtypeB+"_mem_AAAV_dout_nent(var),\n"
-            portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
+            if combined:
+                portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
         else:
             portlist += "        nent_o    => "+mtypeB+"_mem_AAV_dout_nent(var),\n"
     else:
@@ -950,12 +952,12 @@ def writeProcBXPort(modName,isInput,isInitial):
         bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
 
-def writeProcMemoryLHSPorts(argname,mem):
+def writeProcMemoryLHSPorts(argname,mem,combined=False):
     """
     # Processing module port assignment: outputs to memories
     """
     string_mem_ports = ""
-    if "memoriesTEO" in argname or "memoryME" in argname :
+    if combined and ("memoriesTEO" in argname or "memoryME" in argname) :
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => "
         string_mem_ports += mem.keyName()+"_mem_A_wea("+mem.var()+"),\n"
@@ -975,11 +977,11 @@ def writeProcMemoryLHSPorts(argname,mem):
 
     return string_mem_ports
 
-def writeProcMemoryRHSPorts(argname,mem,portindex=0):
+def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
     """
     # Processing module port assignment: inputs from memories
     """
-    if mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME": #FIXME hack for combined modules
+    if combined and (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"): #FIXME hack for combined modules
         string_mem_ports = ""
         nmem = 5
         if mem.mtype == "VMStubsME" :

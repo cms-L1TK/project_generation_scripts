@@ -1004,53 +1004,62 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
 
     if mem.has_numEntries_out and portindex == 0:
         #First branch is for combined modules
-        if mem.mtype == "VMStubsTEOuter" :
-            for i in range(0,2**mem.bxbitwidth): 
-                if mem.is_binned:
-                    for j in range(0,8):
-                        string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("
-                        for k in range(0, 8) :
-                            if k != 0 :
-                                string_mem_ports += ", "
-                            string_mem_ports += mem.keyName()+"_mem_AAV_dout_mask("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
-                        string_mem_ports += "),\n"
-                    for j in range(0,8):
-                        string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => ("
-                        for k in range(0, 8) :
-                            if k != 0 :
-                                string_mem_ports += ", "
-                            string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
-                        string_mem_ports += "),\n"
-                else:
-                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
-                    string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
-        elif mem.mtype == "VMStubsME" :
-            for i in range(0,2**mem.bxbitwidth): 
-                if mem.is_binned:
-                    for j in range(0,8):
-                        string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => ("
-                        for k in range(0, 8) :
-                            if k != 0 :
-                                string_mem_ports += ", "
-                            string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
-                        string_mem_ports += "),\n"
-                else:
-                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
-                    string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
+        if combined:
+            if mem.mtype == "VMStubsTEOuter" :
+                for i in range(0,2**mem.bxbitwidth):
+                    if mem.is_binned:
+                        for j in range(0,8):
+                            string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("
+                            for k in range(0, 8) :
+                                if k != 0 :
+                                    string_mem_ports += ", "
+                                string_mem_ports += mem.keyName()+"_mem_AAV_dout_mask("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
+                            string_mem_ports += "),\n"
+                        for j in range(0,8):
+                            string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => ("
+                            for k in range(0, 8) :
+                                if k != 0 :
+                                    string_mem_ports += ", "
+                                string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
+                            string_mem_ports += "),\n"
+                    else:
+                        string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                        string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
+            elif mem.mtype == "VMStubsME" :
+                for i in range(0,2**mem.bxbitwidth):
+                    if mem.is_binned:
+                        for j in range(0,8):
+                            string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => ("
+                            for k in range(0, 8) :
+                                if k != 0 :
+                                    string_mem_ports += ", "
+                                string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j+(7-k)*8)+")"
+                            string_mem_ports += "),\n"
+                    else:
+                        string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                        string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
+            else:
+                for i in range(0,2**mem.bxbitwidth):
+                    if mem.is_binned:
+                        #Not currently used
+                        #for j in range(0,8):
+                        #    string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => "
+                        #    string_mem_ports += mem.keyName()+"_mem_AAV_dout_mask("+mem.var()+")("+str(i)+")("+str(j)+"),\n"
+                        for j in range(0,8):
+                            string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => "
+                            string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j)+"),\n"
+                    else:
+                        string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                        string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
         else:
-            for i in range(0,2**mem.bxbitwidth): 
+            for i in range(0,2**mem.bxbitwidth):
                 if mem.is_binned:
-                    #Not currently used
-                    #for j in range(0,8):
-                    #    string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => "
-                    #    string_mem_ports += mem.keyName()+"_mem_AAV_dout_mask("+mem.var()+")("+str(i)+")("+str(j)+"),\n"
                     for j in range(0,8):
-                        string_mem_ports += "      "+argname+"_nentries8_"+str(i)+"_V_"+str(j)+"     => "
+                        string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V_"+str(j)+"     => "
                         string_mem_ports += mem.keyName()+"_mem_AAAV_dout_nent("+mem.var()+")("+str(i)+")("+str(j)+"),\n"
                 else:
                     string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                     string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
-
 
     return string_mem_ports
 

@@ -499,6 +499,8 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo):
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
 
+    combined = (memInfo.downstream_mtype_short in ("TP", "MP"))
+
     # Assume all memories of given type have same bxbitwidth.
     bxbitwidth =  memInfo.bxbitwidth
 
@@ -512,8 +514,9 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo):
         if memInfo.is_binned:
             string_output_mems += "    "+mtypeB+"_mem_AAAV_dout_nent : "
             string_output_mems += "out t_arr_"+mtypeB+"_NENT;\n"
-            string_output_mems += "    "+mtypeB+"_mem_AAV_dout_mask : "
-            string_output_mems += "out t_arr_"+mtypeB+"_MASK;\n"
+            if combined:
+                string_output_mems += "    "+mtypeB+"_mem_AAV_dout_mask : "
+                string_output_mems += "out t_arr_"+mtypeB+"_MASK;\n"
         else:
             string_output_mems += "    "+mtypeB+"_mem_AAV_dout_nent  : "
             string_output_mems += "out t_arr_"+mtypeB+"_NENT;\n" 
@@ -637,6 +640,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     for mtypeB in memDict:
         
         memInfo = memInfoDict[mtypeB]
+        combined = (memInfo.downstream_mtype_short in ("TP", "MP"))
 
         if initial_proc in memInfo.downstream_mtype_short and not found_first_mem:
             first_mem = mtypeB
@@ -668,8 +672,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             if memInfo.is_binned:
                 string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAAV_dout_nent").ljust(str_len)+": "
                 string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => (others => '0')))); -- (#page)(#bin)\n"
-                string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_mask").ljust(str_len)+": "
-                string_ctrl_signals += ("t_arr_"+mtypeB+"_MASK").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)(#bin)\n"
+                if combined:
+                    string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_mask").ljust(str_len)+": "
+                    string_ctrl_signals += ("t_arr_"+mtypeB+"_MASK").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)(#bin)\n"
             else:
                 string_ctrl_signals += ("  signal "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len)+": "
                 string_ctrl_signals += ("t_arr_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => (others => (others => '0'))); -- (#page)\n"
@@ -732,6 +737,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
 
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
+        combined = (memInfo.downstream_mtype_short in ("TP", "MP"))
         if memInfo.is_initial:
             if "DL" in mtypeB: # Special case for DTCLink as it has FIFO input
                 string_input += ("        "+mtypeB+"_link_AV_dout").ljust(str_len) + "=> "+mtypeB+"_link_AV_dout,\n"
@@ -755,7 +761,8 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
             string_output += ("        "+mtypeB+"_mem_AV_dout").ljust(str_len) + "=> "+mtypeB+"_mem_AV_dout,\n"
             if memInfo.is_binned:
                 string_output += ("        "+mtypeB+"_mem_AAAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAAV_dout_nent,\n"
-                string_output += ("        "+mtypeB+"_mem_AAV_dout_mask").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_mask,\n"
+                if combined:
+                    string_output += ("        "+mtypeB+"_mem_AAV_dout_mask").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_mask,\n"
             else:
                 string_output += ("        "+mtypeB+"_mem_AAV_dout_nent").ljust(str_len) + "=> "+mtypeB+"_mem_AAV_dout_nent,\n"
         else:

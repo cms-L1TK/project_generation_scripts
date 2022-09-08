@@ -890,7 +890,10 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
 def writeLUTCombination(lut, argname, portlist, parameterlist):
     argname = argname.split("[")[0]
     lut_str = ""
-    lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lutdat"
+    if "TE_" in lut.inst:
+        lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lut"
+    else:
+        lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lutdat"
     lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
     lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
 

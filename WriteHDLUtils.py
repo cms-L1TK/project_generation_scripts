@@ -1132,6 +1132,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                             'TrackletProcessor', 'ProjectionRouter', 'MatchEngine', 'MatchCalculator',
                             'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
 
+    combined = (module.mtype == "VMRouterCM" or module.mtype == "TrackletProcessor" or module.mtype == "MatchProcessor")
+
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
     str_ctrl_func = ""
@@ -1276,17 +1278,17 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         if "DL" in memory.inst: # DTCLink
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
-                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,combined=combined)
 
                     if portname.replace("outer","").find("out") != -1:
                         if memory.isFIFO():
                             string_mem_ports += writeProcTrackStreamLHSPorts(tmp_argname,memory)
                         else:
-                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,combined=combined)
                     if portname.find("trackpar") != -1 and (module.mtype == "TrackletCalculator" or module.mtype == "TrackletProcessor"):
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,combined=combined)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,combined=combined)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)

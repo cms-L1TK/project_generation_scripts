@@ -585,12 +585,16 @@ class TrackletGraph(object):
         file_wires.close()
 
         # Remove processing modules if they do not have input/output memories
+
         for name, proc in p_dict.items():
             nInputs = len(proc.upstreams)
             nOutputs = len(proc.downstreams)
             
             if nInputs == 0 or nOutputs == 0:
-                del p_dict[name]
+                print("Error module:", name, "with nInputs =", nInputs, "nOutputs =", nOutputs)
+                exit(0)
+
+
         
     ########################################       
     # Accessors

@@ -994,6 +994,12 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
     if combined and (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"): #FIXME hack for combined modules
         string_mem_ports = ""
         nmem = 5
+        #FIXME special case for L2L3 seeding where we have 2 TE
+        if "VMSTE_L3" in mem.inst :
+            nmem = 2
+        #FIXME special case for L5L6 seeding where we have 3 TE
+        if "VMSTE_L6" in mem.inst :
+            nmem = 3
         if mem.mtype == "VMStubsME" :
             nmem = 4
         for instance in range(0,nmem):
@@ -1097,6 +1103,8 @@ def writeLUTParameters(argname, lut, innerPS, outerPS):
     elif "regionlut" in argname: #For TP
         width = 8
         depth = 11
+        if "L5L6" in lut.inst :
+            depth = 12
         parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_usereg.dat\",\n"
     elif "lut" in argname: #For TP
         width = 10
@@ -1121,6 +1129,8 @@ def writeLUTWires(argname, lut, innerPS, outerPS):
     elif "regionlut" in argname: #For TP
         width = 8
         depth = 11
+        if "L5L6" in lut.inst :
+            depth = 12
     elif "lut" in argname: #For TP
         width = 10
         depth = 11

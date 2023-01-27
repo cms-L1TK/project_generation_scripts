@@ -268,8 +268,12 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
             # (Needed to compare with emData/).
             if mtypeB == 'TW_84': 
-                fileTF = open("TF_tb_writer.vhd.bodge")
-                string_tmp += fileTF.read();
+                for m in memDict[mtypeB]:
+                    memName = m.inst
+                    seed = memName[-4:]
+                    fileTF = open("bodge/TF_" + seed + "_tb_writer.vhd.bodge")
+                    string_tmp += fileTF.read();
+                    fileTF.close()
 
         if memInfo.is_final:
             if memInfo.isFIFO:
@@ -329,7 +333,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     # A bodge for TrackBuilder to write TF_464 concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_84' in memInfoDict.keys():
-      fileTF = open("TF_tb_constants.vhd.bodge")
+      fileTF = open("bodge/TF_tb_constants.vhd.bodge")
       string_constants += fileTF.read();
 
     string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs)

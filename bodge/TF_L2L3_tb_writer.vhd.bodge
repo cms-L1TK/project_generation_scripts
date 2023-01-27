@@ -1,4 +1,4 @@
-  -- A bodge for TrackBuilder to write TF concatenated track+stub data.
+  -- A bodge for TrackBuilder to write TF concatenated track+stub data for L2L3.
   -- (Needed to compare with emData/).
   writeTF_L2L3_418 : entity work.FileWriterFIFO
   generic map (

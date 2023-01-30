@@ -440,6 +440,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     if memList[0].has_numEntries_out:
         if memList[0].is_binned:
             if combined:
+                portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
                 if "VMSTE" in mtypeB :
                     portlist += "        nent_o    => "+mtypeB+"_mem_AAAV_dout_nent(var),\n"
                 else:

@@ -1085,9 +1085,12 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                     string_mem_ports += "      "+argname+"_nentries8b_v_address0        => "+mem.keyName()+"_mem_AV_addr_nentB("+mem.var()+"),\n"
                     string_mem_ports += "      "+argname+"_nentries8b_v_ce0             => "+mem.keyName()+"_mem_A_enb_nentB("+mem.var()+"),\n"
                 else:
-                    for i in range(0,2**mem.bxbitwidth): 
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
+            else:
+                for i in range(0,2**mem.bxbitwidth):
+                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                    string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
         else:
             for i in range(0,2**mem.bxbitwidth):
                 if mem.is_binned:

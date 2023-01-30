@@ -438,6 +438,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     if memList[0].has_numEntries_out:
         if memList[0].is_binned:
             if combined:
+                portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
                 if "VMSTE" in mtypeB :
                     portlist += "        nent_o    => "+mtypeB+"_mem_AAAV_dout_nent(var),\n"
                 else:
@@ -449,7 +450,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
                     portlist += "        dout_nentB    => "+mtypeB+"_mem_AV_dout_nentB(var),\n"
             else:
                 portlist += "        nent_o    => "+mtypeB+"_mem_AAAV_dout_nent(var),\n"
-            portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
         else:
             portlist += "        nent_o    => "+mtypeB+"_mem_AAV_dout_nent(var),\n"
     else:
@@ -1049,7 +1049,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
         #First branch is for combined modules
         if combined:
             if mem.mtype == "VMStubsTEOuter" :
-                for i in range(0,2**mem.bxbitwidth): 
+                for i in range(0,2**mem.bxbitwidth):
                     if mem.is_binned:
                         for j in range(0,8):
                             string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("

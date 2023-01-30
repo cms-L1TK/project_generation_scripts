@@ -268,6 +268,8 @@ def writeMemoryUtil(memDict, memInfoDict):
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector(31 downto 0);\n"
                 arrName = "t_arr_"+mtypeB+"_NENTADDR"
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector(4 downto 0);\n"
+              else:
+                ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
             else:
               ss += "  type "+arrName+" is array("+enumName+") of t_arr"+str(num_pages)+varStr+";\n"
             if memInfo.is_binned:
@@ -1069,8 +1071,8 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
             elif mem.mtype == "VMStubsME" :
-                for i in range(0,2**mem.bxbitwidth):
-                    if mem.is_binned:
+                if mem.is_binned:
+                    for i in range(0,2**mem.bxbitwidth):
                         for j in range(0,8):
                             string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("
                             for k in range(0, 8) :
@@ -1085,9 +1087,12 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                     string_mem_ports += "      "+argname+"_nentries8b_v_address0        => "+mem.keyName()+"_mem_AV_addr_nentB("+mem.var()+"),\n"
                     string_mem_ports += "      "+argname+"_nentries8b_v_ce0             => "+mem.keyName()+"_mem_A_enb_nentB("+mem.var()+"),\n"
                 else:
-                    for i in range(0,2**mem.bxbitwidth): 
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
+            else:
+                for i in range(0,2**mem.bxbitwidth):
+                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
+                    string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
         else:
             for i in range(0,2**mem.bxbitwidth):
                 if mem.is_binned:

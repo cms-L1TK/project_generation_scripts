@@ -1069,8 +1069,8 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
             elif mem.mtype == "VMStubsME" :
-                if mem.is_binned:
-                    for i in range(0,2**mem.bxbitwidth): 
+                for i in range(0,2**mem.bxbitwidth):
+                    if mem.is_binned:
                         for j in range(0,8):
                             string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("
                             for k in range(0, 8) :

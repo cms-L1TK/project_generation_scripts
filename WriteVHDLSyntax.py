@@ -999,12 +999,16 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False):
         int_ctrl_wire += "  signal "+mtype+"_bx_out : std_logic_vector(2 downto 0);\n"
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
-
+    if True:#FIXME add delay flag
+        int_ctrl_wire += "  signal "+mtype+"_bx_out_0 : std_logic_vector(2 downto 0);\n"
     int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"
     int_ctrl_func += "      reset => reset,\n"
     int_ctrl_func += "      done  => "+mtype+"_done,\n"
+    if True:
+        int_ctrl_func += "      bx_out => "+mtype+"_bx_out_0,\n"
+        int_ctrl_func += "      bx => "+mtype+"_bx_out,\n"
     int_ctrl_func += "      start => "+mtype_down+"_start\n"
     int_ctrl_func += "  );\n\n"
 
@@ -1037,7 +1041,7 @@ def writeProcBXPort(modName,isInput,isInitial):
     elif isInput and not isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
-        bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
+        bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
         bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
 

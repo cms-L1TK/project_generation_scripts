@@ -350,6 +350,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         sync_signal = memInfo.downstream_mtype_short+"_start"
 
     # Write wires
+    if True: #FIXME change this to take an argument flag
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay          : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay   : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay         : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
     if (interface != -1 and not extraports) or (interface == 1 and extraports):
         wirelist += "  signal "+mtypeB+"_mem_A_wea          : "
         wirelist += "t_arr_"+mtypeB+"_1b;\n"
@@ -357,13 +364,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
         wirelist += "  signal "+mtypeB+"_mem_AV_din         : "
         wirelist += "t_arr_"+mtypeB+"_DATA;\n"
-        if True: #FIXME change this to take an argument flag
-            wirelist += "  signal "+mtypeB+"_mem_A_wea_delay          : "
-            wirelist += "t_arr_"+mtypeB+"_1b;\n"
-            wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay   : "
-            wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
-            wirelist += "  signal "+mtypeB+"_mem_AV_din_delay         : "
-            wirelist += "t_arr_"+mtypeB+"_DATA;\n"
     
     if interface != 1:
         if combined :
@@ -765,6 +765,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_din").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
 
+
     if "DL" in first_mem:
         string_ctrl_signals += "\n  -- Indicates that reading of DL of first event has started.\n"
         string_ctrl_signals += "  signal START_FIRST_LINK : std_logic := '0';\n"
@@ -1039,7 +1040,10 @@ def writeProcBXPort(modName,isInput,isInitial):
     elif isInput and not isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
-        bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
+        if modName == "FT":
+            bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
+        else:
+            bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
         bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
 

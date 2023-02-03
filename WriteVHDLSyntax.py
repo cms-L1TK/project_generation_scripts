@@ -1044,9 +1044,10 @@ def writeProcBXPort(modName,isInput,isInitial):
     elif not isInput:
         if modName == "FT":
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
+            bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:
             bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
-        bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+            bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,combined=False):

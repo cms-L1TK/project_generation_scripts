@@ -466,7 +466,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         if module == "TP_" :
             mem_str += "    "+mtypeB+" : entity work.tf_mem_bin_cm5\n"
         elif module == "MP_" :
-            mem_str += "    "+mtypeB+" : entity work.tf_mem_bin_cm4_new\n"
+            mem_str += "    "+mtypeB+" : entity work.tf_mem_bin_cm4\n"
         else:
             mem_str += "    "+mtypeB+" : entity work.tf_mem_bin\n"
     else:

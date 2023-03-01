@@ -899,8 +899,6 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
     lut_str = ""
     if "TE_" in lut.inst:
         lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lut"
-    else:
-        lut_str += "\n  "+lut.inst+"_"+argname+" : entity work.tf_lutdat"
     lut_str += "\n    generic map (\n"+parameterlist.rstrip(",\n")+"\n    )"
     lut_str += "\n    port map (\n"+portlist.rstrip(",\n")+"\n  );\n\n"
 
@@ -1094,14 +1092,6 @@ def writeLUTParameters(argname, lut, innerPS, outerPS):
         width = 1
         depth = 8 if outerPS else 9
         parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_stubptoutercut.tab\",\n"
-    elif "regionlut" in argname: #For TP
-        width = 8
-        depth = 11
-        parameterlist += "      lut_file  => \"LUTs/"+lut.inst+"_usereg.dat\",\n"
-    elif "lut" in argname: #For TP
-        width = 10
-        depth = 11
-        parameterlist += "      lut_file  => \"LUTs/"+lut.inst[:-1]+".dat\",\n" #remove the last character
     parameterlist += "      lut_width => "+str(width)+",\n"
     parameterlist += "      lut_depth => "+str(2**depth)+"\n"
     
@@ -1118,12 +1108,6 @@ def writeLUTWires(argname, lut, innerPS, outerPS):
     elif "out" in argname:
         depth = 8 if outerPS else 9
         width = 1
-    elif "regionlut" in argname: #For TP
-        width = 8
-        depth = 11
-    elif "lut" in argname: #For TP
-        width = 10
-        depth = 11
     wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
     wirelist += "std_logic_vector("+str(depth-1)+" downto 0);\n"
     wirelist += "  signal "+lut.inst+"_"+argname+"_ce       : std_logic;\n"

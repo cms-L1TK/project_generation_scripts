@@ -311,7 +311,7 @@ parser = argparse.ArgumentParser(description="Make a reduced configuration to ru
 parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
 parser.add_argument("-p", "--process", type=str, default="processingmodules.dat", help="Reference processingmodules.dat file (from full config)")
 parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", help="Reference memorymodules.dat file (from full config)")
-parser.add_argument("-s", "--sector", type=str, default="F", help="TC/TP phi sector from which to create the reduced config, e.g. "C" or "All" for all regions")
+parser.add_argument("-s", "--sector", type=str, default="F", help="TC/TP phi sector from which to create the reduced config, e.g. 'C' or 'All' for all regions")
 parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 parser.add_argument("-n", "--noneg", type=bool, default=True, help="Remove all negative eta modules from the config")

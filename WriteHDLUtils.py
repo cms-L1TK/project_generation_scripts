@@ -1135,16 +1135,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     combined = (module.mtype == "VMRouterCM" or module.mtype == "TrackletProcessor" or module.mtype == "MatchProcessor")
 
     # Add internal BX wire and start registers
-    str_ctrl_wire = ""
-    str_ctrl_func = ""
-    if first_of_type and not module.is_last:
-        for mem in module.downstreams:
-            if mem.bxbitwidth != 1: continue
-            oneProcDownMem = mem
-            break
-        ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem,extraports)
-        str_ctrl_wire += ctrl_wire_inst
-        str_ctrl_func += ctrl_func_inst
+    str_ctrl_wire,str_ctrl_func = writeStartSwitchAndInternalBX(module)
         
     # Update here if the function name is not exactly the same as the module type
 
@@ -1182,15 +1173,11 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         if argtype == "BXType":
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
-                if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True)
-                    break
-                else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False)
-                    break
+                string_bx_in += writeProcBXPort(module.inst,True)
+                break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
-                string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
+                string_bx_out += writeProcBXPort(module.mtype_short(),False) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \

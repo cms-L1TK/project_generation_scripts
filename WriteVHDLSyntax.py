@@ -57,7 +57,8 @@ def writeTBOpener(topfunc):
 
 def writeTopModuleEntityCloser(topmodule_name):
     string_closer = "end "+topmodule_name+";\n\n"
-    string_closer += "architecture rtl of "+topmodule_name+" is\n\n"
+    string_closer += "architecture rtl of "+topmodule_name+" is\n"
+    string_closer += "  constant DELAY : natural := 4;\n\n"
     return string_closer
 
 def writeTBEntityBegin():
@@ -352,9 +353,21 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     if (interface != -1 and not extraports) or (interface == 1 and extraports):
         wirelist += "  signal "+mtypeB+"_mem_A_wea          : "
         wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay        : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay_0        : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
         wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr   : "
         wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay_0 : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
         wirelist += "  signal "+mtypeB+"_mem_AV_din         : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay       : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay_0       : "
         wirelist += "t_arr_"+mtypeB+"_DATA;\n"
     if interface != 1:
         if combined :
@@ -365,8 +378,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
             wirelist += "  signal "+mtypeB+"_mem_AAV_dout       : "
             wirelist += "t_arr_"+mtypeB+"_ADATA;\n" 
         else:
-            wirelist += "  signal "+mtypeB+"_mem_A_enb          : "
-            wirelist += "t_arr_"+mtypeB+"_1b;\n"
+            if memInfo.is_binned:
+                wirelist += "  signal "+mtypeB+"_mem_A_enb          : "
+                wirelist += "t_arr_"+mtypeB+"_1b;\n"
             wirelist += "  signal "+mtypeB+"_mem_AV_readaddr    : "
             wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
             wirelist += "  signal "+mtypeB+"_mem_AV_dout        : "
@@ -939,27 +953,49 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
 
     return lut_str
 
-def writeStartSwitchAndInternalBX(module,mem,extraports=False):
+def writeStartSwitchAndInternalBX(module):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
     # Inputs: processing module & memory that is downstream of it.
     """
-    mtype = module.mtype_short()
-    mtype_down = mem.downstreams[0].mtype_short()
+    minst = module.inst
+    first_up_mem = next(mem for mem in module.upstreams if mem.bxbitwidth == 1)
+    first_up_proc = first_up_mem.upstreams[0]
 
     int_ctrl_wire = ""
-    if not extraports: 
-        int_ctrl_wire += "  signal "+mtype+"_done : std_logic := '0';\n"
-        int_ctrl_wire += "  signal "+mtype+"_bx_out : std_logic_vector(2 downto 0);\n"
-        int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
-    int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
+    int_ctrl_wire += "  signal "+minst+"_start   : std_logic := '0';\n"
+    int_ctrl_wire += "  signal "+minst+"_start_0 : std_logic := '0';\n"
+    int_ctrl_wire += "  signal "+minst+"_bx      : std_logic := '0';\n"
+    int_ctrl_wire += "  signal "+minst+"_bx_0    : std_logic := '0';\n"
 
-    int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
+    int_ctrl_func =  "  LATCH_"+minst+": entity work.CreateStartSignal\n"
+    int_ctrl_func += "    generic map (\n"
+    int_ctrl_func += "      DELAY => DELAY\n"
+    int_ctrl_func += "    )\n"
     int_ctrl_func += "    port map (\n"
-    int_ctrl_func += "      clk   => clk,\n"
-    int_ctrl_func += "      reset => reset,\n"
-    int_ctrl_func += "      done  => "+mtype+"_done,\n"
-    int_ctrl_func += "      start => "+mtype_down+"_start\n"
+    int_ctrl_func += "      clk    => clk,\n"
+    int_ctrl_func += "      reset  => reset,\n"
+    if not module.is_first:
+        int_ctrl_func += "      done   => " + first_up_proc.mtype_short() + "_done,\n"
+        int_ctrl_func += "      bx_out => " + first_up_proc.mtype_short() + "_bx_out,\n"
+    else:
+        int_ctrl_func += "      done   => " + module.mtype_short() + "_start,\n"
+        int_ctrl_func += "      bx_out => " + module.mtype_short() + "_bx_in,\n"
+    int_ctrl_func += "      start  => " + minst + "_start_0,\n"
+    int_ctrl_func += "      bx     => " + minst + "_bx_0\n"
+    int_ctrl_func += "  );\n\n"
+
+    int_ctrl_func += "  LATCH_"+minst+"_0: entity work.CreateStartSignal\n"
+    int_ctrl_func += "    generic map (\n"
+    int_ctrl_func += "      DELAY => DELAY\n"
+    int_ctrl_func += "    )\n"
+    int_ctrl_func += "    port map (\n"
+    int_ctrl_func += "      clk    => clk,\n"
+    int_ctrl_func += "      reset  => reset,\n"
+    int_ctrl_func += "      done   => " + minst + "_start_0,\n"
+    int_ctrl_func += "      bx_out => " + minst + "_bx_0\n"
+    int_ctrl_func += "      start  => " + minst + "_start,\n"
+    int_ctrl_func += "      bx     => " + minst + "_bx\n"
     int_ctrl_func += "  );\n\n"
 
     return int_ctrl_wire,int_ctrl_func
@@ -971,7 +1007,7 @@ def writeProcControlSignalPorts(module,first_of_type):
     string_ctrl_ports = ""
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
-    string_ctrl_ports += "      ap_start => "+module.mtype_short()+"_start,\n"
+    string_ctrl_ports += "      ap_start => "+module.inst+"_start,\n"
     string_ctrl_ports += "      ap_idle  => open,\n"
     string_ctrl_ports += "      ap_ready => open,\n"
     if first_of_type:
@@ -981,18 +1017,16 @@ def writeProcControlSignalPorts(module,first_of_type):
 
     return string_ctrl_ports
 
-def writeProcBXPort(modName,isInput,isInitial):
+def writeProcBXPort(modName,isInput):
     """
     # Processing module port assignment: BX ports
     """
     bx_str = ""
-    if isInput and isInitial:
-        bx_str += "      bx_V          => "+modName+"_bx_in,\n"
-    elif isInput and not isInitial:
-        bx_str += "      bx_V          => "+modName+"_bx_out,\n"
-    elif not isInput:
+    if isInput:
+        bx_str += "      bx_V          => "+modName+"_bx,\n"
+    else:
         bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
-        bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+        bx_str += "      bx_o_V_ap_vld => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,combined=False):

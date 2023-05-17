@@ -167,34 +167,15 @@ class project:
         self.seed_layers.append(layers[:2])
         self.seed_layers.append(layers[2:])
 
-
-        if tc == "All":
-            for tc in tcs:
-                tc_i = tcs.index(tc.upper())
-                phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
-                phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
-
-                print("Adding regions to project: %s_%s%s, L1PHI%s, LxPHI%s"%(module_type, layers, tcs[tc_i], l1phis[phi1_i], lxphis[phix_i]))
-                self.tcs.append("%s_%s%s"%(module_type, layers, tcs[tc_i]))
-                self.l1phis.append(l1phis[phi1_i])
-                self.lxphis.append(lxphis[phix_i])
-
-                # Add nodes and connections to the project
-                # Starting with e.g. TC_L1L2F and moving up and down the chain
-                # For each node it adds, will check for all inputs and outputs of that node
-
-                print("Starting with node %s_%s%s"%(module_type,layers,tcs[tc_i]))
-                n = node("%s_%s%s"%(module_type,layers,tcs[tc_i]))
-                self.addNode(n)
-                print("Finding inputs...")
-                self.findInputConnections(n, ref_p)
-                print("Finding outputs...")
-                self.findOutputConnections(n, ref_p)
-        else:
+        tc_list = tcs
+        if tc != "All":
             if tc.upper() not in tcs:
                 print("Bad " + module_type + " index, not adding.")
                 return
+            tc_list = [tc]
 
+
+        for tc in tc_list:
             tc_i = tcs.index(tc.upper())
             phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
             phix_i = int(tc_i*1.*len(lxphis)/len(tcs))

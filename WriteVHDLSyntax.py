@@ -238,6 +238,8 @@ def writeMemoryUtil(memDict, memInfoDict):
                     ncopy = 5
                 arrName = "t_arr_"+mtypeB+"_1b"
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
+                arrName = "t_arr_"+mtypeB+"_3b"
+                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector(2 downto 0);\n" 
                 arrName = "t_arr_"+mtypeB+"_A1b"
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(ncopy-1)+" downto 0);\n" 
                 arrName = "t_arr_"+mtypeB+"_ADDR"
@@ -251,6 +253,8 @@ def writeMemoryUtil(memDict, memInfoDict):
             else:
                 arrName = "t_arr_"+mtypeB+"_1b"
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic;\n" 
+                arrName = "t_arr_"+mtypeB+"_3b"
+                ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector(2 downto 0);\n" 
                 arrName = "t_arr_"+mtypeB+"_ADDR"
                 ss += "  type "+arrName+" is array("+enumName+") of std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
                 arrName = "t_arr_"+mtypeB+"_DATA"
@@ -353,6 +357,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
 
     # Write wires
     if (interface != -1 and not extraports) or (interface == 1 and extraports):
+        wirelist += "  signal "+mtypeB+"_mem_AV_bx_out_delay        : "
+        wirelist += "t_arr_"+mtypeB+"_3b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_bx_out_delay_0        : "
+        wirelist += "t_arr_"+mtypeB+"_3b;\n"
         wirelist += "  signal "+mtypeB+"_mem_A_wea          : "
         wirelist += "t_arr_"+mtypeB+"_1b;\n"
         wirelist += "  signal "+mtypeB+"_mem_A_wea_delay        : "
@@ -410,6 +418,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
                         wirelist += "  signal "+mtypeB+"_mem_AV_dout_nentB : "
                         wirelist += "t_arr_"+mtypeB+"_NENT;\n"
                 else:
+                    wirelist += "  signal "+mtypeB+"_mem_A_sync : "
+                    wirelist += "t_arr_"+mtypeB+"_1b;\n"
+                    wirelist += "  signal "+mtypeB+"_mem_A_sync_0 : "
+                    wirelist += "t_arr_"+mtypeB+"_1b;\n"
                     wirelist += "  signal "+mtypeB+"_mem_AAAV_dout_nent : "
                     wirelist += "t_arr_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
 
@@ -442,7 +454,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         portlist += "        regceb    => '1',\n"
     else:
         portlist += "        clk       => clk,\n"
-        portlist += "        bxa       => "+mtypeB+"_bx_out_delay(var),\n"
+        portlist += "        bxa       => "+mtypeB+"_mem_AV_bx_out_delay(var),\n"
 
     portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
     portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
@@ -541,7 +553,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
     mem_str += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
     mem_str += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
-    mem_str += "        bxa_out   => "+mtypeB+"_bx_out_delay_0(var),\n"
+    mem_str += "        bxa_out   => "+mtypeB+"_mem_AV_bx_out_delay_0(var),\n"
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay_0(var)\n"
@@ -560,11 +572,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "      )\n"
     mem_str += "      port map (\n"
     mem_str += "        clk       => clk,\n"
-    mem_str += "        bxa       => "+mtypeB+"_bx_out_delay_0(var),\n"
+    mem_str += "        bxa       => "+mtypeB+"_mem_AV_bx_out_delay_0(var),\n"
     mem_str += "        wea       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
     mem_str += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
     mem_str += "        dina      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
-    mem_str += "        bxa_out   => "+mtypeB+"_bx_out_delay(var),\n"
+    mem_str += "        bxa_out   => "+mtypeB+"_mem_AV_bx_out_delay(var),\n"
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay(var)\n"
@@ -1048,8 +1060,8 @@ def writeStartSwitchAndInternalBX(module):
     int_ctrl_wire = ""
     int_ctrl_wire += "  signal "+minst+"_start   : std_logic := '0';\n"
     int_ctrl_wire += "  signal "+minst+"_start_0 : std_logic := '0';\n"
-    int_ctrl_wire += "  signal "+minst+"_bx      : std_logic := '0';\n"
-    int_ctrl_wire += "  signal "+minst+"_bx_0    : std_logic := '0';\n"
+    int_ctrl_wire += "  signal "+minst+"_bx      : std_logic_vector(2 downto 0) := (others => '0');\n"
+    int_ctrl_wire += "  signal "+minst+"_bx_0    : std_logic_vector(2 downto 0) := (others => '0');\n"
 
     int_ctrl_func =  "  LATCH_"+minst+": entity work.CreateStartSignal\n"
     int_ctrl_func += "    generic map (\n"
@@ -1059,6 +1071,8 @@ def writeStartSwitchAndInternalBX(module):
     int_ctrl_func += "      clk    => clk,\n"
     int_ctrl_func += "      reset  => reset,\n"
     if not module.is_first:
+        int_ctrl_wire += "  signal " + first_up_proc.mtype_short() + "_done   : std_logic := '0';\n"
+        int_ctrl_wire += "  signal " + first_up_proc.mtype_short() + "_bx_out : std_logic_vector(2 downto 0) := (others => '0');\n"
         int_ctrl_func += "      done   => " + first_up_proc.mtype_short() + "_done,\n"
         int_ctrl_func += "      bx_out => " + first_up_proc.mtype_short() + "_bx_out,\n"
     else:
@@ -1076,7 +1090,7 @@ def writeStartSwitchAndInternalBX(module):
     int_ctrl_func += "      clk    => clk,\n"
     int_ctrl_func += "      reset  => reset,\n"
     int_ctrl_func += "      done   => " + minst + "_start_0,\n"
-    int_ctrl_func += "      bx_out => " + minst + "_bx_0\n"
+    int_ctrl_func += "      bx_out => " + minst + "_bx_0,\n"
     int_ctrl_func += "      start  => " + minst + "_start,\n"
     int_ctrl_func += "      bx     => " + minst + "_bx\n"
     int_ctrl_func += "  );\n\n"

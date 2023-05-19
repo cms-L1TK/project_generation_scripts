@@ -79,6 +79,9 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports)
         string_proc_wire += proc_wire_inst
         string_proc_func += proc_func_inst
+
+    # Remove duplicate wires
+    string_proc_wire = "\n".join(set(string_proc_wire.rstrip().split('\n')))
         
     return string_proc_wire,string_proc_func
 

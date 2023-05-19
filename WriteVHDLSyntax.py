@@ -346,8 +346,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         assert memInfo.upstream_mtype_short != ""
         sync_signal = memInfo.upstream_mtype_short+"_done"
     else:
-        assert memInfo.downstream_mtype_short != ""
-        sync_signal = memInfo.downstream_mtype_short+"_start"
+        first_down_proc = memList[0].downstreams[0]
+        first_up_mem = next(mem for mem in first_down_proc.upstreams if mem.bxbitwidth == 1)
+        first_up_proc = first_up_mem.upstreams[0]
+        sync_signal = first_up_proc.mtype_short()+"_done"
 
     # Write wires
     if (interface != -1 and not extraports) or (interface == 1 and extraports):
@@ -417,39 +419,49 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
 
     # Write parameters
     parameterlist += "        RAM_WIDTH       => "+bitwidth+",\n"
-    parameterlist += "        NUM_PAGES       => "+str(num_pages)+",\n"
-    parameterlist += "        INIT_FILE       => \"\",\n"
-    parameterlist += "        INIT_HEX        => true,\n"
-    parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
-    parameterlist += "        NAME            => \""+mtypeB+"_\"&memory_enum_to_string(var)\n"
+    parameterlist += "        NUM_PAGES       => "+str(num_pages)
+
+    if memInfo.is_binned:
+        parameterlist += ",\n"
+        parameterlist += "        INIT_FILE       => \"\",\n"
+        parameterlist += "        INIT_HEX        => true,\n"
+        parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
+        parameterlist += "        NAME            => \""+mtypeB+"_\"&memory_enum_to_string(var)"
 
     if "VMSME_D" in memList[0].inst: # VMSME memories have 16 bins in the disks
+        parameterlist += ",\n"
         parameterlist += "        NUM_MEM_BINS    => 16,\n"
-        parameterlist += "        NUM_ENTRIES_PER_MEM_BINS => 8,\n"
+        parameterlist += "        NUM_ENTRIES_PER_MEM_BINS => 8"
+
+    parameterlist += "\n"
 
     # Write ports
-    portlist += "        clka      => clk,\n"
-    if combined :
-        portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
-        portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
-        portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay(var),\n"
+    if memInfo.is_binned:
+        portlist += "        clka      => clk,\n"
+        portlist += "        clkb      => clk,\n"
+        portlist += "        regceb    => '1',\n"
     else:
-        portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
-        portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
-        portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay(var),\n"
-    portlist += "        clkb      => clk,\n"
-    portlist += "        rstb      => '0',\n"
-    portlist += "        regceb    => '1',\n"
+        portlist += "        clk       => clk,\n"
+        portlist += "        bxa       => "+mtypeB+"_bx_out_delay(var),\n"
+
+    portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
+    portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
+    portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay(var),\n"
+    portlist += "        rstb      => reset,\n"
+
     if combined :
         for inst in range(0,nmem) :
             portlist += "        enb"+str(inst)+"       => "+mtypeB+"_mem_AA_enb(var)("+str(inst)+"),\n"
             portlist += "        addrb"+str(inst)+"     => "+mtypeB+"_mem_AAV_readaddr(var)("+str(inst)+"),\n"
             portlist += "        doutb"+str(inst)+"     => "+mtypeB+"_mem_AAV_dout(var)("+str(inst)+"),\n"
     else:
-        portlist += "        enb       => "+mtypeB+"_mem_A_enb(var),\n"
+        if memInfo.is_binned:
+            portlist += "        enb       => "+mtypeB+"_mem_A_enb(var),\n"
         portlist += "        addrb     => "+mtypeB+"_mem_AV_readaddr(var),\n"
         portlist += "        doutb     => "+mtypeB+"_mem_AV_dout(var),\n"
-    portlist += "        sync_nent => "+sync_signal+",\n"
+
+    if memInfo.is_binned:
+        portlist += "        sync_nent => "+mtypeB+"_mem_A_sync(var),\n"
 
     if memList[0].has_numEntries_out:
         if memList[0].is_binned:
@@ -487,6 +499,31 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         mem_str += "    "+mtypeB+" : entity work.tf_mem\n"        
     mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
     mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
+    if memInfo.is_binned:
+        mem_str += "    "+mtypeB+"_SYNC : entity work.CreateStartSignal\n"
+        mem_str += "      generic map (\n"
+        mem_str += "        DELAY => DELAY\n"
+        mem_str += "      )\n"
+        mem_str += "      port map (\n"
+        mem_str += "        clk => clk,\n"
+        mem_str += "        reset => reset,\n"
+        mem_str += "        done => "+sync_signal+",\n"
+        mem_str += "        bx_out => (others => '0'),\n"
+        mem_str += "        start => "+mtypeB+"_mem_A_sync_0(var),\n"
+        mem_str += "        bx => open\n"
+        mem_str += "      );\n\n"
+        mem_str += "    "+mtypeB+"_SYNC_0 : entity work.CreateStartSignal\n"
+        mem_str += "      generic map (\n"
+        mem_str += "        DELAY => DELAY\n"
+        mem_str += "      )\n"
+        mem_str += "      port map (\n"
+        mem_str += "        clk => clk,\n"
+        mem_str += "        reset => reset,\n"
+        mem_str += "        done => "+mtypeB+"_mem_A_sync_0(var),\n"
+        mem_str += "        bx_out => (others => '0'),\n"
+        mem_str += "        start => "+mtypeB+"_mem_A_sync(var),\n"
+        mem_str += "        bx => open\n"
+        mem_str += "      );\n\n"
     mem_str += "  end generate "+genName+";\n\n"
 
     genName = mtypeB+"_delay_loop"
@@ -500,9 +537,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "      )\n"
     mem_str += "      port map (\n"
     mem_str += "        clk       => clk,\n"
+    mem_str += "        bxa       => "+memInfo.upstream_mtype_short+"_bx_out,\n"
     mem_str += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
     mem_str += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
     mem_str += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+    mem_str += "        bxa_out   => "+mtypeB+"_bx_out_delay_0(var),\n"
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay_0(var)\n"
@@ -521,9 +560,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "      )\n"
     mem_str += "      port map (\n"
     mem_str += "        clk       => clk,\n"
+    mem_str += "        bxa       => "+mtypeB+"_bx_out_delay_0(var),\n"
     mem_str += "        wea       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
     mem_str += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
     mem_str += "        dina      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
+    mem_str += "        bxa_out   => "+mtypeB+"_bx_out_delay(var),\n"
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay(var)\n"

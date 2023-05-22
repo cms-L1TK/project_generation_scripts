@@ -1054,7 +1054,7 @@ def writeStartSwitchAndInternalBX(module):
     int_ctrl_wire += "  signal "+minst+"_bx      : std_logic_vector(2 downto 0) := (others => '0');\n"
     int_ctrl_wire += "  signal "+minst+"_bx_0    : std_logic_vector(2 downto 0) := (others => '0');\n"
 
-    int_ctrl_func =  "  LATCH_"+minst+": entity work.CreateStartSignal\n"
+    int_ctrl_func =  "  LATCH_"+minst+" : entity work.CreateStartSignal\n"
     int_ctrl_func += "    generic map (\n"
     int_ctrl_func += "      DELAY => DELAY\n"
     int_ctrl_func += "    )\n"
@@ -1073,7 +1073,7 @@ def writeStartSwitchAndInternalBX(module):
     int_ctrl_func += "      bx     => " + minst + "_bx_0\n"
     int_ctrl_func += "  );\n\n"
 
-    int_ctrl_func += "  LATCH_"+minst+"_0: entity work.CreateStartSignal\n"
+    int_ctrl_func += "  LATCH_"+minst+"_0 : entity work.CreateStartSignal\n"
     int_ctrl_func += "    generic map (\n"
     int_ctrl_func += "      DELAY => DELAY\n"
     int_ctrl_func += "    )\n"

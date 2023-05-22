@@ -381,16 +381,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         wirelist += "t_arr_"+mtypeB+"_DATA;\n"
     if interface != 1:
         if combined :
-            wirelist += "  signal "+mtypeB+"_mem_AA_enb         : "
-            wirelist += "t_arr_"+mtypeB+"_A1b;\n"
             wirelist += "  signal "+mtypeB+"_mem_AAV_readaddr   : "
             wirelist += "t_arr_"+mtypeB+"_AADDR;\n"
             wirelist += "  signal "+mtypeB+"_mem_AAV_dout       : "
             wirelist += "t_arr_"+mtypeB+"_ADATA;\n" 
         else:
-            if memInfo.is_binned:
-                wirelist += "  signal "+mtypeB+"_mem_A_enb          : "
-                wirelist += "t_arr_"+mtypeB+"_1b;\n"
             wirelist += "  signal "+mtypeB+"_mem_AV_readaddr    : "
             wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
             wirelist += "  signal "+mtypeB+"_mem_AV_dout        : "
@@ -463,12 +458,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
 
     if combined :
         for inst in range(0,nmem) :
-            portlist += "        enb"+str(inst)+"       => "+mtypeB+"_mem_AA_enb(var)("+str(inst)+"),\n"
             portlist += "        addrb"+str(inst)+"     => "+mtypeB+"_mem_AAV_readaddr(var)("+str(inst)+"),\n"
             portlist += "        doutb"+str(inst)+"     => "+mtypeB+"_mem_AAV_dout(var)("+str(inst)+"),\n"
     else:
         if memInfo.is_binned:
-            portlist += "        enb       => "+mtypeB+"_mem_A_enb(var),\n"
         portlist += "        addrb     => "+mtypeB+"_mem_AV_readaddr(var),\n"
         portlist += "        doutb     => "+mtypeB+"_mem_AV_dout(var),\n"
 
@@ -640,7 +633,6 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo):
     bxbitwidth =  memInfo.bxbitwidth
 
     string_output_mems = ""
-    string_output_mems += "    "+mtypeB+"_mem_A_enb          : in t_arr_"+mtypeB+"_1b;\n"
     string_output_mems += "    "+mtypeB+"_mem_AV_readaddr    : in t_arr_"+mtypeB+"_ADDR;\n"
     string_output_mems += "    "+mtypeB+"_mem_AV_dout        : out t_arr_"+mtypeB+"_DATA;\n"
 
@@ -797,8 +789,6 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
 
         elif memInfo.is_final: # RAM read interface
-            string_ctrl_signals += ("  signal "+mtypeB+"_mem_A_enb").ljust(str_len)+": "
-            string_ctrl_signals += ("t_arr_"+mtypeB+"_1b").ljust(str_len2)+":= (others => '0');\n"
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_readaddr").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_ADDR").ljust(str_len2)+":= (others => (others => '0'));\n"
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_dout").ljust(str_len)+": "
@@ -891,7 +881,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
             else:
                 string_debug  += string_tmp
         elif memInfo.is_final:
-            string_output += ("        "+mtypeB+"_mem_A_enb").ljust(str_len) + "=> "+mtypeB+"_mem_A_enb,\n"
             string_output += ("        "+mtypeB+"_mem_AV_readaddr").ljust(str_len) + "=> "+mtypeB+"_mem_AV_readaddr,\n"
             string_output += ("        "+mtypeB+"_mem_AV_dout").ljust(str_len) + "=> "+mtypeB+"_mem_AV_dout,\n"
             if memInfo.is_binned:
@@ -980,7 +969,6 @@ def writeTBMemoryWriteRAMInstance(mtypeB, proc, bxbitwidth, is_binned):
     string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
     string_mem += "      ADDR".ljust(str_len)+"=> "+mtypeB+"_mem_AV_readaddr(var),\n"
     string_mem += "      DATA".ljust(str_len)+"=> "+mtypeB+"_mem_AV_dout(var),\n"
-    string_mem += "      READ_EN".ljust(str_len)+"=> "+mtypeB+"_mem_A_enb(var),\n"
     string_mem += "      NENT_ARR".ljust(str_len)+"=> "+mtypeB+"_mem_AA" + ("A" if is_binned else "") + "V_dout_nent(var),\n"
     string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
     string_mem += "    );\n"
@@ -1153,7 +1141,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
             nmem = 4
         for instance in range(0,nmem):
             string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_ce"+str(portindex)+"       => "
-            string_mem_ports += mem.keyName()+"_mem_AA_enb("+mem.var()+")("+str(instance)+"),\n"
+            string_mem_ports += "open,\n"
             string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_address"+str(portindex)+"  => "
             string_mem_ports += mem.keyName()+"_mem_AAV_readaddr("+mem.var()+")("+str(instance)+"),\n"
             string_mem_ports += "      "+argname+"_dataarray_"+str(instance)+"_data_V_q"+str(portindex)+"        => "
@@ -1161,7 +1149,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
     else:
         string_mem_ports = ""
         string_mem_ports += "      "+argname+"_dataarray_data_V_ce"+str(portindex)+"       => "
-        string_mem_ports += mem.keyName()+"_mem_A_enb("+mem.var()+"),\n"
+        string_mem_ports += "open,\n"
         string_mem_ports += "      "+argname+"_dataarray_data_V_address"+str(portindex)+"  => "
         string_mem_ports += mem.keyName()+"_mem_AV_readaddr("+mem.var()+"),\n"
         string_mem_ports += "      "+argname+"_dataarray_data_V_q"+str(portindex)+"        => "
@@ -1202,10 +1190,10 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                             string_mem_ports += "),\n"
                     string_mem_ports += "      "+argname+"_nentries8a_v_q0              => "+mem.keyName()+"_mem_AV_dout_nentA("+mem.var()+"),\n"
                     string_mem_ports += "      "+argname+"_nentries8a_v_address0        => "+mem.keyName()+"_mem_AV_addr_nentA("+mem.var()+"),\n"
-                    string_mem_ports += "      "+argname+"_nentries8a_v_ce0             => "+mem.keyName()+"_mem_A_enb_nentA("+mem.var()+"),\n"
+                    string_mem_ports += "      "+argname+"_nentries8a_v_ce0             => open,\n"
                     string_mem_ports += "      "+argname+"_nentries8b_v_q0              => "+mem.keyName()+"_mem_AV_dout_nentB("+mem.var()+"),\n"
                     string_mem_ports += "      "+argname+"_nentries8b_v_address0        => "+mem.keyName()+"_mem_AV_addr_nentB("+mem.var()+"),\n"
-                    string_mem_ports += "      "+argname+"_nentries8b_v_ce0             => "+mem.keyName()+"_mem_A_enb_nentB("+mem.var()+"),\n"
+                    string_mem_ports += "      "+argname+"_nentries8b_v_ce0             => open,\n"
                 else:
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
@@ -1230,7 +1218,7 @@ def writeLUTPorts(argname,lut):
     argname = argname.split("[")[0]
     string_lut_ports += "      clk       => clk,\n"
     string_lut_ports += "      addr      => "+lut.inst+"_"+argname+"_addr,\n"
-    string_lut_ports += "      ce        => "+lut.inst+"_"+argname+"_ce,\n"
+    string_lut_ports += "      ce        => open,\n"
     string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout\n"
 
     return string_lut_ports
@@ -1264,7 +1252,6 @@ def writeLUTWires(argname, lut, innerPS, outerPS):
         width = 1
     wirelist += "  signal "+lut.inst+"_"+argname+"_addr       : "
     wirelist += "std_logic_vector("+str(depth-1)+" downto 0);\n"
-    wirelist += "  signal "+lut.inst+"_"+argname+"_ce       : std_logic;\n"
     wirelist += "  signal "+lut.inst+"_"+argname+"_dout : "
     wirelist += "std_logic_vector("+str(width-1)+" downto 0);\n"
     return wirelist
@@ -1275,7 +1262,7 @@ def writeLUTMemPorts(argname, module):
     string_mem_ports += "      "+argname+"_V_address0                  => " 
     string_mem_ports += module.inst+"_"+argname+"_addr,\n"
     string_mem_ports += "      "+argname+"_V_ce0                       => "
-    string_mem_ports += module.inst+"_"+argname+"_ce,\n"
+    string_mem_ports += "open,\n"
     string_mem_ports += "      "+argname+"_V_q0                        => "
     string_mem_ports += module.inst+"_"+argname+"_dout,\n"
     return string_mem_ports

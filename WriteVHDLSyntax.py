@@ -536,12 +536,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         mem_str += "        start => "+mtypeB+"_mem_A_sync(var),\n"
         mem_str += "        bx => open\n"
         mem_str += "      );\n\n"
-    mem_str += "  end generate "+genName+";\n\n"
 
-    genName = mtypeB+"_delay_loop"
-    mem_str += "  "+genName+" : for var in "+enum_type+" generate\n"
-    mem_str += "  begin\n\n"
-    mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"
+    mem_str += "    "+mtypeB+"_DELAY : entity work.tf_pipe_delay\n"
     mem_str += "      generic map (\n"
     mem_str += "        DELAY => DELAY,\n"
     mem_str += "        RAM_WIDTH => " + bitwidth + ",\n"
@@ -557,14 +553,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay_0(var)\n"
-    mem_str += "      );\n"
-    mem_str += "\n"
-    mem_str += "  end generate "+genName+";\n\n"
+    mem_str += "      );\n\n"
 
-    genName = mtypeB+"_delay_loop_0"
-    mem_str += "  "+genName+" : for var in "+enum_type+" generate\n"
-    mem_str += "  begin\n\n"
-    mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"
+    mem_str += "    "+mtypeB+"_DELAY_0 : entity work.tf_pipe_delay\n"
     mem_str += "      generic map (\n"
     mem_str += "        DELAY => DELAY,\n"
     mem_str += "        RAM_WIDTH => " + bitwidth + ",\n"
@@ -580,9 +571,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "        wea_out   => "+mtypeB+"_mem_A_wea_delay(var),\n"
     mem_str += "        addra_out => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
     mem_str += "        dina_out  => "+mtypeB+"_mem_AV_din_delay(var)\n"
-    mem_str += "      );\n"
-    mem_str += "\n"
-    mem_str += "  end generate "+genName+";\n\n\n"
+    mem_str += "      );\n\n"
+
+    mem_str += "  end generate "+genName+";\n\n"
 
     return wirelist,mem_str
 

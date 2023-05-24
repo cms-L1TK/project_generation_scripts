@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay = True):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -47,7 +47,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -85,7 +85,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, streamIO=False):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, streamIO=False, delay=True):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -117,7 +117,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = True)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -150,7 +150,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay=True):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -161,7 +161,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -431,6 +431,8 @@ if __name__ == "__main__":
                         help="Number of downstream processing steps to include")
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
+    parser.add_argument('-de', '--delay', action='store_true', 
+                        help="Enables additional pipeline stages on writing to memory modules")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
@@ -541,7 +543,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay)
 
     ###############
     # Test bench

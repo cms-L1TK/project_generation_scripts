@@ -308,7 +308,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = True):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -332,6 +332,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     portlist = ""
     mem_str = ""
     delay_parameterlist = ""
+    delay_portlist_0 = ""
     delay_portlist = ""
     mtype = mtypeB.split("_")[0]
     bitwidth = mtypeB.split("_")[1]
@@ -350,7 +351,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         sync_signal = memInfo.downstream_mtype_short+"_start"
 
     # Write wires
-    if True: #FIXME change this to take an argument flag
+    if delay: #FIXME change this to take an argument flag
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay_0          : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay_0   : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay_0         : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
         wirelist += "  signal "+mtypeB+"_mem_A_wea_delay          : "
         wirelist += "t_arr_"+mtypeB+"_1b;\n"
         wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay   : "
@@ -417,7 +424,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     parameterlist += "        INIT_HEX        => true,\n"
     parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
     parameterlist += "        NAME            => \""+mtypeB+"_\"&memory_enum_to_string(var)\n"
-    if True : #FIXME change true to flag
+    if delay: #FIXME change true to flag
         #delay_parameterlist +="        DELAY           => DELAY,\n" 
         #enable to use non-default delay value
         delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
@@ -431,7 +438,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         #FIXME implement delay for disks
     # Write ports
     portlist += "        clka      => clk,\n"
-    if True:#FIXME add flag here
+    if delay:#FIXME add flag here
         if combined :#FIXME why are these the same?
             portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
             portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
@@ -449,11 +456,18 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
             portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
             portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
             portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
-    if True: #FIXME add flag here
+    if delay: #FIXME add flag here
+        delay_portlist_0 += "        clk      => clk,\n"
+        delay_portlist_0 += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
+        delay_portlist_0 += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
+        delay_portlist_0 += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+        delay_portlist_0 += "        wea_out       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
+        delay_portlist_0 += "        addra_out     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
+        delay_portlist_0 += "        dina_out      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
         delay_portlist += "        clk      => clk,\n"
-        delay_portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
-        delay_portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
-        delay_portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+        delay_portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
+        delay_portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
+        delay_portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
         delay_portlist += "        wea_out       => "+mtypeB+"_mem_A_wea_delay(var),\n"
         delay_portlist += "        addra_out     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
         delay_portlist += "        dina_out      => "+mtypeB+"_mem_AV_din_delay(var),\n"
@@ -511,17 +525,25 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
     mem_str += "  end generate "+genName+";\n\n\n"
     #FIXME do this better? -jf
-    delay_genName = mtypeB+"_delay_loop"
-    mem_str += "  "+delay_genName+" : for var in "+enum_type+" generate\n"
-    mem_str += "  begin\n\n"
-    mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"        
-    mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
-    mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
-    mem_str += "  end generate "+delay_genName+";\n\n\n"
+    if delay:
+        delay_genName = mtypeB+"_delay_loop"
+        mem_str += "  "+delay_genName+" : for var in "+enum_type+" generate\n"
+        mem_str += "  begin\n\n"
+        mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"        
+        mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+        mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
+        mem_str += "  end generate "+delay_genName+";\n\n\n"
+        delay_genName_0 = mtypeB+"_delay_loop_0"
+        mem_str += "  "+delay_genName_0+" : for var in "+enum_type+" generate\n"
+        mem_str += "  begin\n\n"
+        mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"        
+        mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+        mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
+        mem_str += "  end generate "+delay_genName_0+";\n\n\n"
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs):
+def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs,delay = True):
     """
     # Top-level interface: control signals
     """
@@ -984,7 +1006,7 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
 
     return lut_str
 
-def writeStartSwitchAndInternalBX(module,mem,extraports=False):
+def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = True):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
     # Inputs: processing module & memory that is downstream of it.
@@ -998,14 +1020,13 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False):
         int_ctrl_wire += "  signal "+mtype+"_bx_out : std_logic_vector(2 downto 0);\n"
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
-    if True:#FIXME add delay flag
-        int_ctrl_wire += "  signal "+mtype+"_bx_out_0 : std_logic_vector(2 downto 0);\n"
     int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"
     int_ctrl_func += "      reset => reset,\n"
     int_ctrl_func += "      done  => "+mtype+"_done,\n"
-    if True:
+    if delay:#FIXME
+        int_ctrl_wire += "  signal "+mtype+"_bx_out_0 : std_logic_vector(2 downto 0);\n"
         int_ctrl_func += "      bx_out => "+mtype+"_bx_out_0,\n"
         int_ctrl_func += "      bx => "+mtype+"_bx_out,\n"
     int_ctrl_func += "      start => "+mtype_down+"_start\n"

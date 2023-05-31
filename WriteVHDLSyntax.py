@@ -582,12 +582,10 @@ def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs):
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+final_proc+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc+"_done   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
         string_ctrl_signals += "    "+mid_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-        string_ctrl_signals += "    "+mid_proc+"_bx_out_vld : out std_logic;\n"
         string_ctrl_signals += "    "+mid_proc+"_done   : out std_logic;\n"
 
     return string_ctrl_signals
@@ -755,10 +753,8 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
-        string_ctrl_signals += ("  signal "+mid_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+final_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
-    string_ctrl_signals += ("  signal "+final_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+final_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
 
     first_mem = "" # The first memory of the chain
@@ -846,7 +842,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
     string_fwblock_inst += ("        " + final_proc + "_bx_out").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
-    string_fwblock_inst += ("        " + final_proc + "_bx_out_vld").ljust(str_len) + "=> " + final_proc + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_proc + "_done").ljust(str_len) + "=> " + final_proc + "_done,\n"
 
     # Add debug signals if considering intermediate memories
@@ -854,7 +849,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         string_fwblock_inst += "        -- Debug control signals\n"
         for mid_proc in notfinal_procs:
             string_fwblock_inst += ("        " + mid_proc + "_bx_out").ljust(str_len) + "=> " + mid_proc + "_bx_out,\n"
-            string_fwblock_inst += ("        " + mid_proc + "_bx_out_vld").ljust(str_len) + "=> " + mid_proc + "_bx_out_vld,\n"
             string_fwblock_inst += ("        " + mid_proc + "_done").ljust(str_len) + "=> " + mid_proc + "_done,\n"
 
     # Memory input/output/debug signals

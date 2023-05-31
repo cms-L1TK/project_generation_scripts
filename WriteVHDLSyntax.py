@@ -458,12 +458,12 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
 
     if combined :
         for inst in range(0,nmem) :
-            portlist += "        enb"+str(inst)+"       => '0',\n"
+            portlist += "        enb"+str(inst)+"       => '1',\n"
             portlist += "        addrb"+str(inst)+"     => "+mtypeB+"_mem_AAV_readaddr(var)("+str(inst)+"),\n"
             portlist += "        doutb"+str(inst)+"     => "+mtypeB+"_mem_AAV_dout(var)("+str(inst)+"),\n"
     else:
         if memInfo.is_binned:
-            portlist += "        enb       => '0',\n"
+            portlist += "        enb       => '1',\n"
         portlist += "        addrb     => "+mtypeB+"_mem_AV_readaddr(var),\n"
         portlist += "        doutb     => "+mtypeB+"_mem_AV_dout(var),\n"
 
@@ -1220,7 +1220,7 @@ def writeLUTPorts(argname,lut):
     argname = argname.split("[")[0]
     string_lut_ports += "      clk       => clk,\n"
     string_lut_ports += "      addr      => "+lut.inst+"_"+argname+"_addr,\n"
-    string_lut_ports += "      ce        => open,\n"
+    string_lut_ports += "      ce        => '1',\n"
     string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout\n"
 
     return string_lut_ports

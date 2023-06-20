@@ -160,10 +160,6 @@ class project:
         l1phis = ["A", "B", "C", "D", "E", "F", "G", "H"]
         lxphis = ["A", "B", "C", "D"]
 
-        if tc.upper() not in tcs:
-            print("Bad " + module_type + " index, not adding.")
-            return
-
         # Store whether or not we're including negative eta inputs
         self.noneg = noneg
 
@@ -171,26 +167,35 @@ class project:
         self.seed_layers.append(layers[:2])
         self.seed_layers.append(layers[2:])
 
-        tc_i = tcs.index(tc.upper())
-        phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
-        phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
+        tc_list = tcs
+        if tc != "All":
+            if tc.upper() not in tcs:
+                print("Bad " + module_type + " index, not adding.")
+                return
+            tc_list = [tc]
 
-        print("Adding regions to project: %s_%s%s, L1PHI%s, LxPHI%s"%(module_type, layers, tcs[tc_i], l1phis[phi1_i], lxphis[phix_i]))
-        self.tcs.append("%s_%s%s"%(module_type, layers, tcs[tc_i]))
-        self.l1phis.append(l1phis[phi1_i])
-        self.lxphis.append(lxphis[phix_i])
 
-        # Add nodes and connections to the project
-        # Starting with e.g. TC_L1L2F and moving up and down the chain
-        # For each node it adds, will check for all inputs and outputs of that node
+        for tc in tc_list:
+            tc_i = tcs.index(tc.upper())
+            phi1_i = int(tc_i*1.*len(l1phis)/len(tcs))
+            phix_i = int(tc_i*1.*len(lxphis)/len(tcs))
 
-        print("Starting with node %s_%s%s"%(module_type,layers,tcs[tc_i]))
-        n = node("%s_%s%s"%(module_type,layers,tcs[tc_i]))
-        self.addNode(n)
-        print("Finding inputs...")
-        self.findInputConnections(n, ref_p)
-        print("Finding outputs...")
-        self.findOutputConnections(n, ref_p)
+            print("Adding regions to project: %s_%s%s, L1PHI%s, LxPHI%s"%(module_type, layers, tcs[tc_i], l1phis[phi1_i], lxphis[phix_i]))
+            self.tcs.append("%s_%s%s"%(module_type, layers, tcs[tc_i]))
+            self.l1phis.append(l1phis[phi1_i])
+            self.lxphis.append(lxphis[phix_i])
+
+            # Add nodes and connections to the project
+            # Starting with e.g. TC_L1L2F and moving up and down the chain
+            # For each node it adds, will check for all inputs and outputs of that node
+
+            print("Starting with node %s_%s%s"%(module_type,layers,tcs[tc_i]))
+            n = node("%s_%s%s"%(module_type,layers,tcs[tc_i]))
+            self.addNode(n)
+            print("Finding inputs...")
+            self.findInputConnections(n, ref_p)
+            print("Finding outputs...")
+            self.findOutputConnections(n, ref_p)
 
     def findInputConnections(self, n, ref_p):
         if verbose: print("\t", n.name)
@@ -287,7 +292,7 @@ parser = argparse.ArgumentParser(description="Make a reduced configuration to ru
 parser.add_argument("-w", "--wires", type=str, default="wires.dat", help="Reference wires.dat file (from full config)")
 parser.add_argument("-p", "--process", type=str, default="processingmodules.dat", help="Reference processingmodules.dat file (from full config)")
 parser.add_argument("-m", "--memories", type=str, default="memorymodules.dat", help="Reference memorymodules.dat file (from full config)")
-parser.add_argument("-s", "--sector", type=str, default="F", help="TC/TP phi sector from which to create the reduced config")
+parser.add_argument("-s", "--sector", type=str, default="F", help="TC/TP phi sector from which to create the reduced config, e.g. 'C' or 'All' for all regions")
 parser.add_argument("-o", "--output", type=str, default="reduced_", help="Prefix to add to all output files")
 parser.add_argument("-l", "--layers", type=str, default="L1L2", help="Select the layer pair to create seeds with")
 parser.add_argument("-n", "--noneg", type=bool, default=True, help="Remove all negative eta modules from the config")
@@ -319,8 +324,8 @@ reduced_wires.saveModules("%sprocessingmodules.dat"%args.output)
 reduced_wires.saveMemories("%smemorymodules.dat"%args.output)
 
 # Create a pdf of the .dat files we've made
-tracklet = TrackletGraph.from_configs("%sprocessingmodules.dat"%args.output,"%smemorymodules.dat"%args.output,"%swires.dat"%args.output)
 if ( args.graph) :
+    tracklet = TrackletGraph.from_configs("%sprocessingmodules.dat"%args.output,"%smemorymodules.dat"%args.output,"%swires.dat"%args.output)
     pageWidth, pageHeight, dyBox, textSize = tracklet.draw_graph(tracklet.get_all_proc_modules())
     import ROOT
     ROOT.gROOT.SetBatch(True)

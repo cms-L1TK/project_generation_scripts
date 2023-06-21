@@ -1080,6 +1080,12 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
     if combined and (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"): #FIXME hack for combined modules
         string_mem_ports = ""
         nmem = 5
+        #FIXME special case for L2L3 seeding where we have 2 TE
+        if "VMSTE_L3" in mem.inst :
+            nmem = 2
+        #FIXME special case for L5L6 seeding where we have 3 TE
+        if "VMSTE_L6" in mem.inst :
+            nmem = 3
         if mem.mtype == "VMStubsME" :
             nmem = 4
         for instance in range(0,nmem):

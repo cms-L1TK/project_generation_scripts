@@ -440,7 +440,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     if memList[0].has_numEntries_out:
         if memList[0].is_binned:
             if combined:
-                portlist += "        mask_o    => "+mtypeB+"_mem_AAV_dout_mask(var),\n"
                 if "VMSTE" in mtypeB :
                     portlist += "        nent_o    => "+mtypeB+"_mem_AAAV_dout_nent(var),\n"
                 else:
@@ -1085,12 +1084,9 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                     string_mem_ports += "      "+argname+"_nentries8b_v_address0        => "+mem.keyName()+"_mem_AV_addr_nentB("+mem.var()+"),\n"
                     string_mem_ports += "      "+argname+"_nentries8b_v_ce0             => "+mem.keyName()+"_mem_A_enb_nentB("+mem.var()+"),\n"
                 else:
+                    for i in range(0,2**mem.bxbitwidth): 
                         string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                         string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
-            else:
-                for i in range(0,2**mem.bxbitwidth):
-                    string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
-                    string_mem_ports += mem.keyName()+"_mem_AAV_dout_nent("+mem.var()+")("+str(i)+"),\n"
         else:
             for i in range(0,2**mem.bxbitwidth):
                 if mem.is_binned:

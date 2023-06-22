@@ -231,7 +231,7 @@ class TrackletGraph(object):
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
             if disk>-1: mem.bitwidth = 55
         elif mem.mtype == "TrackWord":
-            mem.bitwidth = 84
+            mem.bitwidth = 98
         elif mem.mtype == "BarrelStubWord":
             mem.bitwidth = 46
         elif mem.mtype == "DiskStubWord":

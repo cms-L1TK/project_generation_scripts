@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay = True):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -56,7 +56,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay = True):
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir, extraports):
+def writeProcModules(proc_list, hls_src_dir, extraports, delay):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
@@ -73,10 +73,10 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
 
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay)
             proc_type_list.append(aProcMod.mtype)
         else:
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports, delay)
         string_proc_wire += proc_wire_inst
         string_proc_func += proc_func_inst
         
@@ -85,7 +85,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, streamIO=False, delay=True):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, streamIO=False):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -117,7 +117,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = True)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = delay)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -150,7 +150,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay=True):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -173,11 +173,11 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
 
-    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports)
+    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports, delay)
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                                                       memDict, memInfoDict, extraports)
+                                                       memDict, memInfoDict, extraports, delay)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -431,8 +431,8 @@ if __name__ == "__main__":
                         help="Number of downstream processing steps to include")
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
-    parser.add_argument('-de', '--delay', action='store_true', 
-                        help="Enables additional pipeline stages on writing to memory modules")
+    parser.add_argument('-de', '--delay', type=int, default=0,
+                        help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")

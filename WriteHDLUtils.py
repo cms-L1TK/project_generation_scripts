@@ -1183,14 +1183,14 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True)
+                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True,delay)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False)
+                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,delay)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
-                string_bx_out += writeProcBXPort(module.mtype_short(),False,False) # output bx
+                string_bx_out += writeProcBXPort(module.mtype_short(),False,False,delay) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \

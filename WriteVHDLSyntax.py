@@ -1020,7 +1020,8 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
     int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
-    startsignal_parameter_list +="        DELAY           => " + str(delay*2) +",\n"
+    if delay > 0:
+      startsignal_parameter_list +="        DELAY           => " + str(delay*2) +",\n"
     int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
 
     int_ctrl_func += "    port map (\n"
@@ -1053,7 +1054,7 @@ def writeProcControlSignalPorts(module,first_of_type):
 
     return string_ctrl_ports
 
-def writeProcBXPort(modName,isInput,isInitial):
+def writeProcBXPort(modName,isInput,isInitial,delay):
     """
     # Processing module port assignment: BX ports
     """
@@ -1063,7 +1064,7 @@ def writeProcBXPort(modName,isInput,isInitial):
     elif isInput and not isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
-        if modName == "FT":
+        if modName == "FT" or delay==0:
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
             bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:

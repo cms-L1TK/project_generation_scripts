@@ -1022,7 +1022,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
     int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
     if delay > 0:
       startsignal_parameter_list +="        DELAY           => " + str(delay*2) +",\n"
-    int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
+      int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
 
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"

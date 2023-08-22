@@ -308,7 +308,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -331,7 +331,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     parameterlist = ""
     portlist = ""
     mem_str = ""
-
+    delay_parameterlist = ""
+    delay_portlist_0 = ""
+    delay_portlist = ""
     mtype = mtypeB.split("_")[0]
     bitwidth = mtypeB.split("_")[1]
 
@@ -349,6 +351,19 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         sync_signal = memInfo.downstream_mtype_short+"_start"
 
     # Write wires
+    if delay > 0:
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay_0          : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay_0   : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay_0         : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
+        wirelist += "  signal "+mtypeB+"_mem_A_wea_delay          : "
+        wirelist += "t_arr_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_writeaddr_delay   : "
+        wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
+        wirelist += "  signal "+mtypeB+"_mem_AV_din_delay         : "
+        wirelist += "t_arr_"+mtypeB+"_DATA;\n"
     if (interface != -1 and not extraports) or (interface == 1 and extraports):
         wirelist += "  signal "+mtypeB+"_mem_A_wea          : "
         wirelist += "t_arr_"+mtypeB+"_1b;\n"
@@ -356,6 +371,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
         wirelist += "t_arr_"+mtypeB+"_ADDR;\n"
         wirelist += "  signal "+mtypeB+"_mem_AV_din         : "
         wirelist += "t_arr_"+mtypeB+"_DATA;\n"
+    
     if interface != 1:
         if combined :
             wirelist += "  signal "+mtypeB+"_mem_AA_enb         : "
@@ -408,21 +424,55 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     parameterlist += "        INIT_HEX        => true,\n"
     parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
     parameterlist += "        NAME            => \""+mtypeB+"_\"&memory_enum_to_string(var)\n"
+    if delay > 0:
+        delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
+        #enable to use non-default delay value
+        delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
+        if combined:
+            delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+"*PAGE_LENGTH_CM,\n"
+        delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
 
     if "VMSME_D" in memList[0].inst: # VMSME memories have 16 bins in the disks
         parameterlist += "        NUM_MEM_BINS    => 16,\n"
         parameterlist += "        NUM_ENTRIES_PER_MEM_BINS => 8,\n"
-
+        #FIXME implement delay for disks
     # Write ports
     portlist += "        clka      => clk,\n"
-    if combined :
-        portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
-        portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
-        portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+    if delay > 0:
+        if combined :
+            portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
+            portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
+            portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay(var),\n"
+        else:
+            portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay(var),\n"
+            portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
+            portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay(var),\n"
     else:
-        portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
-        portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
-        portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+        if combined :
+            portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
+            portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
+            portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+        else:
+            portlist += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
+            portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
+            portlist += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+    if delay > 0:
+        delay_portlist_0 += "        clk      => clk,\n"
+        delay_portlist_0 += "        wea       => "+mtypeB+"_mem_A_wea(var),\n"
+        delay_portlist_0 += "        addra     => "+mtypeB+"_mem_AV_writeaddr(var),\n"
+        delay_portlist_0 += "        dina      => "+mtypeB+"_mem_AV_din(var),\n"
+        delay_portlist_0 += "        wea_out       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
+        delay_portlist_0 += "        addra_out     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
+        delay_portlist_0 += "        dina_out      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
+        delay_portlist += "        clk      => clk,\n"
+        delay_portlist += "        wea       => "+mtypeB+"_mem_A_wea_delay_0(var),\n"
+        delay_portlist += "        addra     => "+mtypeB+"_mem_AV_writeaddr_delay_0(var),\n"
+        delay_portlist += "        dina      => "+mtypeB+"_mem_AV_din_delay_0(var),\n"
+        delay_portlist += "        wea_out       => "+mtypeB+"_mem_A_wea_delay(var),\n"
+        delay_portlist += "        addra_out     => "+mtypeB+"_mem_AV_writeaddr_delay(var),\n"
+        delay_portlist += "        dina_out      => "+mtypeB+"_mem_AV_din_delay(var),\n"
+        
+
     portlist += "        clkb      => clk,\n"
     portlist += "        rstb      => '0',\n"
     portlist += "        regceb    => '1',\n"
@@ -474,10 +524,25 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports):
     mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
     mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
     mem_str += "  end generate "+genName+";\n\n\n"
+    if delay > 0:
+        delay_genName = mtypeB+"_delay_loop"
+        mem_str += "  "+delay_genName+" : for var in "+enum_type+" generate\n"
+        mem_str += "  begin\n\n"
+        mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"        
+        mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+        mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
+        mem_str += "  end generate "+delay_genName+";\n\n\n"
+        delay_genName_0 = mtypeB+"_delay_loop_0"
+        mem_str += "  "+delay_genName_0+" : for var in "+enum_type+" generate\n"
+        mem_str += "  begin\n\n"
+        mem_str += "    "+mtypeB+" : entity work.tf_pipe_delay\n"        
+        mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+        mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
+        mem_str += "  end generate "+delay_genName_0+";\n\n\n"
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs):
+def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = 0):
     """
     # Top-level interface: control signals
     """
@@ -721,6 +786,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
             string_ctrl_signals += ("  signal "+mtypeB+"_mem_AV_din").ljust(str_len)+": "
             string_ctrl_signals += ("t_arr_"+mtypeB+"_DATA").ljust(str_len2)+":= (others => (others => '0'));\n"
 
+
     if "DL" in first_mem:
         string_ctrl_signals += "\n  -- Indicates that reading of DL of first event has started.\n"
         string_ctrl_signals += "  signal START_FIRST_LINK : std_logic := '0';\n"
@@ -939,26 +1005,33 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
 
     return lut_str
 
-def writeStartSwitchAndInternalBX(module,mem,extraports=False):
+def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
     # Inputs: processing module & memory that is downstream of it.
     """
     mtype = module.mtype_short()
     mtype_down = mem.downstreams[0].mtype_short()
-
+    startsignal_parameter_list = ""
     int_ctrl_wire = ""
     if not extraports: 
         int_ctrl_wire += "  signal "+mtype+"_done : std_logic := '0';\n"
         int_ctrl_wire += "  signal "+mtype+"_bx_out : std_logic_vector(2 downto 0);\n"
         int_ctrl_wire += "  signal "+mtype+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype_down+"_start : std_logic := '0';\n"
-
     int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
+    if delay > 0:
+      startsignal_parameter_list +="        DELAY           => " + str(delay*2) +",\n"
+      int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
+
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"
     int_ctrl_func += "      reset => reset,\n"
     int_ctrl_func += "      done  => "+mtype+"_done,\n"
+    if delay > 0:
+        int_ctrl_wire += "  signal "+mtype+"_bx_out_0 : std_logic_vector(2 downto 0);\n"
+        int_ctrl_func += "      bx_out => "+mtype+"_bx_out_0,\n"
+        int_ctrl_func += "      bx => "+mtype+"_bx_out,\n"
     int_ctrl_func += "      start => "+mtype_down+"_start\n"
     int_ctrl_func += "  );\n\n"
 
@@ -981,7 +1054,7 @@ def writeProcControlSignalPorts(module,first_of_type):
 
     return string_ctrl_ports
 
-def writeProcBXPort(modName,isInput,isInitial):
+def writeProcBXPort(modName,isInput,isInitial,delay):
     """
     # Processing module port assignment: BX ports
     """
@@ -991,8 +1064,12 @@ def writeProcBXPort(modName,isInput,isInitial):
     elif isInput and not isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
-        bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
-        bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+        if modName == "FT" or delay==0:
+            bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
+            bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+        else:
+            bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
+            bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,combined=False):
@@ -1027,6 +1104,12 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
     if combined and (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"): #FIXME hack for combined modules
         string_mem_ports = ""
         nmem = 5
+        #FIXME special case for L2L3 seeding where we have 2 TE
+        if "VMSTE_L3" in mem.inst :
+            nmem = 2
+        #FIXME special case for L5L6 seeding where we have 3 TE
+        if "VMSTE_L6" in mem.inst :
+            nmem = 3
         if mem.mtype == "VMStubsME" :
             nmem = 4
         for instance in range(0,nmem):

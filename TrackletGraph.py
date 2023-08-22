@@ -231,7 +231,7 @@ class TrackletGraph(object):
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
             if disk>-1: mem.bitwidth = 55
         elif mem.mtype == "TrackWord":
-            mem.bitwidth = 84
+            mem.bitwidth = 98
         elif mem.mtype == "BarrelStubWord":
             mem.bitwidth = 46
         elif mem.mtype == "DiskStubWord":
@@ -585,12 +585,16 @@ class TrackletGraph(object):
         file_wires.close()
 
         # Remove processing modules if they do not have input/output memories
+
         for name, proc in p_dict.items():
             nInputs = len(proc.upstreams)
             nOutputs = len(proc.downstreams)
             
             if nInputs == 0 or nOutputs == 0:
-                del p_dict[name]
+                print("Error module:", name, "with nInputs =", nInputs, "nOutputs =", nOutputs)
+                exit(0)
+
+
         
     ########################################       
     # Accessors

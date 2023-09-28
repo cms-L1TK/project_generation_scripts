@@ -2,14 +2,14 @@
   -- (Needed to compare with emData/).
   writeTF_L3L4_366 : entity work.FileWriterFIFO
   generic map (
-    FILE_NAME  => FILE_OUT_TF&memory_enum_to_string(L3L4)&outputFileNameEnding,
+    FILE_NAME  => FILE_OUT_TF&"L3L4"&outputFileNameEnding,
     FIFO_WIDTH  => 380
   )
   port map (
     CLK => CLK,
     DONE => FT_DONE,
-    WRITE_EN => TW_98_stream_A_write(L3L4),
-    FULL_NEG => TW_98_stream_A_full_neg(L3L4),
-    DATA => TW_98_stream_AV_din(L3L4)&BW_46_stream_AV_din(L3L4_L1)&BW_46_stream_AV_din(L3L4_L2)&BW_46_stream_AV_din(L3L4_L5)&BW_46_stream_AV_din(L3L4_L6)&emptyDiskStub&emptyDiskStub
+    WRITE_EN => TW_L3L4_stream_A_write,
+    FULL_NEG => TW_L3L4_stream_A_full_neg,
+    DATA => TW_L3L4_stream_AV_din&BW_L3L4_L1_stream_AV_din&BW_L3L4_L2_stream_AV_din&BW_L3L4_L5_stream_AV_din&BW_L3L4_L6_stream_AV_din&emptyDiskStub&emptyDiskStub
   );
 

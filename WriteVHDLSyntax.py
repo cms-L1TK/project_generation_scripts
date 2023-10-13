@@ -968,7 +968,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
     
     return string_mem
 
-def writeTBMemoryWriteRAMInstance(mtypeB, mmeDict, proc, bxbitwidth, is_binned):
+def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
     """
     # VHDL test bench: write the loop that writes the output from the end-of-chain BRAM memories to text files
     # Inputs:

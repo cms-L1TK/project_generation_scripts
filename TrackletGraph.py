@@ -259,8 +259,7 @@ class TrackletGraph(object):
     @staticmethod
     def populate_is_binned(mem,hls_dir):
         # Populate fields saying whether mem module is binned
-        if (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME"):
-            mem.is_binned = True
+        mem.is_binned = (mem.mtype == "VMStubsTEOuter" or mem.mtype == "VMStubsME")
 
     @staticmethod
     def populate_has_numEntries_out(mem,hls_dir):

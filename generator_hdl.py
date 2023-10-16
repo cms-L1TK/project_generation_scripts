@@ -281,7 +281,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp

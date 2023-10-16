@@ -892,7 +892,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                     string_input += ("        "+mem+"_link_empty_neg").ljust(str_len) + "=> "+mem+"_link_empty_neg,\n"
                     string_input += ("        "+mem+"_link_read").ljust(str_len) + "=> "+mem+"_link_read,\n"
                 else:
-                    string_input += ("        "+meme+"_wea").ljust(str_len) + "=> "+memB+"_wea,\n"
+                    string_input += ("        "+mem+"_wea").ljust(str_len) + "=> "+mem+"_wea,\n"
                     string_input += ("        "+mem+"_writeaddr").ljust(str_len) + "=> "+mem+"_writeaddr,\n"
                     string_input += ("        "+mem+"_din").ljust(str_len) + "=> "+mem+"_din,\n"
             elif memInfo.isFIFO: # Special case FIFO output

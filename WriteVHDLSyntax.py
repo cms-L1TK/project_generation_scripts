@@ -987,7 +987,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
 
     for memMod in memList:
 
-        mem = memMod.list
+        mem = memMod.inst
 
         string_mem += "    write"+mem+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
         string_mem += "    generic map (\n"

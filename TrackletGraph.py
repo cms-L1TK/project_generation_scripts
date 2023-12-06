@@ -585,13 +585,17 @@ class TrackletGraph(object):
 
         # Remove processing modules if they do not have input/output memories
 
+        errorMsg = ""
         for name, proc in p_dict.items():
             nInputs = len(proc.upstreams)
             nOutputs = len(proc.downstreams)
             
             if nInputs == 0 or nOutputs == 0:
-                print("Error module:", name, "with nInputs =", nInputs, "nOutputs =", nOutputs)
-                exit(0)
+                errorMsg += "Error module: " + name + " with nInputs = " + str(nInputs) + " nOutputs = " + str(nOutputs) + "\n"
+
+        if errorMsg != "":
+            print(errorMsg)
+            exit(1)
 
 
         

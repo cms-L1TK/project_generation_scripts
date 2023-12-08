@@ -127,18 +127,18 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         if memInfo.is_initial:
             # Input arguments
             if "DL" in mtypeB: # DTCLink
-                string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB)
+                string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB, memDict)
             else:
-                string_input_mems += writeMemoryLHSPorts_interface(mtypeB)
+                string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB)
         elif memInfo.is_final:
             # Output arguments
             if memInfo.isFIFO:
-                string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB)
+                string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
                 string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
-            string_input_mems += writeMemoryLHSPorts_interface(mtypeB, extraports)            
+            string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
         
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
@@ -208,19 +208,20 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc):
 
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
+        memList = memDict[mtypeB]
 
         if memInfo.is_initial:
             first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
-            string_read += writeTBMemoryReadInstance(mtypeB, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
+            string_read += writeTBMemoryReadInstance(mtypeB, memDict, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
 
             if first_mem: # Write start signal for the first memory in the chain
                 string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
                 if "DL" in memInfo.mtype_short: 
                     string_read += "  -- first event starts being read from the first link in the chain.\n"
-                    string_read += "  START_FIRST_LINK <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n"
+                    string_read += "  START_FIRST_LINK <= START_" + memList[0].inst+";\n\n"
                 else:
                     string_read += "  -- first event starts being written to first memory in chain.\n"
-                    string_read += "  START_FIRST_WRITE <= START_" + memInfo.mtype_short + "(enum_" + mtypeB + "'val(0));\n\n" 
+                    string_read += "  START_FIRST_WRITE <= START_" + memList[0].inst+";\n\n" 
                 found_first_mem = True
 
     # string_read += "\n"
@@ -259,12 +260,13 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
     string_final = ""
     
     for mtypeB in memDict:
+        memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
         proc = memInfo.upstream_mtype_short # Processing module that writes to mtypeB
         up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if notfinal_procs and proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
 
         if memInfo.isFIFO:
-            string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, proc, memInfo.bxbitwidth)
+            string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, memInfo.bxbitwidth)
             # A bodge for TrackBuilder to write TF concatenated track+stub data.
             # (Needed to compare with emData/).
             if mtypeB == 'TW_98':
@@ -279,13 +281,13 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp
             else:
               is_cm = memInfo.downstream_mtype_short in ("TP", "MP")
-              string_intermediate += writeTBMemoryWriteInstance(mtypeB, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+              string_intermediate += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"

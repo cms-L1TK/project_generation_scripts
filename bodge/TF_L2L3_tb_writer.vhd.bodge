@@ -1,9 +1,9 @@
   -- A bodge for TrackBuilder to write TF concatenated track+stub data for L2L3.
   -- (Needed to compare with emData/).
-  writeTF_L2L3_418 : entity work.FileWriterFIFO
+  writeTF_L2L3_438 : entity work.FileWriterFIFO
   generic map (
     FILE_NAME  => FILE_OUT_TF&"L2L3"&outputFileNameEnding,
-    FIFO_WIDTH  => 432
+    FIFO_WIDTH  => 438
   )
   port map (
     CLK => CLK,

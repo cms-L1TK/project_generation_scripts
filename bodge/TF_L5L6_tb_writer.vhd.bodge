@@ -1,9 +1,9 @@
   -- A bodge for TrackBuilder to write TF concatenated track+stub data for L5L6.
   -- (Needed to compare with emData/).
-  writeTF_L5L6_268 : entity work.FileWriterFIFO
+  writeTF_L5L6_288 : entity work.FileWriterFIFO
   generic map (
     FILE_NAME  => FILE_OUT_TF&"L5L6"&outputFileNameEnding,
-    FIFO_WIDTH  => 282
+    FIFO_WIDTH  => 288
   )
   port map (
     CLK => CLK,

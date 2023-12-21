@@ -1016,18 +1016,19 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
     return string_mem 
 
 
-def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, bxbitwidth):
+def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc):
     """
     # VHDL test bench: write the loop that writes the input to all FIFO memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
-    #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
     """
 
     memList = memDict[mtypeB]
 
     string_mem = ""
+
+    memWidth = int(mtypeB.split("_")[-1])
 
     for memMod in memList:
         mem = memMod.inst
@@ -1041,7 +1042,7 @@ def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, bxbitwidth):
         string_mem += "    port map (\n"
         string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
         string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE,\n"
-        string_mem += "      WRITE_EN".ljust(str_len)+"=> "+mem+"_stream_A_write,\n"
+        string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_A_write and "+mem+"_stream_AV_din(" + str(memWidth - 1) + ")),\n"
         string_mem += "      FULL_NEG".ljust(str_len)+"=> "+mem+"_stream_A_full_neg,\n"
         string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_AV_din\n"
         string_mem += "    );\n"

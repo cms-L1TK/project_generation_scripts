@@ -8,7 +8,7 @@
   port map (
     CLK => CLK,
     DONE => FT_DONE,
-    WRITE_EN => TW_L3L4_stream_A_write,
+    WRITE_EN => (TW_L3L4_stream_A_write and TW_L3L4_stream_AV_din(103)),
     FULL_NEG => TW_L3L4_stream_A_full_neg,
     DATA => TW_L3L4_stream_AV_din&BW_L3L4_L1_stream_AV_din&BW_L3L4_L2_stream_AV_din&BW_L3L4_L5_stream_AV_din&BW_L3L4_L6_stream_AV_din&emptyDiskStub&emptyDiskStub
   );

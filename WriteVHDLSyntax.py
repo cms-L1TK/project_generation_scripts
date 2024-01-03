@@ -311,11 +311,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
 
-    combined = False
     nmem = 0
 
     if memInfo.is_binned:
-        combined =  memInfo.downstream_mtype_short in ("TP", "MP")
         if memInfo.downstream_mtype_short == "TP" :
             nmem =  5
         if memInfo.downstream_mtype_short == "MP" :
@@ -372,7 +370,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                 wirelist += "t_"+mtypeB+"_DATA;\n"
     
         if interface != 1:
-            if combined :
+            if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
                 wirelist += "  signal "+mem+"_AV_readaddr   : "
@@ -389,38 +387,33 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
 
             if memInfo.has_numEntries_out:
                 if memInfo.is_binned:
-                    if combined:
-                        wirelist += "  signal "+mem+"_AV_dout_mask : "
-                        wirelist += "t_"+mtypeB+"_MASK; -- (#page)(#bin)\n"  
-                        if "VMSTE" in mtypeB :
-                            wirelist += "  signal "+mem+"_enb_nent         : "
-                            wirelist += "t_"+mtypeB+"_1b;\n"
-                            wirelist += "  signal "+mem+"_V_addr_nent   : "
-                            wirelist += "t_"+mtypeB+"_NENTADDR;\n"
-                            wirelist += "  signal "+mem+"_AV_dout_nent : "
-                            wirelist += "t_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
-                            wirelist += "  signal "+mem+"_V_datatmp : "
-                            wirelist += "std_logic_vector(79 downto 0);\n"
-                            wirelist += "  signal "+mem+"_V_masktmp : "
-                            wirelist += "std_logic_vector(64*2-1 downto 0);\n"
-                        else:
-                            wirelist += "  signal "+mem+"_enb_nent         : "
-                            wirelist += "t_"+mtypeB+"_1b;\n"
-                            wirelist += "  signal "+mem+"_V_addr_nent   : "
-                            wirelist += "t_"+mtypeB+"_NENTADDR;\n"
-                            wirelist += "  signal "+mem+"_AV_dout_nent : "
-                            wirelist += "t_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
-                            wirelist += "  signal "+mem+"_V_datatmp : "
-                            if "16" in mtypeB :
-                                wirelist += "std_logic_vector(63 downto 0);\n"
-                            else:
-                                wirelist += "std_logic_vector(67 downto 0);\n"
-                            wirelist += "  signal "+mem+"_V_masktmp : "
-                            wirelist += "std_logic_vector(64*4-1 downto 0);\n"
-                    else:
-                        wirelist += "  signal "+mem+"_AAV_dout_nent : "
+                    wirelist += "  signal "+mem+"_AV_dout_mask : "
+                    wirelist += "t_"+mtypeB+"_MASK; -- (#page)(#bin)\n"  
+                    if "VMSTE" in mtypeB :
+                        wirelist += "  signal "+mem+"_enb_nent         : "
+                        wirelist += "t_"+mtypeB+"_1b;\n"
+                        wirelist += "  signal "+mem+"_V_addr_nent   : "
+                        wirelist += "t_"+mtypeB+"_NENTADDR;\n"
+                        wirelist += "  signal "+mem+"_AV_dout_nent : "
                         wirelist += "t_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
-
+                        wirelist += "  signal "+mem+"_V_datatmp : "
+                        wirelist += "std_logic_vector(79 downto 0);\n"
+                        wirelist += "  signal "+mem+"_V_masktmp : "
+                        wirelist += "std_logic_vector(64*2-1 downto 0);\n"
+                    else:
+                        wirelist += "  signal "+mem+"_enb_nent         : "
+                        wirelist += "t_"+mtypeB+"_1b;\n"
+                        wirelist += "  signal "+mem+"_V_addr_nent   : "
+                        wirelist += "t_"+mtypeB+"_NENTADDR;\n"
+                        wirelist += "  signal "+mem+"_AV_dout_nent : "
+                        wirelist += "t_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
+                        wirelist += "  signal "+mem+"_V_datatmp : "
+                        if "16" in mtypeB :
+                            wirelist += "std_logic_vector(63 downto 0);\n"
+                        else:
+                            wirelist += "std_logic_vector(67 downto 0);\n"
+                        wirelist += "  signal "+mem+"_V_masktmp : "
+                        wirelist += "std_logic_vector(64*4-1 downto 0);\n"
                 else:
                     wirelist += "  signal "+mem+"_AV_dout_nent  : "
                     wirelist += "t_"+mtypeB+"_NENT; -- (#page)\n"
@@ -436,7 +429,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
             delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
             #enable to use non-default delay value
             delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
-            if combined:
+            if memInfo.is_binned:
                 delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+"*PAGE_LENGTH_CM,\n"
             delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
 
@@ -460,7 +453,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
         # Write ports
         portlist += "        clka      => clk,\n"
         if delay > 0:
-            if combined :
+            if memInfo.is_binned :
                 portlist += "        wea       => "+mem+"_wea_delay,\n"
                 portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
                 portlist += "        dina      => "+mem+"_din_delay,\n"
@@ -469,7 +462,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                 portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
                 portlist += "        dina      => "+mem+"_din_delay,\n"
         else:
-            if combined :
+            if memInfo.is_binned :
                 portlist += "        wea       => "+mem+"_wea,\n"
                 portlist += "        addra     => "+mem+"_writeaddr,\n"
                 portlist += "        dina      => "+mem+"_din,\n"
@@ -497,7 +490,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
         portlist += "        clkb      => clk,\n"
         portlist += "        rstb      => '0',\n"
         portlist += "        regceb    => '1',\n"
-        if not combined :
+        if not memInfo.is_binned :
             portlist += "        enb       => "+mem+"_enb,\n"
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
@@ -505,52 +498,31 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
 
         if memList[0].has_numEntries_out:
             if memList[0].is_binned:
-                if combined:
-                    if "VMSTE" in mtypeB :
-                        portlist += "        enb       => ("
-                        portlist += mem+"_A_enb(4),"
-                        portlist += mem+"_A_enb(3),"
-                        portlist += mem+"_A_enb(2),"
-                        portlist += mem+"_A_enb(1),"
-                        portlist += mem+"_A_enb(0)),\n"
-                        portlist += "        addrb     => ("
-                        portlist += mem+"_AV_readaddr(4),"
-                        portlist += mem+"_AV_readaddr(3),"
-                        portlist += mem+"_AV_readaddr(2),"
-                        portlist += mem+"_AV_readaddr(1),"
-                        portlist += mem+"_AV_readaddr(0)),\n"
-                        portlist += "        doutb     => "+mem+"_V_datatmp,\n"
-                        portlist += "        enb_nent  => "+mem+"_enb_nent,\n"
-                        portlist += "        addr_nent  => "+mem+"_V_addr_nent,\n"
-                        portlist += "        dout_nent  => "+mem+"_AV_dout_nent,\n"
-                        portlist += "        mask_o    => "+mem+"_V_masktmp,\n"
+                ncopy = 5
+                if "VMSME" in mem:
+                    ncopy = 4
+                portlist += "        enb       => ("
+                for i in reversed(range(0, ncopy)) : 
+                    if i != 0 :
+                        portlist += mem+"_A_enb("+str(i)+"),"
                     else:
-                        portlist += "        enb       => ("
-                        portlist += mem+"_A_enb(3),"
-                        portlist += mem+"_A_enb(2),"
-                        portlist += mem+"_A_enb(1),"
-                        portlist += mem+"_A_enb(0)),\n"
-                        portlist += "        addrb     => ("
-                        portlist += mem+"_AV_readaddr(3),"
-                        portlist += mem+"_AV_readaddr(2),"
-                        portlist += mem+"_AV_readaddr(1),"
-                        portlist += mem+"_AV_readaddr(0)),\n"
-                        portlist += "        doutb     => "+mem+"_V_datatmp,\n"
-                        portlist += "        enb_nent  => "+mem+"_enb_nent,\n"
-                        portlist += "        addr_nent  => "+mem+"_V_addr_nent,\n"
-                        portlist += "        dout_nent  => "+mem+"_AV_dout_nent,\n"
-                        portlist += "        mask_o    => "+mem+"_V_masktmp,\n"
-                else:
-                    portlist += "        nent_o    => "+mem+"_AV_dout_nent,\n"
+                        portlist += mem+"_A_enb("+str(i)+")),\n"
+                portlist += "        addrb     => ("
+                for i in reversed(range(0, ncopy)) : 
+                    if i !=0 :
+                        portlist += mem+"_AV_readaddr("+str(i)+"),"
+                    else:
+                        portlist += mem+"_AV_readaddr("+str(i)+")),\n"
+                portlist += "        doutb     => "+mem+"_V_datatmp,\n"
+                portlist += "        enb_nent  => "+mem+"_enb_nent,\n"
+                portlist += "        addr_nent  => "+mem+"_V_addr_nent,\n"
+                portlist += "        dout_nent  => "+mem+"_AV_dout_nent,\n"
+                portlist += "        mask_o    => "+mem+"_V_masktmp,\n"
             else:
                 portlist += "        nent_o    => "+mem+"_AV_dout_nent,\n"
         else:
             portlist += "        nent_o    => open,\n"
 
-    #    enum_type = "enum_"+mtypeB
-    #    genName = mtypeB+"_loop"
-    #    mem_str += "  "+genName+" : for var in "+enum_type+" generate\n"
-    #    mem_str += "  begin\n\n"
         if memList[0].is_binned:
             vmstubwidth = "16"
             if "17" in mtypeB:
@@ -580,25 +552,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                     mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout_mask("+str(i)+")\n"
             mem_str += "      );\n\n"
             mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
-
-            #if module == "TP_" :
-            #    mem_str += "      port map (\n"
-            #    mem_str += "        datain => "+mem+"_V_masktmp,\n"
-            #    mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
-            #    mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1)\n"
-            #    mem_str += "      );\n\n"
-            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
-            #elif module == "MP_" :
-            #    mem_str += "      port map (\n"
-            #    mem_str += "        datain => "+mem+"_V_masktmp,\n"
-            #    mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
-            #    mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1),\n"
-            #    mem_str += "        dataout2 => "+mem+"_AV_dout_mask(2),\n"
-            #    mem_str += "        dataout3 => "+mem+"_AV_dout_mask(3)\n"
-            #    mem_str += "      );\n\n"
-            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
-            #else:
-            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
         else:
             mem_str += "    "+mem+" : entity work.tf_mem\n"        
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"

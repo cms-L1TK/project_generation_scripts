@@ -221,13 +221,6 @@ def writeMemoryUtil(memDict, memInfoDict):
         bitwidth = int(mtypeB.split("_")[1]);
         num_pages = 2**memInfo.bxbitwidth
 
-        combined = False
-
-        if memInfo.is_binned:
-            combined =  memInfo.downstream_mtype_short in ("TP", "MP")
-
-        # address and nentries types not needed for DTC links or output track
-        # streams
         if memInfo.isFIFO: 
             tName = "t_"+mtypeB+"_1b"
             ss += "  subtype "+tName+" is std_logic;\n"
@@ -235,7 +228,7 @@ def writeMemoryUtil(memDict, memInfoDict):
             ss += "  subtype "+tName+" is std_logic_vector("+str(bitwidth-1)+" downto 0);\n"
         else:
 
-            if combined:
+            if memInfo.is_binned:
                 ncopy = 4
                 if memInfo.downstream_mtype_short == "TP" :
                     ncopy = 5
@@ -261,29 +254,23 @@ def writeMemoryUtil(memDict, memInfoDict):
 
 
             if memInfo.is_binned:
-                if memInfo.downstream_mtype_short in ("TP", "MP") :
-                    varStr = "_64_4b"
-                else:
-                    varStr = "_8_5b"
+                varStr = "_64_4b"
             else:
                 varStr = "_7b"
             tName = "t_"+mtypeB+"_NENT"
-            if combined:
-              if  "VMSME" in tName :
-                ss += "  subtype "+tName+" is std_logic_vector(63 downto 0);\n"
-                tName = "t_"+mtypeB+"_NENTADDR"
-                ss += "  subtype "+tName+" is std_logic_vector(4 downto 0);\n"
-              else:
-                ss += "  subtype "+tName+" is std_logic_vector(63 downto 0);\n"
-                tName = "t_"+mtypeB+"_NENTADDR"
-                ss += "  subtype "+tName+" is std_logic_vector(3 downto 0);\n"
-            else:
-              ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
             if memInfo.is_binned:
-                if memInfo.downstream_mtype_short in ("TP", "MP") :
-                    varStr = "_64_1b"
-                    tName = "t_"+mtypeB+"_MASK"
-                    ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
+                ss += "  subtype "+tName+" is std_logic_vector(63 downto 0);\n"
+                tName = "t_"+mtypeB+"_NENTADDR"
+                nentaddrbits = "4"
+                if "VMSTE" in mtypeB :
+                    nentaddrbits = "3"
+                ss += "  subtype "+tName+" is std_logic_vector("+nentaddrbits+" downto 0);\n"
+            else:
+                ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
+            if memInfo.is_binned:
+                varStr = "_64_1b"
+                tName = "t_"+mtypeB+"_MASK"
+                ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
 
     ss += "\n  -- ########################### Functions ###########################\n\n"
     ss += "  -- Following functions are needed because VHDL doesn't preserve case when converting an enum to a string using image\n"
@@ -565,50 +552,53 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
     #    mem_str += "  "+genName+" : for var in "+enum_type+" generate\n"
     #    mem_str += "  begin\n\n"
         if memList[0].is_binned:
+            vmstubwidth = "16"
+            if "17" in mtypeB:
+                vmstubwidth = "17"
+            ncopy = 5
+            nbx = 2
+            if "VMSME" in mem:
+                ncopy = 4
+                nbx = 4
+            mem_str += "    "+mem+"_dataformat : entity work.vmstub"+vmstubwidth+"dout"+str(ncopy)+"\n"
             module =  memList[0].downstreams[0].inst[0:3]
-            if module == "TP_" :
-                if "16" in mtypeB :
-                    mem_str += "    "+mem+"_dataformat : entity work.vmstub16dout5\n"
-                else: 
-                    mem_str += "    "+mem+"_dataformat : entity work.vmstub17dout5\n"
-                mem_str += "      port map (\n"
-                mem_str += "        datain => "+mem+"_V_datatmp,\n"
-                mem_str += "        dataout0 => "+mem+"_AV_dout(0),\n"
-                mem_str += "        dataout1 => "+mem+"_AV_dout(1),\n"
-                mem_str += "        dataout2 => "+mem+"_AV_dout(2),\n"
-                mem_str += "        dataout3 => "+mem+"_AV_dout(3),\n"
-                mem_str += "        dataout4 => "+mem+"_AV_dout(4)\n"
-                mem_str += "      );\n\n"
-                mem_str += "    "+mem+"_maskformat : entity work.vmstub2mask\n"
-                mem_str += "      port map (\n"
-                mem_str += "        datain => "+mem+"_V_masktmp,\n"
-                mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
-                mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1)\n"
-                mem_str += "      );\n\n"
-                mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
-            elif module == "MP_" :
-                if "16" in mtypeB :
-                    mem_str += "    "+mem+"_dataformat : entity work.vmstub16dout4\n"
-                else: 
-                    mem_str += "    "+mem+"_dataformat : entity work.vmstub17dout4\n"
-                mem_str += "      port map (\n"
-                mem_str += "        datain => "+mem+"_V_datatmp,\n"
-                mem_str += "        dataout0 => "+mem+"_AV_dout(0),\n"
-                mem_str += "        dataout1 => "+mem+"_AV_dout(1),\n"
-                mem_str += "        dataout2 => "+mem+"_AV_dout(2),\n"
-                mem_str += "        dataout3 => "+mem+"_AV_dout(3)\n"
-                mem_str += "      );\n\n"
-                mem_str += "    "+mem+"_maskformat : entity work.vmstub4mask\n"
-                mem_str += "      port map (\n"
-                mem_str += "        datain => "+mem+"_V_masktmp,\n"
-                mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
-                mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1),\n"
-                mem_str += "        dataout2 => "+mem+"_AV_dout_mask(2),\n"
-                mem_str += "        dataout3 => "+mem+"_AV_dout_mask(3)\n"
-                mem_str += "      );\n\n"
-                mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
-            else:
-                mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
+            mem_str += "      port map (\n"
+            mem_str += "        datain => "+mem+"_V_datatmp,\n"
+            for i in range(0, ncopy) : 
+                if i < ncopy-1 :
+                    mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout("+str(i)+"),\n"
+                else:
+                    mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout("+str(i)+")\n"
+            mem_str += "      );\n\n"
+            mem_str += "    "+mem+"_maskformat : entity work.vmstub"+str(nbx)+"mask\n"
+            mem_str += "      port map (\n"
+            mem_str += "        datain => "+mem+"_V_masktmp,\n"
+            for i in range(0, nbx) :
+                if i < nbx-1 :
+                    mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout_mask("+str(i)+"),\n"
+                else:
+                    mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout_mask("+str(i)+")\n"
+            mem_str += "      );\n\n"
+            mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
+
+            #if module == "TP_" :
+            #    mem_str += "      port map (\n"
+            #    mem_str += "        datain => "+mem+"_V_masktmp,\n"
+            #    mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
+            #    mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1)\n"
+            #    mem_str += "      );\n\n"
+            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
+            #elif module == "MP_" :
+            #    mem_str += "      port map (\n"
+            #    mem_str += "        datain => "+mem+"_V_masktmp,\n"
+            #    mem_str += "        dataout0 => "+mem+"_AV_dout_mask(0),\n"
+            #    mem_str += "        dataout1 => "+mem+"_AV_dout_mask(1),\n"
+            #    mem_str += "        dataout2 => "+mem+"_AV_dout_mask(2),\n"
+            #    mem_str += "        dataout3 => "+mem+"_AV_dout_mask(3)\n"
+            #    mem_str += "      );\n\n"
+            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
+            #else:
+            #    mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
         else:
             mem_str += "    "+mem+" : entity work.tf_mem\n"        
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"

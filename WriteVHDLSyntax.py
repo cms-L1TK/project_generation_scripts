@@ -393,7 +393,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
     #   memInfo = Info about each memory type (in MemTypeInfoByKey class)
     """
 
-
     wirelist = ""
     mem_str = ""
     mtype = mtypeB.split("_")[0]

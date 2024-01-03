@@ -354,7 +354,6 @@ def writeMemoryUtil(memDict, memInfoDict):
                     ss += "  subtype "+tName+"_3 is std_logic_vector(3*"+str(vmstubwidth)+"-1 downto 0);\n" 
                     ss += "  subtype "+tName+"_4 is std_logic_vector(4*"+str(vmstubwidth)+"-1 downto 0);\n" 
                     
-
     ss += "\n  -- ########################### Functions ###########################\n\n"
     ss += "  -- Following functions are needed because VHDL doesn't preserve case when converting an enum to a string using image\n"
 

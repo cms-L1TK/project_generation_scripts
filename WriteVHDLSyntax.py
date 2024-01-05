@@ -630,7 +630,10 @@ def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, dela
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+    if delay > 0:
+      string_ctrl_signals += "    "+final_proc+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
+    else:
+      string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc+"_done   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
@@ -1191,7 +1194,7 @@ def writeProcBXPort(modName,isInput,isInitial,delay):
     elif isInput and not isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
-        if modName == "FT" or delay==0:
+        if delay==0:
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
             bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:

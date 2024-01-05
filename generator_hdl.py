@@ -135,7 +135,9 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo)
+                string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
+                if "VMSME" in mtypeB and extraports:
+                  string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
@@ -281,7 +283,10 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              if "VMSME" in mtypeB:
+                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+              else:
+                string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp

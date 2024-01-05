@@ -1266,7 +1266,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:
-                        if "DL" in memory.inst: # DTCLink
+                        if "DL" in memory.inst and "AS" not in memory.inst: # DTCLink
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
                             string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)

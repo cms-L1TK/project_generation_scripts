@@ -296,7 +296,10 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              if "VMSME" in mtypeB:
+                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+              else:
+                string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp

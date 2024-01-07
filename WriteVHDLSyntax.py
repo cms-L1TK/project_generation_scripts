@@ -420,7 +420,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         disk = ""
         if memInfo.is_binned:
             nmem = getVMStubNCopy(memmod)
-            if "VMSME_D" in mem:
+            if "_D" in mem:
                 disk="DISK"
 
         parameterlist = ""

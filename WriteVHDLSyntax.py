@@ -426,7 +426,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
         disk = ""
         if memInfo.is_binned:
             nmem = getVMStubNCopy(memmod)
-            if "_D" in mem:
+            if "VMSME_D" in mem:
                 disk="DISK"
 
         parameterlist = ""
@@ -479,7 +479,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                     #if "16" in mtypeB :
                     #    vmstubwidth = 16 
                     disk=""
-                    if "_D" in mem:
+                    if "VMSME_D" in mem:
                         disk="DISK"
                     wirelist += "  signal "+mem+"_AV_dout_mask : "
                     wirelist += "t_"+mtypeB+"_MASK"+disk+"; -- (#page)(#bin)\n"  
@@ -501,7 +501,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
         else :
             if memInfo.is_binned:
                 disk=""
-                if "_D" in mem:
+                if "VMSME_D" in mem:
                     disk="DISK"
                 wirelist += "  signal "+mem+"_V_datatmp : "
                 wirelist += "t_"+mtypeB+"_DATA_"+str(nmem)+";\n"
@@ -523,7 +523,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
             delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
             if memInfo.is_binned:
                 disk=""
-                if "_D" in mem:
+                if "VMSME_D" in mem:
                     disk = "*2"
                 delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
             delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
@@ -531,15 +531,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
         ncopy = getVMStubNCopy(memmod);
 
 
-        if "VMSTE_L" in mem: 
+        if "VMSTE_" in mem: 
             parameterlist += "        ADDR_WIDTH      => 4,\n"
             parameterlist += "        NUM_PHI_BINS    => 8,\n"
             parameterlist += "        NUM_RZ_BINS     => 8,\n"
-            parameterlist += "        NUM_COPY        => "+str(ncopy)+"\n"
-        if "VMSTE_D" in mem: 
-            parameterlist += "        ADDR_WIDTH      => 4,\n"
-            parameterlist += "        NUM_PHI_BINS    => 8,\n"
-            parameterlist += "        NUM_RZ_BINS     => 16,\n"
             parameterlist += "        NUM_COPY        => "+str(ncopy)+"\n"
         if "VMSME_L" in mem: # VMSME memories have 16 bins in the disks
             parameterlist += "        ADDR_WIDTH      => 4,\n"
@@ -641,7 +636,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                     mem_str += "        dataout"+str(i)+" => "+mem+"_AV_dout("+str(i)+")\n"
             mem_str += "      );\n\n"
             disk = ""
-            if "_D" in mem:
+            if "VMSME_D" in mem:
                 disk = "DISK"
             mem_str += "    "+mem+"_maskformat : entity work.vmstub"+str(nbx)+"mask"+disk+"\n"
             mem_str += "      port map (\n"
@@ -711,7 +706,7 @@ def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False):
 
         disk = ""
         if memMod.is_binned :
-            if "_D" in mem:
+            if "VMSME_D" in mem:
                 disk = "DISK"
 
         string_input_mems += "    "+mem+"_wea        : "+direction+" t_"+mtypeB+"_1b;\n"
@@ -755,7 +750,7 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
       mem = memMod.inst
 
       disk=""
-      if "_D" in mem:
+      if "VMSME_D" in mem:
           disk="DISK"
 
       if "VMSME" in mtypeB:
@@ -948,7 +943,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
                 # Add nentries signal if last memory of the chain
                 if memInfo.is_binned: #FIXME including both read and write signals
                     disk = ""
-                    if "_D" in mem:
+                    if "VMSME_D" in mem:
                         disk = "DISK"
                     string_ctrl_signals += ("  signal "+mem+"_wea").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -982,7 +977,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
                 mem = memMod.inst
                 disk = ""
                 if memMod.is_binned:
-                    if "_D" in mem:
+                    if "VMSME_D" in mem:
                         disk = "DISK"
 
                 string_ctrl_signals += ("  signal "+mem+"_wea").ljust(str_len)+": "
@@ -1135,7 +1130,10 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         string_mem += "        FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
         string_mem += "        RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
         if is_cm and is_binned :
-            string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
+            if "VMSME_D" in mem:
+                string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 2048,\n"
+            else:
+                string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"

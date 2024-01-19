@@ -214,7 +214,7 @@ class TrackletGraph(object):
         elif mem.mtype == "StubPairs":
             mem.bitwidth = 14
         elif mem.mtype == "TrackletParameters":
-            mem.bitwidth = 70
+            mem.bitwidth = 73
         elif mem.mtype == "TrackletProjections" or mem.mtype == "AllProj":
             if barrelPS>-1: mem.bitwidth = 60
             if barrel2S>-1: mem.bitwidth = 58
@@ -231,7 +231,7 @@ class TrackletGraph(object):
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
             if disk>-1: mem.bitwidth = 55
         elif mem.mtype == "TrackWord":
-            mem.bitwidth = 98
+            mem.bitwidth = 104
         elif mem.mtype == "BarrelStubWord":
             mem.bitwidth = 46
         elif mem.mtype == "DiskStubWord":
@@ -585,13 +585,17 @@ class TrackletGraph(object):
 
         # Remove processing modules if they do not have input/output memories
 
+        errorMsg = ""
         for name, proc in p_dict.items():
             nInputs = len(proc.upstreams)
             nOutputs = len(proc.downstreams)
             
             if nInputs == 0 or nOutputs == 0:
-                print("Error module:", name, "with nInputs =", nInputs, "nOutputs =", nOutputs)
-                exit(0)
+                errorMsg += "Error module: " + name + " with nInputs = " + str(nInputs) + " nOutputs = " + str(nOutputs) + "\n"
+
+        if errorMsg != "":
+            print(errorMsg)
+            exit(1)
 
 
         

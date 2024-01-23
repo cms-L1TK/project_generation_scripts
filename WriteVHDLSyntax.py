@@ -555,6 +555,9 @@ def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, dela
     string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc+"_done   : out std_logic;\n"
+    if final_proc.startswith("FT"):
+      string_ctrl_signals += "    "+final_proc+"_last_track   : out std_logic;\n"
+      string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
         string_ctrl_signals += "    "+mid_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
@@ -750,6 +753,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     string_ctrl_signals += ("  signal "+final_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
     string_ctrl_signals += ("  signal "+final_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+final_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
+    if final_proc.startswith("FT"):
+      string_ctrl_signals += ("  signal "+final_proc+"_last_track").ljust(str_len)+": std_logic := '0';\n"
+      string_ctrl_signals += ("  signal "+final_proc+"_last_track_vld").ljust(str_len)+": std_logic := '0';\n"
 
     first_mem = "" # The first memory of the chain
     found_first_mem = False
@@ -866,6 +872,9 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += ("        " + final_proc + "_bx_out").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
     string_fwblock_inst += ("        " + final_proc + "_bx_out_vld").ljust(str_len) + "=> " + final_proc + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_proc + "_done").ljust(str_len) + "=> " + final_proc + "_done,\n"
+    if final_proc.startswith("FT"):
+      string_fwblock_inst += ("        " + final_proc + "_last_track").ljust(str_len) + "=> " + final_proc + "_last_track,\n"
+      string_fwblock_inst += ("        " + final_proc + "_last_track_vld").ljust(str_len) + "=> " + final_proc + "_last_track_vld,\n"
 
     # Add debug signals if considering intermediate memories
     if notfinal_procs:
@@ -1007,18 +1016,19 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
     return string_mem 
 
 
-def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, bxbitwidth):
+def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc):
     """
     # VHDL test bench: write the loop that writes the input to all FIFO memories to text files
     # Inputs:
     #   mtypeB:     the name of the memory type, including the number of bits (e.g. TPROJ_58)
     #   proc:       the processing module that writes to this memory.
-    #   bxbitwidth: number of bits for the bunch-crossings. I.e. one page per bx.
     """
 
     memList = memDict[mtypeB]
 
     string_mem = ""
+
+    memWidth = int(mtypeB.split("_")[-1])
 
     for memMod in memList:
         mem = memMod.inst
@@ -1032,7 +1042,7 @@ def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, bxbitwidth):
         string_mem += "    port map (\n"
         string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
         string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE,\n"
-        string_mem += "      WRITE_EN".ljust(str_len)+"=> "+mem+"_stream_A_write,\n"
+        string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_A_write and "+mem+"_stream_AV_din(" + str(memWidth - 1) + ")),\n"
         string_mem += "      FULL_NEG".ljust(str_len)+"=> "+mem+"_stream_A_full_neg,\n"
         string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_AV_din\n"
         string_mem += "    );\n"
@@ -1242,6 +1252,16 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0,combined=False):
                     string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_AV_dout_nent("+str(i)+"),\n"
 
     return string_mem_ports
+
+def writeLastTrackPorts(is_open):
+    string_last_track_port = "      done        => "
+    if is_open:
+      string_last_track_port += "open,\n"
+    else:
+      string_last_track_port += "FT_last_track,\n"
+    string_last_track_port += "      done_ap_vld => FT_last_track_vld,\n"
+
+    return string_last_track_port
 
 def writeLUTPorts(argname,lut):
     string_lut_ports = ""

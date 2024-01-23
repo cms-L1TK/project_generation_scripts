@@ -6,7 +6,7 @@
 #from collections import deque
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 
-from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeProcTrackStreamLHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
+from WriteVHDLSyntax import writeStartSwitchAndInternalBX, writeProcControlSignalPorts, writeProcBXPort, writeProcMemoryLHSPorts, writeProcMemoryRHSPorts, writeProcCombination, writeProcDTCLinkRHSPorts, writeProcTrackStreamLHSPorts, writeInputLinkWordPort, writeInputLinkPhiBinsPort, writeLastTrackPorts, writeLUTPorts, writeLUTParameters, writeLUTCombination, writeLUTWires, writeLUTMemPorts
 import re
 # This dictionary preserves key order. 
 # (Requires python >= 2.7. And can be replace with normal dict for >= 3.7)
@@ -1170,6 +1170,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     string_bx_out = ""
     # memory ports
     string_mem_ports = ""
+    # last track ports
+    string_last_track_ports = ""
     # module string
     module_str = ""
 
@@ -1202,6 +1204,8 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             module_str += writeLUTCombination(module, argname, string_ports, string_parameters)
             str_ctrl_wire += writeLUTWires(argname, module, innerPS, outerPS)
             string_mem_ports += writeLUTMemPorts(argname, module)
+        elif argtype.startswith("bool") and argtype.endswith("&") and argname == "done":
+            string_last_track_ports = writeLastTrackPorts(is_open = not module.is_last)
         else:
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False
@@ -1307,6 +1311,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     string_ports += string_bx_in
     string_ports += string_bx_out
     string_ports += string_mem_ports
+    string_ports += string_last_track_ports
     string_ports += string_luts
     string_ports.rstrip(",\n")
 

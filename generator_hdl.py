@@ -266,7 +266,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
         up_proc = notfinal_procs[notfinal_procs.index(proc)-1] if notfinal_procs and proc != notfinal_procs[0] and proc in notfinal_procs else "" # The previous processing module
 
         if memInfo.isFIFO:
-            string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc, memInfo.bxbitwidth)
+            string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc)
             # A bodge for TrackBuilder to write TF concatenated track+stub data.
             # (Needed to compare with emData/).
             if mtypeB == 'TW_104':

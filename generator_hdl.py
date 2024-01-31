@@ -47,10 +47,11 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if ("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split):
+        if "VMSME" in mtypeB or ("TPROJ" in mtypeB and split):
             continue
 
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
+        print(mtypeB)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -138,7 +139,10 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
+                if "VMSME" in mtypeB:
+                  string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)
+                else:
+                  if "TPROJ" not in mtypeB:
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
               
         elif extraports:

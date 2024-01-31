@@ -448,7 +448,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
             wirelist += "  signal "+mem+"_din_delay         : "
             wirelist += "t_"+mtypeB+"_DATA;\n"
-            if ((interface != -1 and not extraports) or (interface == 1 and extraports and "VMSME" not in mtypeB)):
+            if ((interface != -1 and not extraports) or (interface == 1 and extraports and "VMSME" not in mtypeB)) and "VMSME" not in mtypeB:
                 wirelist += "  signal "+mem+"_wea          : "
                 wirelist += "t_"+mtypeB+"_1b;\n"
                 wirelist += "  signal "+mem+"_writeaddr   : "
@@ -683,7 +683,7 @@ def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False):
     # Top-level interface: input memories' ports.
     """
 
-    if (extraports):
+    if (extraports or "VMSME" in mtypeB):
         direction = "out" # carry debug info to test-bench
     else:
         direction = "in"
@@ -813,7 +813,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
     string_constants += "  constant INST_TOP_TF".ljust(str_len) + ": integer := 1; \n"
     string_constants += "  --=========================================================================\n\n"
     string_constants += "  constant CLK_PERIOD".ljust(str_len) + ": time    := 4 ns;       --! 250 MHz\n"
-    string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := false;      --! Debug off/on\n"
+    string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := False;      --! Debug off/on\n"
  
     # Write delay and input/output file name signals
     string_input_tmp = "  -- File directories and the start of the file names that memories have in common\n"
@@ -1342,13 +1342,20 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_d0        => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
     else:
-        string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
-        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
-        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
-        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
+        if ("TPROJ" in mem.inst) and split: #set TPROJ to open for a split-FPGA project
+          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
+  
+        else:
+          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
+          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
+          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
+          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
 
 
     return string_mem_ports

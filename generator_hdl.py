@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -47,6 +47,10 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
+        if "VMSME" in mtypeB or ("TPROJ" in mtypeB and split):
+            continue
+
+        print(mtypeB)
         string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
@@ -56,7 +60,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay):
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir, extraports, delay):
+def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
@@ -73,10 +77,10 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay):
 
     for aProcMod in proc_list:
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay, split)
             proc_type_list.append(aProcMod.mtype)
         else:
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports, delay)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports, delay, split)
         string_proc_wire += proc_wire_inst
         string_proc_func += proc_func_inst
         
@@ -135,9 +139,12 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
-                if "VMSME" in mtypeB and extraports:
+                if "VMSME" in mtypeB:
                   string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)
+                else:
+                  if "TPROJ" not in mtypeB:
+                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
+              
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
@@ -152,7 +159,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -175,7 +182,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
 
-    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports, delay)
+    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports, delay, split)
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
@@ -440,6 +447,8 @@ if __name__ == "__main__":
                         help="Add debug ports corresponding to all BRAM inputs")
     parser.add_argument('-de', '--delay', type=int, default=0,
                         help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
+    parser.add_argument('-sp', '--split', action='store_true',
+                        help="enables split-fpga project")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
@@ -550,7 +559,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split)
 
     ###############
     # Test bench

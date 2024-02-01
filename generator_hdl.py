@@ -47,7 +47,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if "VMSME" in mtypeB or ("TPROJ" in mtypeB and split):
+        if ("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split):
             continue
 
         print(mtypeB)
@@ -139,10 +139,10 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                if "VMSME" in mtypeB:
+                if ("VMSME" in mtypeB and args.split):
                   string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)
                 else:
-                  if "TPROJ" not in mtypeB:
+                  if ("TPROJ" not in mtypeB and  not args.split):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
               
         elif extraports:
@@ -290,10 +290,10 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              if "VMSME" in mtypeB:
-                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
-              else:
-                string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
+#              if "VMSME" in mtypeB:
+#                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+#              else:
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp

@@ -448,7 +448,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
             wirelist += "  signal "+mem+"_din_delay         : "
             wirelist += "t_"+mtypeB+"_DATA;\n"
-            if ((interface != -1 and not extraports) or (interface == 1 and extraports and "VMSME" not in mtypeB)) and "VMSME" not in mtypeB:
+            if ((interface != -1 and not extraports) or (interface == 1 and extraports and "VMSME" not in mtypeB)):
                 wirelist += "  signal "+mem+"_wea          : "
                 wirelist += "t_"+mtypeB+"_1b;\n"
                 wirelist += "  signal "+mem+"_writeaddr   : "
@@ -683,7 +683,7 @@ def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False):
     # Top-level interface: input memories' ports.
     """
 
-    if (extraports or "VMSME" in mtypeB):
+    if (extraports):
         direction = "out" # carry debug info to test-bench
     else:
         direction = "in"

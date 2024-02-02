@@ -846,9 +846,8 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
     string_constants += "  constant inputFileNameEnding".ljust(str_len) + ": string := \"_" + sector + ".dat\"; -- " + sector + " specifies the nonant/sector the testvectors represent\n"
     string_constants += "  constant outputFileNameEnding".ljust(str_len) + ": string := \".txt\";\n"
     string_constants += "  constant debugFileNameEnding".ljust(str_len) + ": string := \".debug.txt\";\n\n"
-    #FIXME dummy signals for AS_36 outputs are unneeded when VMSMERouter added to wiring files
-    string_constants += "  signal dummy : STD_LOGIC := '0';\n\n -- dummy tb signal for inputs into sectorproc\n"
-    string_constants += "  signal dummy_AS_36_addr : t_as_36_addr := (others => '0');\n\n -- dummy tb signal for inputs into sectorproc"
+    string_constants += "  signal dummy : STD_LOGIC := '0';\n\n -- dummy tb signal for inputs into sectorproc"
+    string_constants += "  signal dummyaddr : t_as_36_addr := (others => '0');\n\n -- dummy tb signal for inputs into sectorproc"
 
     return string_constants
 
@@ -1052,8 +1051,8 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         for memMod in memList:
             mem = memMod.inst
             if split and ("AS" in mtypeB and "n1" in mem):
-                    string_output += ("        "+mem+"_enb").ljust(str_len) + "=> open,\n"
-                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> open,\n"
+                    string_output += ("        "+mem+"_enb").ljust(str_len) + "=> dummy,\n"
+                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> dummyaddr,\n"
                     string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
             if memInfo.is_initial:
@@ -1318,11 +1317,16 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
     """
 
     string_mem_ports = ""
-    if ("TPROJ" in mem.inst or "VMSME" in mem.inst) and split: #set TPROJ and VMSME to open for a split-FPGA project
+    if ("TPROJ" in mem.inst) and split: #set TPROJ and VMSME to open for a split-FPGA project
           string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
+    elif ("VMSME" in mem.inst and split):
+        string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_0_data_V_address0  => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_0_data_V_d0        => open,\n"
     elif "memoriesTEO" in argname or "memoryME" in argname :
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => "

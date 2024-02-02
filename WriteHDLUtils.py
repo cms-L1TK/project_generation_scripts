@@ -1281,7 +1281,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         else:
                             string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,split)
                     if portname.find("trackpar") != -1 and (module.mtype == "TrackletCalculator" or module.mtype == "TrackletProcessor"):
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory)
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,split)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
                         string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
@@ -1333,7 +1333,7 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay, s
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMRCM,
                                          matchArgPortNames_VMRCM,
-                                         first_of_type, extraports, delay)
+                                         first_of_type, extraports, delay, split)
     elif module.mtype == 'TrackletEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TE,

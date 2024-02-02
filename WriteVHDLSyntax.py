@@ -389,7 +389,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -456,8 +456,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0):
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_din         : "
                 wirelist += "t_"+mtypeB+"_DATA;\n"
-    
-        if interface != 1:
+        if interface != 1 and not (("AS" in mem and "n1" in mem) and split):
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
@@ -862,7 +861,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
 
     return string_constants
 
-def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs):
+def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs, split = False):
     """
     # VHDL test bench: write control signals
     # Inputs:
@@ -903,7 +902,8 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     # Loop over all memory types
     string_ctrl_signals += "\n  -- Signals matching ports of top-level VHDL\n"
     for mtypeB in memDict:
-        
+        if split and ("TPROJ" in mtypeB or "VMSME" in mtypeB):
+          continue 
         memInfo = memInfoDict[mtypeB]
 
         if initial_proc in memInfo.downstream_mtype_short and not found_first_mem:
@@ -1004,7 +1004,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
 
     return string_ctrl_signals
 
-def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs = []):
+def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs = [], split = False):
     """
     # VHDL test bench: write the instantiation of the top level SectorProcessor FW
     # Inputs:
@@ -1026,10 +1026,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
-    if "FT" in final_proc:
-      string_fwblock_inst += ("        " + final_proc + "_bx_out").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
-    else:
-      string_fwblock_inst += ("        " + final_proc + "_bx_out_0").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
+    string_fwblock_inst += ("        " + final_proc + "_bx_out_0").ljust(str_len) + "=> " + final_proc + "_bx_out,\n"
     string_fwblock_inst += ("        " + final_proc + "_bx_out_vld").ljust(str_len) + "=> " + final_proc + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_proc + "_done").ljust(str_len) + "=> " + final_proc + "_done,\n"
     if final_proc.startswith("FT"):
@@ -1050,10 +1047,17 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_debug = ""
 
     for mtypeB in memDict:
+        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+          continue
         memInfo = memInfoDict[mtypeB]
         memList = memDict[mtypeB]
         for memMod in memList:
             mem = memMod.inst
+            if split and ("AS" in mtypeB and "n1" in mem):
+                    string_output += ("        "+mem+"_enb").ljust(str_len) + "=> open,\n"
+                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> open,\n"
+                    string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> open,\n"
+                    string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
             if memInfo.is_initial:
                 if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTCLink as it has FIFO input
                     string_input += ("        "+mem+"_link_AV_dout").ljust(str_len) + "=> "+mem+"_link_AV_dout,\n"
@@ -1316,7 +1320,12 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
     """
 
     string_mem_ports = ""
-    if "memoriesTEO" in argname or "memoryME" in argname :
+    if ("TPROJ" in mem.inst or "VMSME" in mem.inst) and split: #set TPROJ and VMSME to open for a split-FPGA project
+          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
+          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
+    elif "memoriesTEO" in argname or "memoryME" in argname :
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
@@ -1325,20 +1334,13 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_d0        => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
     else:
-        if ("TPROJ" in mem.inst) and split: #set TPROJ to open for a split-FPGA project
-          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
-  
-        else:
-          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
-          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
-          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
-          string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
+        string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
+        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
+        string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
+        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
+        string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
+        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
 
 
     return string_mem_ports

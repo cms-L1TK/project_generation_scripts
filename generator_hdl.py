@@ -50,8 +50,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
         if ("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split):
             continue
 
-        print(mtypeB)
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -134,15 +133,17 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB, memDict)
             else:
                 string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB)
+        if ("AS_36" in mtypeB and args.split): #for split fpga we want AS sent to second device
+          ASmemDict = {mtypeB : []}
+          for mem in memList: 
+            if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
+          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict)
         elif memInfo.is_final:
             # Output arguments
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                if ("VMSME" in mtypeB and args.split):
-                  string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)
-                else:
-                  if ("TPROJ" not in mtypeB and  not args.split):
+                  if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
               
         elif extraports:
@@ -242,7 +243,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     # string_read += "\n"
     return string_read
 
-def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split):
+def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split):
     """
     #   topfunc:        name of the top module
     #   memDict:        dictionary of memories organised by type 
@@ -260,9 +261,10 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
 
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
-    if initial_proc not in final_proc_short: # For a single module the normal and the full are the same
-        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split)
-    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+    if initial_proc not in final_proc: # For a single module the normal and the full are the same
+        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc,split=split)
+    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split=split)
+
     return string_instantiaion
 
 def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
@@ -363,13 +365,13 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
       fileTF = open("bodge/TF_tb_constants.vhd.bodge")
       string_constants += fileTF.read();
 
-    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split)
+    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split)
 
     string_begin = writeTBEntityBegin()
     string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc,split)
     string_mem_stim = writeTBMemoryStimulusProcess(initial_proc)
 
-    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split=split)
 
     string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split)
 

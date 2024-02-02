@@ -133,11 +133,6 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB, memDict)
             else:
                 string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB)
-        if ("AS_36" in mtypeB and args.split): #for split fpga we want AS sent to second device
-          ASmemDict = {mtypeB : []}
-          for mem in memList: 
-            if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
-          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict)
         elif memInfo.is_final:
             # Output arguments
             if memInfo.isFIFO:
@@ -149,6 +144,11 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
+        if ("AS_36" in mtypeB and args.split): #for split fpga we want AS sent to second device
+          ASmemDict = {mtypeB : []}
+          for mem in memList: 
+            if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
+          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict)
         
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems

@@ -13,9 +13,10 @@ ProcOrder_dict = {
    'TrackletProcessor':2,
    'TrackletCalculator':3,
    'ProjectionRouter':4,
+   'ProjectionCalculator':3,
    'MatchEngine':5,
    'MatchCalculator':6,
-   'MatchProcessor':3,
+   'MatchProcessor':4,
    'FitTrack':7,
    'PurgeDuplicate':8,
    'TrackBuilder':9

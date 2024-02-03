@@ -920,6 +920,7 @@ def writeTemplatePars_MP(aMPModule):
     return templpars_str
 
 
+
 def matchArgPortNames_MP(argname, portname, memoryname):
     if argname in ['allstub','allproj']:
         return portname == argname+'in'
@@ -934,6 +935,34 @@ def matchArgPortNames_MP(argname, portname, memoryname):
         return False
 
 
+################################
+# ProjectionCalculator
+################################
+
+
+def writeTemplatePars_PC(aMPModule):
+    instance_name = aMPModule.inst
+    # e.g. MP_L2PHID
+
+    return ""
+
+
+def matchArgPortNames_PC(argname, portname, memoryname):
+    if 'projin' in argname:
+        return 'projin' in portname
+    if 'projout' in argname:
+        return 'projout' in portname
+    if 'tpar' in argname:
+        return 'tpar' in portname
+    if 'mpar' in argname:
+        return 'mpar' in portname
+    if 'valid' in argname:
+        return 'valid' in portname
+    if 'trackletIndex' in argname:
+        return 'trackletIndex' in portname
+    else:
+        print("matchArgPortNames_PC: Unknown argument name:", argname)
+        return False
 
 
 
@@ -1128,7 +1157,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type, extraports,delay,split=False):
     ####
     # function name
-    assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletProcessor',
+
+    assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletEngine',
+                            'TrackletProcessor', 'ProjectionCalculator', 
                             'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
 
     # Add internal BX wire and start registers
@@ -1383,6 +1414,11 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay, s
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PD,
                                          matchArgPortNames_PD,
+                                         first_of_type, extraports, delay)
+    elif module.mtype == 'ProjectionCalculator':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_PC,
+                                         matchArgPortNames_PC,
                                          first_of_type, extraports, delay)
     else:
         raise ValueError(module.mtype + " is unknown.")

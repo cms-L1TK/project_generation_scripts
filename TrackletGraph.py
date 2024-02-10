@@ -14,6 +14,7 @@ ProcOrder_dict = {
    'TrackletCalculator':3,
    'ProjectionRouter':4,
    'ProjectionCalculator':3,
+   'VMSMERouter':3,
    'MatchEngine':5,
    'MatchCalculator':6,
    'MatchProcessor':4,
@@ -148,9 +149,9 @@ class MemTypeInfoByKey(object):
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
-        if self.mixedIO and self.is_initial:
-            print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
-            exit(1)
+        #if self.mixedIO and self.is_initial:
+        #    print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
+        #    exit(1)
 
 
 #######################################

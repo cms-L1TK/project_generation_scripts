@@ -424,7 +424,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC", "FT"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,

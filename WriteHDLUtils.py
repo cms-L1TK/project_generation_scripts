@@ -948,12 +948,12 @@ def writeTemplatePars_PC(aMPModule):
 
 
 def matchArgPortNames_PC(argname, portname, memoryname):
-    if 'projin' in argname:
-        return 'projin' in portname
     if 'projout' in argname:
         return 'projout' in portname
     if 'tpar' in argname:
         return 'tpar' in portname
+    if 'tparout' in argname:
+        return 'tparout' in portname
     if 'mpar' in argname:
         return 'mpar' in portname
     if 'valid' in argname:
@@ -1196,6 +1196,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     # Write ports
     memModuleList, portNameList = getListsOfGroupedMemories(module)
 
+    print("module: ", module.inst)
+    print("memModuleList: ",memModuleList)
+    print("portNameList: ",portNameList)
+    
     # clock, reset, start
     string_ctrl_ports = writeProcControlSignalPorts(module, first_of_type)
 
@@ -1331,7 +1335,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Check that all the ports/memories have been matched
     if (memModuleList or portNameList):
-        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]))
+        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]), portNameList)
 
     # External LUTs
     string_luts = ""

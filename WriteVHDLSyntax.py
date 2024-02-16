@@ -809,7 +809,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
     string_constants += "  constant INST_TOP_TF".ljust(str_len) + ": integer := 1; \n"
     string_constants += "  --=========================================================================\n\n"
     string_constants += "  constant CLK_PERIOD".ljust(str_len) + ": time    := 4 ns;       --! 250 MHz\n"
-    string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := False;      --! Debug off/on\n"
+    string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := false;      --! Debug off/on\n"
  
     # Write delay and input/output file name signals
     string_input_tmp = "  -- File directories and the start of the file names that memories have in common\n"

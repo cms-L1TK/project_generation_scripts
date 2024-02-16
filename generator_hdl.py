@@ -138,13 +138,13 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                  if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
+                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
               
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
-        if ("AS_36" in mtypeB and args.split): #for split fpga we want AS sent to second device
+        if (memInfo.mtype == "AllStubs" and args.split): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
           for mem in memList: 
             if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
@@ -294,9 +294,6 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-#              if "VMSME" in mtypeB:
-#                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
-#              else:
               string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:

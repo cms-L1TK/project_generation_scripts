@@ -144,7 +144,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
-        if (memInfo.mtype == "AllStubs" and args.split): #for split fpga we want AS sent to second device
+        if (memInfo.mtype_long == "AllStubs" and args.split): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
           for mem in memList: 
             if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)

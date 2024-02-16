@@ -333,17 +333,13 @@ def writeMemoryUtil(memDict, memInfoDict):
                 tName = "t_"+mtypeB+"_MASK"
                 ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
                 tName = "t_"+mtypeB+"_MASK_"+str(num_pages)
-#                ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
                 ss += "  subtype "+tName+" is std_logic_vector("+str(num_pages)+"*64-1 downto 0);\n"
                 varStr = "_128_1b"
                 tName = "t_"+mtypeB+"_MASKDISK"
                 ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
                 tName = "t_"+mtypeB+"_MASKDISK_"+str(num_pages)
-#                ss += "  subtype "+tName+" is t_arr"+str(num_pages)+varStr+";\n"
                 ss += "  subtype "+tName+" is std_logic_vector("+str(num_pages)+"*128-1 downto 0);\n"
-                vmstubwidth = 17
-                if "16" in mtypeB:
-                    vmstubwidth = 16
+                vmstubwidth = memInfo.bitwidth
                 if "VMSTE" in mtypeB:
                     ss += "  subtype "+tName+"_2 is std_logic_vector(2*64-1 downto 0);\n" 
                     tName = "t_"+mtypeB+"_DATA"
@@ -474,9 +470,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
             if memInfo.has_numEntries_out:
                 if memInfo.is_binned:
-                    #vmstubwidth = 17
-                    #if "16" in mtypeB :
-                    #    vmstubwidth = 16 
                     disk=""
                     if "VMSME_D" in mem:
                         disk="DISK"
@@ -490,10 +483,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "t_"+mtypeB+"_NENT; -- (#page)(#bin)\n"
                     wirelist += "  signal "+mem+"_V_datatmp : "
                     wirelist += "t_"+mtypeB+"_DATA_"+str(nmem)+";\n"
-                    #wirelist += "std_logic_vector("+str(nmem*vmstubwidth-1)+" downto 0);\n"
                     wirelist += "  signal "+mem+"_V_masktmp : "
                     wirelist += "t_"+mtypeB+"_MASK"+disk+"_"+str(num_pages)+";\n"
-                    #wirelist += "std_logic_vector(64*"+str(num_pages)+"-1 downto 0);\n"
                 else:
                     wirelist += "  signal "+mem+"_AV_dout_nent  : "
                     wirelist += "t_"+mtypeB+"_NENT; -- (#page)\n"
@@ -504,10 +495,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     disk="DISK"
                 wirelist += "  signal "+mem+"_V_datatmp : "
                 wirelist += "t_"+mtypeB+"_DATA_"+str(nmem)+";\n"
-                #wirelist += "std_logic_vector("+str(nmem*vmstubwidth-1)+" downto 0);\n"
                 wirelist += "  signal "+mem+"_V_masktmp : "
                 wirelist += "t_"+mtypeB+"_MASK"+disk+"_"+str(num_pages)+";\n"
-                #wirelist += "std_logic_vector(64*"+str(num_pages)+"-1 downto 0);\n"
 
         # Write parameters
         parameterlist += "        RAM_WIDTH       => "+bitwidth+",\n"
@@ -619,9 +608,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        nent_o    => open,\n"
 
         if memList[0].is_binned:
-            vmstubwidth = "16"
-            if "17" in mtypeB:
-                vmstubwidth = "17"
+            vmstubwidth = str(memInfo.bitwidth)
             nbx = 2**bxbitwidth
             ncopy = getVMStubNCopy(memmod) 
             mem_str += "    "+mem+"_dataformat : entity work.vmstub"+vmstubwidth+"dout"+str(ncopy)+"\n"

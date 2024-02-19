@@ -428,11 +428,16 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         parameterlist = ""
         portlist = ""
         delay_parameterlist = ""
+        delay2_parameterlist = ""
         delay_portlist_0 = ""
         delay_portlist = ""
+        delay2_portlist = ""
 
         # Write wires
         if delay > 0:
+            if not memInfo.is_binned:
+                wirelist += "  signal "+mem+"_bx                   : "
+                wirelist += "std_logic_vector(2 downto 0);\n"
             wirelist += "  signal "+mem+"_wea_delay_0          : "
             wirelist += "t_"+mtypeB+"_1b;\n"
             wirelist += "  signal "+mem+"_writeaddr_delay_0   : "
@@ -505,6 +510,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
             parameterlist += "        NAME            => \""+mem+"\",\n"
         if delay > 0:
+            delay2_parameterlist +="        DELAY           => " + str(delay*2) +",\n"
             delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
             #enable to use non-default delay value
             delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
@@ -542,7 +548,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
             portlist += "        dina      => "+mem+"_din_delay,\n"
             if not memInfo.is_binned:
-                portlist += "        bxa       => "+memInfo.upstream_mtype_short+"_bx_out,\n"
+                portlist += "        bxa       => "+mem+"_bx,\n"
         else:
             portlist += "        wea       => "+mem+"_wea,\n"
             portlist += "        addra     => "+mem+"_writeaddr,\n"
@@ -550,6 +556,12 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             if not memInfo.is_binned:
                 portlist += "        bxa       => "+memInfo.upstream_mtype_short+"_bx_out,\n"
         if delay > 0:
+            delay2_portlist += "        clk      => clk,\n"
+            delay2_portlist += "        reset    => reset,\n"
+            delay2_portlist += "        done     => '0',\n"
+            delay2_portlist += "        bx_out   => "+memmod.upstreams[0].mtype_short()+"_bx_out,\n"
+            delay2_portlist += "        bx       => "+mem+"_bx,\n"
+            delay2_portlist += "        start    => open,\n"
             delay_portlist_0 += "        clk      => clk,\n"
             delay_portlist_0 += "        wea       => "+mem+"_wea,\n"
             delay_portlist_0 += "        addra     => "+mem+"_writeaddr,\n"
@@ -630,6 +642,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
         if delay > 0:
+            if not memInfo.is_binned:
+                mem_str += "    "+mem+"_BX_GEN : entity work.CreateStartSignal\n"
+                mem_str += "      generic map (\n"+delay2_parameterlist.rstrip(",\n")+"\n      )\n"
+                mem_str += "      port map (\n"+delay2_portlist.rstrip(",\n")+"\n      );\n\n"
             mem_str += "    "+mem+"_DELAY : entity work.tf_pipe_delay\n"        
             mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"

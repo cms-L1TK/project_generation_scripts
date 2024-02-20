@@ -1202,7 +1202,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             str_ctrl_wire += writeLUTWires(argname, module, innerPS, outerPS)
             string_mem_ports += writeLUTMemPorts(argname, module)
         elif argtype.startswith("bool") and argtype.endswith("&") and argname == "done":
-            string_last_track_ports = writeLastTrackPorts(is_open = not module.is_last)
+            string_last_track_ports = writeLastTrackPorts(ftName = module.inst, is_open = not module.is_last)
         else:
             # Given argument name, search for the matched port name in the mem lists
             foundMatch = False

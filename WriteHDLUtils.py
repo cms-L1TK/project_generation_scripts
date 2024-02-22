@@ -1125,14 +1125,11 @@ def parseProcFunction(proc_name, fname_def):
     return arg_types_list, arg_names_list, templ_pars_list
 
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
-                              f_matchArgPortNames, first_of_type, extraports,delay):
+                              f_matchArgPortNames, first_of_type, extraports,delay,split=False):
     ####
     # function name
-    assert(module.mtype in ['InputRouter', 'VMRouter', 'VMRouterCM', 'TrackletEngine', 'TrackletCalculator',
-                            'TrackletProcessor', 'ProjectionRouter', 'MatchEngine', 'MatchCalculator',
+    assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletProcessor',
                             'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
-
-    combined = (module.mtype == "VMRouterCM" or module.mtype == "TrackletProcessor" or module.mtype == "MatchProcessor")
 
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
@@ -1273,20 +1270,20 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     # Add the memory instance to the port string
                     # Assumes a sorted memModuleList due to arrays
                     if portname.replace("inner","").find("in") != -1:
-                        if "DL" in memory.inst: # DTCLink
+                        if "DL" in memory.inst and "AS" not in memory.inst: # DTCLink
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
-                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,combined=combined)
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
                     if portname.replace("outer","").find("out") != -1:
                         if memory.isFIFO():
                             string_mem_ports += writeProcTrackStreamLHSPorts(tmp_argname,memory)
                         else:
-                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,combined=combined)
+                            string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,split)
                     if portname.find("trackpar") != -1 and (module.mtype == "TrackletCalculator" or module.mtype == "TrackletProcessor"):
-                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,combined=combined)
+                        string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,split)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,combined=combined)
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)
@@ -1321,7 +1318,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     return str_ctrl_wire,module_str
 
 ################################
-def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay):
+def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay, split = False):
     if module.mtype == 'InputRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_IR,
@@ -1336,7 +1333,7 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay):
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMRCM,
                                          matchArgPortNames_VMRCM,
-                                         first_of_type, extraports, delay)
+                                         first_of_type, extraports, delay, split)
     elif module.mtype == 'TrackletEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TE,
@@ -1346,7 +1343,7 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay):
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TP,
                                          matchArgPortNames_TP,
-                                         first_of_type, extraports, delay)
+                                         first_of_type, extraports, delay, split)
     elif module.mtype == 'TrackletCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TC,

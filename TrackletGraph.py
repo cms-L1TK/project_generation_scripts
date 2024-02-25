@@ -246,11 +246,11 @@ class TrackletGraph(object):
 
         # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
-               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
+               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch" or mem.mtype == "VMStubsME"
                or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
                   or mem.mtype == "InputLink" or mem.mtype == "DTCLink" or mem.mtype == "AllInnerStubs"):
             mem.bxbitwidth = 1
-        elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
+        elif (    mem.mtype == "AllProj" 
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
             if (mem.mtype == "VMStubsME" and  mem.downstreams[0].inst[0:2] == "MP") : 
@@ -635,7 +635,8 @@ class TrackletGraph(object):
         "Return all the ProcModule objects of a given type"
         modules = {}
         for instance_name in self.__proc_dict:
-            if instance_name.startswith(module+"_"):
+            #FIXME
+            if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
             print("WARNING!! Cannot find any modules with name starting with", module,"!!")

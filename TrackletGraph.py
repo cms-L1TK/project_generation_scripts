@@ -273,10 +273,16 @@ class TrackletGraph(object):
         # If those memories are at the of the chain, add numEntries port anyway for VHDL chain debugging purposes.
         if mem.mtype == "AllStubs" and not mem.is_final:
             mem.has_numEntries_out = False
+            #FIXME hack
+            if "in" in mem.inst:
+                mem.has_numEntries_out = True
         elif mem.mtype == "AllProj" and not mem.is_final:
             mem.has_numEntries_out = False
         elif mem.mtype == "TrackletParameters" and not mem.is_final:
             mem.has_numEntries_out = False
+            #FIXME hack
+            if "in" in mem.inst:
+                mem.has_numEntries_out = True
         else:
             mem.has_numEntries_out = True
 

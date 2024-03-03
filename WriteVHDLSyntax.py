@@ -481,16 +481,24 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_DATA;\n"
                 #FIXME this is a hack
                 if "MPAR" in mem and "in" in mem :
+                    wirelist += "  signal "+mem+"_V_tpar        : "
+                    wirelist += "t_"+mtypeB+"_DATA;\n"
                     wirelist += "  signal "+mem+"_valid        : "
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_trackletindex        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
+                    wirelist += "  signal "+mem+"_AV_dout_nent        : "
+                    wirelist += "t_arr_7b(0 to 7);\n"
                 #FIXME this is a hack
                 if "AS" in mem and "in" in mem :
+                    wirelist += "  signal "+mem+"_V_as        : "
+                    wirelist += "t_"+mtypeB+"_DATA;\n"
                     wirelist += "  signal "+mem+"_valid        : "
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_index        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
+                    wirelist += "  signal "+mem+"_AV_dout_nent : "
+                    wirelist += "t_arr_7b(0 to 7);\n"
 
             if memInfo.has_numEntries_out:
                 if memInfo.is_binned:
@@ -617,7 +625,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
 
-        if memList[0].has_numEntries_out:
+        if memmod.has_numEntries_out:
             if memList[0].is_binned:
                 ncopy = getVMStubNCopy(memmod);
                 portlist += "        enb       => ("
@@ -1286,6 +1294,44 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     # FIXME needs fixing to include template parameters for generic proc module writing
     """
     module_str = ""
+    if "PC_" in module.inst:
+        module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
+        module_str += "    generic map (\n"
+        module_str += "      RAM_WIDTH    => 73,\n"
+        module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
+        module_str += "    )\n"
+        module_str += "    port map (\n"
+        module_str += "      clk    => clk,\n"
+        module_str += "      bx    => PC_bx_in,\n"
+        module_str += "      start => PC_start,\n"
+        module_str += "      enb   => MPAR_"+module.inst[3:]+"in_enb,\n"
+        module_str += "      addra => MPAR_"+module.inst[3:]+"in_V_readaddr,\n"
+        module_str += "      din   => MPAR_"+module.inst[3:]+"in_V_dout,\n"
+        module_str += "      dout  => MPAR_"+module.inst[3:]+"in_V_tpar,\n"
+        module_str += "      valid  => MPAR_"+module.inst[3:]+"in_valid,\n"
+        module_str += "      index  => MPAR_"+module.inst[3:]+"in_trackletindex(6 downto 0),\n"
+        module_str += "      nent  => MPAR_"+module.inst[3:]+"in_AV_dout_nent\n"
+        module_str += "    );\n\n"
+
+    if "VMSMER_" in module.inst:
+        module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
+        module_str += "    generic map (\n"
+        module_str += "      RAM_WIDTH    => 36,\n"
+        module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
+        module_str += "    )\n"
+        module_str += "    port map (\n"
+        module_str += "      clk    => clk,\n"
+        module_str += "      bx    => PC_bx_in,\n"
+        module_str += "      start => PC_start,\n"
+        module_str += "      enb   => AS_"+module.inst[7:]+"in_enb,\n"
+        module_str += "      addra => AS_"+module.inst[7:]+"in_V_readaddr,\n"
+        module_str += "      din   => AS_"+module.inst[7:]+"in_V_dout,\n"
+        module_str += "      dout  => AS_"+module.inst[7:]+"in_V_as,\n"
+        module_str += "      valid  => AS_"+module.inst[7:]+"in_valid,\n"
+        module_str += "      index  => AS_"+module.inst[7:]+"in_index(6 downto 0),\n"
+        module_str += "      nent  => AS_"+module.inst[7:]+"in_AV_dout_nent\n"
+        module_str += "    );\n\n"
+
     module_str += str_ctrl_func
     module_str += "  "+module.inst+" : entity work."+module.IPname+"\n"
     module_str += "    port map (\n"+str_ports.rstrip(",\n")+"\n  );\n\n"
@@ -1344,16 +1390,14 @@ def writeProcControlSignalPorts(module,first_of_type):
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
     #FIXME Special case as the PC_start is use also for VMSMER
-    if (module.mtype_short()=="VMSMER") :
-        string_ctrl_ports += "      ap_start => PC_start,\n"
-    else:
+    if (module.mtype_short()!="PC" and module.mtype_short()!="VMSMER") :
         string_ctrl_ports += "      ap_start => "+module.mtype_short()+"_start,\n"
-    string_ctrl_ports += "      ap_idle  => open,\n"
-    string_ctrl_ports += "      ap_ready => open,\n"
-    if first_of_type:
-        string_ctrl_ports += "      ap_done  => "+module.mtype_short()+"_done,\n"
-    else:
-        string_ctrl_ports += "      ap_done  => open,\n"
+        string_ctrl_ports += "      ap_idle  => open,\n"
+        string_ctrl_ports += "      ap_ready => open,\n"
+        if first_of_type:
+            string_ctrl_ports += "      ap_done  => "+module.mtype_short()+"_done,\n"
+        else:
+            string_ctrl_ports += "      ap_done  => open,\n"
 
     return string_ctrl_ports
 
@@ -1437,7 +1481,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
           string_mem_ports += "      trackletindex        => "
           string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_trackletindex,\n"
           string_mem_ports += "      "+argname+"_data_V        => "
-          string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_dout,\n"
+          string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_tpar,\n"
     elif (mem.mtype == "AllStubs" and "in" in mem.var()) :
         #FIXME - this is a hack as this is not a memory type..
           string_mem_ports += "      valid        => "
@@ -1445,7 +1489,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
           string_mem_ports += "      index        => "
           string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_index,\n"
           string_mem_ports += "      "+argname+"_data_V        => "
-          string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_dout,\n"
+          string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_as,\n"
     else:
         string_mem_ports = ""
         string_mem_ports += "      "+argname+"_dataarray_data_V_ce"+str(portindex)+"       => "
@@ -1473,6 +1517,11 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
                     string_mem_ports += "),\n"
         else:
             for i in range(0,2**mem.bxbitwidth):
+                #FIXME - hack...
+                if "MPAR" in mem.mtype_short() :
+                    continue
+                if "AS" in mem.mtype_short() and "in" in mem.var():
+                    continue
                 string_mem_ports += "      "+argname+"_nentries_"+str(i)+"_V               => "
                 string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_AV_dout_nent("+str(i)+"),\n"
 

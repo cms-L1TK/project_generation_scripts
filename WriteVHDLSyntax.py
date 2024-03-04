@@ -609,7 +609,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
     #FIXME - hack where we use the PC_start instead of VMSMER_start for the VMSMER modules
-        if sync_signal == "VMSMER_start" :
+        if sync_signal == "VMSMER_start" or "MPROJ_" in mem:
             portlist += "        sync_nent => PC_start,\n"
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
@@ -667,7 +667,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "      );\n\n"
             mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
         else:
-            mem_str += "    "+mem+" : entity work.tf_mem\n"        
+            if "MPROJ" in mem or "MPAR" in mem:
+                mem_str += "    "+mem+" : entity work.tf_mem_tproj\n"        
+            else:
+                mem_str += "    "+mem+" : entity work.tf_mem\n"        
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
         if delay > 0:

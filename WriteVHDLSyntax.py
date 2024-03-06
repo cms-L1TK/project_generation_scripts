@@ -666,10 +666,7 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
-    if delay > 0:
-      string_ctrl_signals += "    "+final_proc_short+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
-    else:
-      string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
+    string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
     if final_proc_short == "FT":
@@ -1030,7 +1027,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
-    string_fwblock_inst += ("        " + final_proc_short + "_bx_out_0").ljust(str_len) + "=> " + final_proc_short + "_bx_out,\n"
+    string_fwblock_inst += ("        " + final_proc_short + "_bx_out").ljust(str_len) + "=> " + final_proc_short + "_bx_out,\n"
     string_fwblock_inst += ("        " + final_proc_short + "_bx_out_vld").ljust(str_len) + "=> " + final_proc_short + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_proc_short + "_done").ljust(str_len) + "=> " + final_proc_short + "_done,\n"
     if final_proc_short.startswith("FT"):

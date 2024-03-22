@@ -10,6 +10,6 @@
     DONE => FT_DONE,
     WRITE_EN => (TW_L2L3_stream_A_write and TW_L2L3_stream_AV_din(103)),
     FULL_NEG => TW_L2L3_stream_A_full_neg,
-    DATA => TW_L2L3_stream_AV_din&BW_L2L3_L1_stream_AV_din(&BW_L2L3_L4_stream_AV_din&BW_L2L3_L5_stream_AV_din&emptyDiskStub&emptyDiskStub&emptyDiskStub&emptyDiskStub
+    DATA => TW_L2L3_stream_AV_din&BW_L2L3_L1_stream_AV_din&BW_L2L3_L4_stream_AV_din&BW_L2L3_L5_stream_AV_din&emptyDiskStub&emptyDiskStub&emptyDiskStub&emptyDiskStub
   );
 

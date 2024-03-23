@@ -1250,15 +1250,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True,delay)
+                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True,first_of_type,delay)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,delay)
+                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,first_of_type,delay)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             #FIXME hack for PC and VMSMER
             if first_of_type or module.mtype_short() == "PC" or module.mtype_short() == "VMSMER" :
-                string_bx_out += writeProcBXPort(module.mtype_short(),False,False,delay) # output bx
+                string_bx_out += writeProcBXPort(module.mtype_short(),False,False,first_of_type, delay) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \

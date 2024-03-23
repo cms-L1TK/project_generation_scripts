@@ -694,11 +694,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0):
+def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = 0):
     """
     # Top-level interface: control signals
     """
-    final_proc_short = final_procs[0].split("_")[0]
 
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
@@ -707,13 +706,12 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
     if delay > 0:
-      string_ctrl_signals += "    "+final_proc_short+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
+      string_ctrl_signals += "    "+final_proc+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
     else:
-      string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
-    string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
-    if final_proc_short == "FT":
-      for final_proc in final_procs:
+      string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+    string_ctrl_signals += "    "+final_proc+"_bx_out_vld : out std_logic;\n"
+    string_ctrl_signals += "    "+final_proc+"_done   : out std_logic;\n"
+    if final_proc.startswith("FT"):
         string_ctrl_signals += "    "+final_proc+"_last_track   : out std_logic;\n"
         string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
@@ -934,8 +932,6 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
     str_len = 36 # length of string for formatting purposes
     str_len2 = 21
 
-    final_proc_short = final_procs[0].split("_")[0]
-
     string_ctrl_signals = "\n  -- ########################### Signals ###########################\n"
     string_ctrl_signals += "  -- ### UUT signals ###\n"
     string_ctrl_signals += "  signal clk".ljust(str_len)+": std_logic := '0';\n"
@@ -949,11 +945,10 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
-    string_ctrl_signals += ("  signal "+final_proc_short+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
-    string_ctrl_signals += ("  signal "+final_proc_short+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
-    string_ctrl_signals += ("  signal "+final_proc_short+"_done").ljust(str_len)+": std_logic := '0';\n"
-    if final_proc_short == "FT":
-      for final_proc in final_procs:
+    string_ctrl_signals += ("  signal "+final_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
+    string_ctrl_signals += ("  signal "+final_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+final_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
+    if final_proc.startswith("FT"):
         string_ctrl_signals += ("  signal "+final_proc+"_last_track").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+final_proc+"_last_track_vld").ljust(str_len)+": std_logic := '0';\n"
 
@@ -1080,9 +1075,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     """
     str_len = 35 # length of string for formatting purposes
 
-    final_proc_short = final_procs[0].split("_")[0]
-
-    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs or final_proc_short == initial_proc else "  sectorProc : if INST_TOP_TF = 0 generate\n"
+    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs or final_proc == initial_proc else "  sectorProc : if INST_TOP_TF = 0 generate\n"
     string_fwblock_inst += "  begin\n"
     string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
     string_fwblock_inst += "      port map(\n"
@@ -1120,7 +1113,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
             mem = memMod.inst
             if split and ("AS" in mtypeB and "n1" in mem):
                     string_output += ("        "+mem+"_enb").ljust(str_len) + "=> dummy,\n"
-                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> dummyaddr,\n"
+                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> dummy_AS_36_addr,\n"
                     string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
             if memInfo.is_initial:
@@ -1178,7 +1171,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += string_output[:-2]+"\n" # Remove the last comma
     
     string_fwblock_inst += "      );\n"
-    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs or final_proc_short == initial_proc else "  end generate sectorProc;\n\n"
+    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs or final_proc == initial_proc else "  end generate sectorProc;\n\n"
 
     return string_fwblock_inst
 

@@ -107,12 +107,12 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 
     # Find names of first & last processing modules in project
     initial_proc = ""
-    final_procs = []
+    final_proc = ""
     notfinal_procs_tmp = OrderedDict() # OrderedSet() doesn't exist ...
 
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
-        if proc.is_last: final_procs.append(proc.inst)
+        if proc.is_last: final_proc = proc.mtype_short()
         if extraports and (not proc.is_last):
             notfinal_procs_tmp[proc.mtype_short()] = None # Use dictionary as set
     notfinal_procs = notfinal_procs_tmp.keys()
@@ -120,7 +120,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = delay)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -138,14 +138,14 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                  if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
+                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
               
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
 
-        if ("AS_36" in mtypeB and args.split): #for split fpga we want AS sent to second device
+        if (memInfo.mtype_long == "AllStubs" and args.split): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
           for mem in memList: 
             if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
@@ -253,8 +253,6 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
     string_instantiaion = "  -- ########################### Instantiation ###########################\n"
     string_instantiaion += "  -- Instantiate the Unit Under Test (UUT)\n\n"
 
-    final_proc_short = final_procs[0].split("_")[0]
-
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
     if initial_proc not in final_proc: # For a single module the normal and the full are the same
@@ -298,9 +296,6 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-#              if "VMSME" in mtypeB:
-#                 string_final += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
-#              else:
               string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
@@ -338,14 +333,11 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     # Find names of first & last processing modules in project
     initial_proc = ""
     final_proc = ""
-    final_procs = []
     notfinal_procs = []
     sorted(process_list, key=lambda p: p.order) # Sort processing modules in the order they are in the chain
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
-        if proc.is_last:
-            final_proc = proc.mtype_short()
-            final_procs.append(proc.inst)
+        if proc.is_last: final_proc = proc.mtype_short()
         if not proc.is_last and proc.mtype_short() not in notfinal_procs:
             notfinal_procs.append(proc.mtype_short())
 

@@ -1,10 +1,20 @@
 from builtins import range
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-
+#following dictionary tracks which trackletparameters are grouped together by merging module
+MPARdict = {
+    "L5L6" : ["ABCD"]
+    "L2L3" : ["ABCD"]
+    "L3L4" : ["AB","CD"]
+    "L2D1" : ["ABCD"]
+    "L1D1" : ["ABCD","EFGH"]
+    "D1D2" : ["ABCD"]
+    "D3D4" : ["ABCD"]
+    "L1L2" : ["ABCD","JLK","DF","GI","E","H"]
+}
 def getVMStubNCopy(memmod):
 
     mem = memmod.inst;
-
+  
     if "VMSTE" in mem:
         proc = memmod.downstreams[0].inst;
         if "L1L2" in proc:
@@ -50,7 +60,6 @@ def getVMStubNCopy(memmod):
         return "Error no match for "+mem
     else:
         return "Wrong memory module:"+mem
-
     
 
 def writeTopPreamble(all=True):

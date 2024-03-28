@@ -504,7 +504,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_ADATA;\n"
             else:
                 wirelist += "  signal "+mem+"_enb          : "
-                wirelist += "t_"+mtypeB+"_1b;\n"
+                wirelist += "t_"+mtypeB+"_1b := '1';\n" #FIXME remove this
                 wirelist += "  signal "+mem+"_V_readaddr    : "
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_V_dout        : "
@@ -649,9 +649,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             numpages = 8
             seed = mem.split("_")[1][:-1]
             iTC = mem.split("_")[1][-1]
-            for PCgroup in MPARdict[seed]:
-                if iTC == PCgroup[0]:
-                    numInputs = len(PCgroup)
+            for PCGroup in MPARdict[seed]:
+                if iTC == PCGroup[0]:
+                    numInputs = len(PCGroup)
                     merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
                     merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
                     merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
@@ -661,11 +661,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_portlist += "        clk => clk,\n"
                     merge_portlist += "        enb_arr => open,\n"
                     merge_portlist += "        bx_out => open,\n"
-                    merge_portlist += "        merged_dout => MTPAR_"+seed+PCgroup+"_stream_V_dout,\n"
-                    for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCgroup[i%numInputs]+"_V_dout,\n"
-                    for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCgroup[i%numInputs]+"_AV_dout_nent,\n"
-                    for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>TPAR_"+seed+PCgroup[i%numInputs]+"_V_readaddr,\n"
-                    mem_str += "    MERGE_STREAM_TPAR"+seed+PCgroup+" : entity work.tf_merge_streamer\n"
+                    merge_portlist += "        merged_dout => MTPAR_"+seed+PCGroup+"_stream_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_AV_dout_nent,\n"
+                    for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_readaddr,\n"
+                    mem_str += "    MERGE_STREAM_TPAR"+seed+PCGroup+" : entity work.tf_merge_streamer\n"
                     mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
                     mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
 
@@ -897,10 +897,9 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
       elif "TPAR" in mtypeB:
           seed = mem.split("_")[1][:-1]
           itc = mem.split("_")[1][-1]
-          print(itc)
-          for PCgroup in MPARdict[seed]:
-              if itc == PCgroup[0]:
-                  string_output_mems += "    MTPAR_"+seed+PCgroup+"_stream_V_dout : out std_logic_vector(75 downto 0);\n"
+          for PCGroup in MPARdict[seed]:
+              if itc == PCGroup[0]:
+                  string_output_mems += "    MTPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector(75 downto 0);\n"
       else:
           string_output_mems += "    "+mem+"_enb          : in t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_readaddr    : in t_"+mtypeB+"_ADDR;\n"
@@ -1116,8 +1115,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                 elif split and "TPAR" in mem:
                     seed = mem.split("_")[1][:-1]
                     itc = mem.split("_")[1][-1]
-                    if MPARdict[seed][0] == itc:
-                        string_ctrl_signals +="  signal MPAR_"+seed+MPARdict[seed] +": std_logic_vector(75 downto 0) := (others=> '0') ;\n"
+                    for PCGroup in MPARdict[seed]:
+                        if PCGroup[0] == itc:
+                            string_ctrl_signals +="  signal MTPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector(75 downto 0) := (others=> '0') ;\n"
                 else:
                     string_ctrl_signals += ("  signal "+mem+"_enb").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1216,8 +1216,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         memList = memDict[mtypeB]
         for memMod in memList:
             mem = memMod.inst
-            if split and ("AS" in mtypeB and "n1" in mem):
-                    string_output += ("        "+mem+"_stream_V_dout").ljust(str_len) + "=> "+mem+"_stream_V_dout,\n"
             if memInfo.is_initial:
                 if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTCLink as it has FIFO input
                     string_input += ("        "+mem+"_link_AV_dout").ljust(str_len) + "=> "+mem+"_link_AV_dout,\n"
@@ -1252,13 +1250,16 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                 elif ("TPAR" in mem) and split:
                     seed = mem.split("_")[1][:-1]
                     itc = mem.split("_")[1][-1]
-                    if MPARdict[seed][0] == itc:
-                        string_output += ("        MTPAR_"+seed+MPARdict[seed]+"_stream_V_dout").ljust(str_len) + "=> MTPAR_"+seed+MPARdict[seed]+"_stream_V_dout,\n"
+                    for PCGroup in  MPARdict[seed]:
+                        if PCGroup[0] == itc:
+                            string_output += ("        MTPAR_"+seed+PCGroup+"_stream_V_dout").ljust(str_len) + "=> MTPAR_"+seed+PCGroup+"_stream_V_dout,\n"
                 else:
                     string_output += ("        "+mem+"_enb").ljust(str_len) + "=> "+mem+"_enb,\n"
                     string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> "+mem+"_readaddr,\n"
                     string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> "+mem+"_dout,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> "+mem+"_AV_dout_nent,\n"
+            elif split and ("AS" in mtypeB and "n1" in mem):
+                    string_output += ("        "+mem+"_stream_V_dout").ljust(str_len) + "=> "+mem+"_stream_V_dout,\n"
             else:
                 string_debug += ("        "+mem+"_wea").ljust(str_len) + "=> "+mem+"_wea,\n"
                 string_debug += ("        "+mem+"_writeaddr").ljust(str_len) + "=> "+mem+"_writeaddr,\n"
@@ -1294,6 +1295,22 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
 
     for memMod in memList:
         mem = memMod.inst
+        if ("AS" in mem and "n1" in mem): #FIXME this is not good
+            width = 37
+            str_len = 16 # length of string for formatting purposes
+            string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
+            string_mem += "    generic map (\n"
+            string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
+            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
+            string_mem += "    )\n"
+            string_mem += "    port map (\n"
+            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+            string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
+            string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
+            string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
+            string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_V_dout\n"
+            string_mem += "    );\n"
+            continue
 
         string_mem += "      write"+mem+" : entity work.FileWriter\n"
         string_mem += "      generic map (\n"
@@ -1343,6 +1360,32 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
 
         mem = memMod.inst
 
+        if ("TPAR" in mem) or ("AS" in mem and "n1" in mem): #FIXME this is not good
+            width = 0
+            if "TPAR" in mem:
+              width=76
+              seed = mem.split("_")[1][:-1]
+              itc = mem.split("_")[1][-1]
+              for PCGroup in MPARdict[seed]:
+                  if PCGroup[0] != itc: continue
+                  mem = "MTPAR_" + seed + PCGroup
+            else:
+              width=37
+            if "MTPAR" not in mem: continue #FIXME also not good
+            str_len = 16 # length of string for formatting purposes
+            string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
+            string_mem += "    generic map (\n"
+            string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
+            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
+            string_mem += "    )\n"
+            string_mem += "    port map (\n"
+            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+            string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
+            string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
+            string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
+            string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_V_dout\n"
+            string_mem += "    );\n"
+            continue
         string_mem += "    write"+mem+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
         string_mem += "    generic map (\n"
         string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"

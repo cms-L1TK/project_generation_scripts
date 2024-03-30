@@ -1555,8 +1555,11 @@ def writeLastTrackPorts(ftName, is_open):
     if is_open:
       string_last_track_port += "open,\n"
     else:
-      string_last_track_port += ftName+"_last_track,\n"
-    string_last_track_port += "      done_ap_vld => "+ftName+"_last_track_vld,\n"
+    #FIXME - Hack for last track - something is broken here....
+    #  string_last_track_port += ftName+"_last_track,\n"
+    #string_last_track_port += "      done_ap_vld => "+ftName+"_last_track_vld,\n"
+      string_last_track_port += "FT_last_track,\n"
+    string_last_track_port += "      done_ap_vld => FT_last_track_vld,\n"
 
     return string_last_track_port
 

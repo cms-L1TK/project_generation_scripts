@@ -471,7 +471,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_din         : "
                 wirelist += "t_"+mtypeB+"_DATA;\n"
-        if interface != 1 and not (("AS" in mem and "n1" in mem) and split):
+        if interface != 1 and not (("AS" in mem and "n2" in mem) and split):
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
@@ -504,8 +504,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_index        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
-                    wirelist += "  signal "+mem+"_AV_dout_nent : "
-                    wirelist += "t_arr_7b(0 to 7);\n"
 
             if memInfo.has_numEntries_out:
                 if memInfo.is_binned:
@@ -1115,7 +1113,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         memList = memDict[mtypeB]
         for memMod in memList:
             mem = memMod.inst
-            if split and ("AS" in mtypeB and "n1" in mem):
+            if split and ("AS" in mtypeB and "n2" in mem):
                     string_output += ("        "+mem+"_enb").ljust(str_len) + "=> dummy,\n"
                     string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> dummy_AS_36_addr,\n"
                     string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> open,\n"

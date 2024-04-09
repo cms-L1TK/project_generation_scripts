@@ -321,6 +321,9 @@ def writeMemoryUtil(memDict, memInfoDict):
                 varStr = "_64_4b"
             else:
                 varStr = "_7b"
+            if "MPROJ" in tName:
+                tName = "t_"+mtypeB+"_MASK"
+                ss += "  subtype "+tName+" is t_arr"+str(num_pages)+"_4b;\n"
             tName = "t_"+mtypeB+"_NENT"
             if memInfo.is_binned:
                 ss += "  subtype "+tName+" is std_logic_vector(63 downto 0);\n"
@@ -520,6 +523,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 else:
                     wirelist += "  signal "+mem+"_AV_dout_nent  : "
                     wirelist += "t_"+mtypeB+"_NENT; -- (#page)\n"
+                    if "MPROJ" in mem:
+                        wirelist += "  signal "+mem+"_AV_dout_mask  : "
+                        wirelist += "t_"+mtypeB+"_MASK;\n"
         else :
             if memInfo.is_binned:
                 disk=""
@@ -645,6 +651,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 portlist += "        mask_o    => "+mem+"_V_masktmp,\n"
             else:
                 portlist += "        nent_o    => "+mem+"_AV_dout_nent,\n"
+                if "MPROJ" in mem:
+                    portlist += "        mask_o    => "+mem+"_AV_dout_mask,\n"
         else:
             portlist += "        nent_o    => open,\n"
 
@@ -1537,6 +1545,9 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
             tpage = 1
             if "MPROJ" in mem.mtype_short() :
                 tpage = 4
+                for i in range(0,2**mem.bxbitwidth):
+                    string_mem_ports += "      "+argname+"_mask_"+str(i)+"_V                   => "
+                    string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_AV_dout_mask("+str(i)+"),\n"
             for i in range(0,tpage*(2**mem.bxbitwidth)):
                 #FIXME - hack...
                 if "MPAR" in mem.mtype_short() :

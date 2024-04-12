@@ -1124,6 +1124,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                     string_input += ("        "+mem+"_link_read").ljust(str_len) + "=> "+mem+"_link_read,\n"
                 else:
                     if ("MPAR" in mem or "AS" in mem) and not "in" in mem:
+                        continue
                     string_input += ("        "+mem+"_wea").ljust(str_len) + "=> "+mem+"_wea,\n"
                     string_input += ("        "+mem+"_writeaddr").ljust(str_len) + "=> "+mem+"_writeaddr,\n"
                     string_input += ("        "+mem+"_din").ljust(str_len) + "=> "+mem+"_din,\n"

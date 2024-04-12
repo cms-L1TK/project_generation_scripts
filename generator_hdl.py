@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -47,7 +47,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if ("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split):
+        if (("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split)) and not fpga2:
             continue
 
         string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
@@ -161,7 +161,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, fpga2, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -172,7 +172,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, fpga2, split)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -224,7 +224,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
           continue
         if memInfo.is_initial:
             first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
-            string_read += writeTBMemoryReadInstance(mtypeB, memDict, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
+            string_read += writeTBMemoryReadInstance(mtypeB, memDict, memInfo.bxbitwidth, first_mem, memInfo.is_binned, split)
 
             if first_mem: # Write start signal for the first memory in the chain
                 string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
@@ -346,7 +346,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memPrintsDir, sector)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memPrintsDir, sector, split)
     # A bodge for TrackBuilder to write TF concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_104' in memInfoDict.keys():
@@ -452,6 +452,9 @@ if __name__ == "__main__":
                         help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
     parser.add_argument('-sp', '--split', action='store_true',
                         help="enables split-fpga project")
+
+    parser.add_argument('-f2', '--fpga2', action='store_true',
+                        help="enables split-fpga2 project")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
@@ -562,7 +565,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.fpga2, args.split)
 
     ###############
     # Test bench

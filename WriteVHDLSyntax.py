@@ -163,7 +163,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
 
     return string_mem
 
-def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned):
+def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned, split):
     """
     # VHDL test-bench
     # Reads memory text files
@@ -177,6 +177,9 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
     for memMod in memList :
 
         mem = memMod.inst
+
+        if split and "in" not in mem:
+            continue
     
         if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTC links that reads from FIFOs
             string_mem += "    read" + mem + " : entity work.FileReaderFIFO\n"
@@ -445,10 +448,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         #FIXME
         if "MPAR" in mem and not "in" in mem:
             interface = 0
-            extraports = 0
+            extraports = False
         if "AS" in mem and not "in" in mem:
             interface = 0
-            extraports = 0
+            extraports = False
         
         # Write wires
         if delay > 0:
@@ -467,14 +470,14 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
             wirelist += "  signal "+mem+"_din_delay         : "
             wirelist += "t_"+mtypeB+"_DATA;\n"
-            if ((interface != -1 and not extraports) or (interface == 1 and extraports and "VMSME" not in mtypeB)):
+            if (interface != -1 and not extraports):
                 wirelist += "  signal "+mem+"_wea          : "
                 wirelist += "t_"+mtypeB+"_1b;\n"
                 wirelist += "  signal "+mem+"_writeaddr   : "
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_din         : "
                 wirelist += "t_"+mtypeB+"_DATA;\n"
-        if interface != 1 and not (("AS" in mem and "n2" in mem) and split):
+        if interface != 1 :
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
@@ -622,15 +625,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        enb       => "+mem+"_enb,\n"
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
-    #FIXME - hack where we use the PC_start instead of VMSMER_start for the VMSMER modules
-        if sync_signal == "VMSMER_start" or "MPROJ_" in mem or "MPAR_" in mem:
-            if "in" in mem:
-                portlist += "        sync_nent => START_FIRST_WRITE,\n"
-            else:
-                portlist += "        sync_nent => PC_start,\n"
+        if ("AS" in mem or "MPAR" in mem) and "in" in mem:
+            portlist += "        sync_nent => PC_start,\n"
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
-
         if memmod.has_numEntries_out:
             if memList[0].is_binned:
                 ncopy = getVMStubNCopy(memmod);
@@ -851,7 +849,7 @@ def writeTrackStreamRHSPorts_interface(mtypeB, memDict):
 
     return string_output_mems
 
-def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
+def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
     """
     # VHDL test-bench: write the constants used by the test-bench
     # Inputs:
@@ -893,6 +891,10 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
                 mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "").replace("InputLink", "InputStubs").replace("FullMatch", "FullMatches").replace("CandidateMatch", "CandidateMatches") # Testvector file name start. FIX ME, make this prettier?!
                 mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
+                #FIXME - hack for fpga2 project
+                if split:
+                    mem_delay = 0
+
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
                 string_input_tmp += ("  constant FILE_IN_" + mtypeB).ljust(str_len) + ": string := memPrintsDir&\"" + mem_dir + "/" + mem_file_start + "_\";\n"
                 if "VMSME_16" == mtypeB:
@@ -904,9 +906,6 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector):
                     string_output_tmp += ("  constant FILE_OUT_VMSME_17").ljust(str_len) + ": string := dataOutDir;\n"
         else:
             string_output_tmp += ("  constant FILE_OUT_" + mtypeB).ljust(str_len) + ": string := dataOutDir;\n"
-
-            #FIXME
-    #string_output_tmp += ("  constant FILE_OUT_AS_36").ljust(str_len) + ": string := dataOutDir;\n"
 
     string_constants += "\n  -- Paths of data files specified relative to Vivado project's xsim directory.\n"
     string_constants += "  -- e.g. IntegrationTests/PRMEMC/script/Work/Work.sim/sim_1/behav/xsim/\n"
@@ -1040,6 +1039,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfin
 
             for memMod in memList :
                 mem = memMod.inst
+
                 disk = ""
                 if memMod.is_binned:
                     if "VMSME_D" in mem:
@@ -1121,24 +1121,13 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         memList = memDict[mtypeB]
         for memMod in memList:
             mem = memMod.inst
-            if split and ("AS" in mtypeB and "n2" in mem):
-                    string_output += ("        "+mem+"_enb").ljust(str_len) + "=> dummy,\n"
-                    string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> dummy_AS_36_addr,\n"
-                    string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> open,\n"
-                    string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
             if memInfo.is_initial:
                 if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTCLink as it has FIFO input
                     string_input += ("        "+mem+"_link_AV_dout").ljust(str_len) + "=> "+mem+"_link_AV_dout,\n"
                     string_input += ("        "+mem+"_link_empty_neg").ljust(str_len) + "=> "+mem+"_link_empty_neg,\n"
                     string_input += ("        "+mem+"_link_read").ljust(str_len) + "=> "+mem+"_link_read,\n"
                 else:
-                    #FIXME hack for the MPAR and AS for PC amd VMSMER
-                    if "MPAR" in mem :
-                        if not "in" in mem :
-                            continue
-                    if "AS" in mem :
-                        if not "in" in mem :
-                            continue
+                    if ("MPAR" in mem or "AS" in mem) and not "in" in mem:
                     string_input += ("        "+mem+"_wea").ljust(str_len) + "=> "+mem+"_wea,\n"
                     string_input += ("        "+mem+"_writeaddr").ljust(str_len) + "=> "+mem+"_writeaddr,\n"
                     string_input += ("        "+mem+"_din").ljust(str_len) + "=> "+mem+"_din,\n"
@@ -1219,7 +1208,6 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         string_mem += "        ADDR".ljust(str_len)+"=> "+mem+"_writeaddr,\n"
         string_mem += "        DATA".ljust(str_len)+"=> "+mem+"_din,\n"
         string_mem += "        WRITE_EN".ljust(str_len)+"=> "+mem+"_wea,\n"
-        #FIXME Hack for VMSMER
         if proc == "VMSMER" :
             string_mem += "        START".ljust(str_len)+"=> PC_START,\n"
         else:

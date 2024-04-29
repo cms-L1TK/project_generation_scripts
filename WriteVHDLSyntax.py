@@ -1434,7 +1434,7 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
             bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:
-            if first_of_type or modName == "VMSMER":
+            if first_of_type:
                 bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
                 bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str
@@ -1551,13 +1551,10 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
 def writeLastTrackPorts(ftName, is_open):
     string_last_track_port = "      done        => "
     if is_open:
-      string_last_track_port += "open,\n"
+        string_last_track_port += "open,\n"
     else:
-    #FIXME - Hack for last track - something is broken here....
-    #  string_last_track_port += ftName+"_last_track,\n"
-    #string_last_track_port += "      done_ap_vld => "+ftName+"_last_track_vld,\n"
-      string_last_track_port += "FT_last_track,\n"
-    string_last_track_port += "      done_ap_vld => FT_last_track_vld,\n"
+        string_last_track_port += ftName+"_last_track,\n"
+        string_last_track_port += "      done_ap_vld => "+ftName+"_last_track_vld,\n"
 
     return string_last_track_port
 

@@ -107,12 +107,12 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 
     # Find names of first & last processing modules in project
     initial_proc = ""
-    final_proc = ""
+    final_procs = []
     notfinal_procs_tmp = OrderedDict() # OrderedSet() doesn't exist ...
 
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
-        if proc.is_last: final_proc = proc.mtype_short()
+        if proc.is_last: final_procs.append(proc.inst)
         if extraports and (not proc.is_last):
             notfinal_procs_tmp[proc.mtype_short()] = None # Use dictionary as set
     notfinal_procs = notfinal_procs_tmp.keys()
@@ -120,7 +120,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = delay)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay)
     
     string_input_mems = ""
     string_output_mems = ""

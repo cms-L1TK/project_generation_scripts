@@ -704,11 +704,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = 0):
+def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0):
     """
     # Top-level interface: control signals
     """
-
+    
+    final_proc_short = final_procs[0].split("_")[0]
+    
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"

@@ -698,11 +698,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, delay = 0):
+def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0):
     """
     # Top-level interface: control signals
     """
-
+    
+    final_proc_short = final_procs[0].split("_")[0]
+    
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
@@ -710,14 +712,15 @@ def writeControlSignals_interface(initial_proc, final_proc, notfinal_procs, dela
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
     if delay > 0:
-      string_ctrl_signals += "    "+final_proc+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
+      string_ctrl_signals += "    "+final_proc_short+"_bx_out_0 : out std_logic_vector(2 downto 0);\n"
     else:
-      string_ctrl_signals += "    "+final_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+final_proc+"_bx_out_vld : out std_logic;\n"
-    string_ctrl_signals += "    "+final_proc+"_done   : out std_logic;\n"
-    if final_proc.startswith("FT"):
-        string_ctrl_signals += "    "+final_proc+"_last_track   : out std_logic;\n"
-        string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
+      string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
+    string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
+    string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
+    if final_proc_short == "FT":
+        for final_proc in final_procs:
+            string_ctrl_signals += "    "+final_proc+"_last_track   : out std_logic;\n"
+            string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
         string_ctrl_signals += "    "+mid_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"

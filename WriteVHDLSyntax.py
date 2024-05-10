@@ -9,7 +9,7 @@ MPARdict = {
     "L1D1" : ["ABCD","EFGH"],
     "D1D2" : ["ABCD"],
     "D3D4" : ["ABCD"],
-    "L1L2" : ["ABC","JLK","DF","GI","E","H"]
+    "L1L2" : ["ABC","JKL","DE","G","F","HI"]
 }
 def getVMStubNCopy(memmod):
 

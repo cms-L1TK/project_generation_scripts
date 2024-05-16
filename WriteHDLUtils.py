@@ -1028,7 +1028,8 @@ def matchArgPortNames_TB(argname, portname, memoryname):
         fm_layer_or_disk = memoryname.split("_")[2][0]
 
     if argname.startswith("trackletParameters"):
-        return portname.startswith("tpar")
+        npages = str(len(memoryname) - len("MPAR_L1L2")) if memoryname.startswith("MPAR_") else ""
+        return portname.startswith("tpar") and argname.startswith("trackletParameters" + npages)
     if argname.startswith("barrelFullMatches"):
         return (fm_layer_or_disk == "L" and portname.startswith("fullmatch"))
     if argname.startswith("diskFullMatches"):

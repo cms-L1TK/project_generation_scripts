@@ -715,9 +715,12 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         mem_str += "    "+mem+"_start_delay : entity work.start_delay1\n"
         mem_str += "    port map (\n"
         mem_str += "      clk    => clk,\n"
-        if "AS_" in mem :
-            mem_str += "      start_in => PC_start,\n"
-        if "MPAR_" in mem or "MPROJ_" in mem or "VMSME_" in mem :
+        if "AS_" in mem or "MPAR_" in mem:
+            if "in" in mem:
+                mem_str += "      start_in => PC_start,\n"
+            else:
+                mem_str += "      start_in => MP_start,\n"
+        if "MPROJ_" in mem or "VMSME_" in mem :
             mem_str += "      start_in => MP_start,\n"
         if "FM_" in mem :
             mem_str += "      start_in => FT_start,\n"

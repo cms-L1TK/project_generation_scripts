@@ -239,14 +239,14 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     # string_read += "\n"
     return string_read
 
-def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split):
+def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split):
     """
     #   topfunc:        name of the top module
     #   memDict:        dictionary of memories organised by type 
     #                   & no. of bits (TPROJ_58 etc.)
     #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
     #   initial_proc:   name of the first processing module of the chain
-    #   final_proc:     name of the last processing module of the chain
+    #   final_procs:     names of the last processing module of the chain
     #   notfinal_procs: a set of the names of processing modules not at the end of the chain
     """
 
@@ -255,9 +255,9 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
 
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
-    if initial_proc not in final_proc: # For a single module the normal and the full are the same
-        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc,split=split)
-    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split=split)
+    if initial_proc not in final_procs[0].mtype_short(): # For a single module the normal and the full are the same
+        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split)
+    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
 
     return string_instantiaion
 
@@ -332,12 +332,12 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
 
     # Find names of first & last processing modules in project
     initial_proc = ""
-    final_proc = ""
+    final_procs = []
     notfinal_procs = []
     sorted(process_list, key=lambda p: p.order) # Sort processing modules in the order they are in the chain
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
-        if proc.is_last: final_proc = proc.mtype_short()
+        if proc.is_last: final_procs.append(proc)
         if not proc.is_last and proc.mtype_short() not in notfinal_procs:
             notfinal_procs.append(proc.mtype_short())
 
@@ -346,20 +346,20 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memPrintsDir, sector, split)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[0].mtype_short()], memPrintsDir, sector, split)
     # A bodge for TrackBuilder to write TF concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_104' in memInfoDict.keys():
       fileTF = open("bodge/TF_tb_constants.vhd.bodge")
       string_constants += fileTF.read();
 
-    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split)
+    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split)
 
     string_begin = writeTBEntityBegin()
     string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc,split)
     string_mem_stim = writeTBMemoryStimulusProcess(initial_proc)
 
-    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_proc, notfinal_procs,split=split)
+    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
 
     string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split)
 

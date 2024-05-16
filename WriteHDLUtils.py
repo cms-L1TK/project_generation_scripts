@@ -1259,7 +1259,10 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     string_bx_in += writeProcBXPort(module.mtype_short(),True,True,first_of_type,delay)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,first_of_type,delay)
+                    if "MP_" in module.inst :
+                        string_bx_in += writeProcBXPort(module.inst,True,False,first_of_type,delay)
+                    else:
+                        string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,first_of_type,delay)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             #FIXME hack for PC and VMSMER

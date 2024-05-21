@@ -1420,6 +1420,7 @@ def writeLUTPorts(argname,lut):
 
 def writeLUTParameters(argname, lut, innerPS, outerPS):
     parameterlist = ""
+    depth = 0
     width = 0
     if "in" in argname:
         width = 1

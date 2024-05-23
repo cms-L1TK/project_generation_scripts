@@ -643,7 +643,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         # add merge_stream modules if split and TPAR or AS
         if "TPAR" in mem and split:
             addrwidth = 10
-            ramwidth = 73
+            ramwidth = memInfo.bitwidth
             numpages = 8
             seed = mem.split("_")[1][:-1]
             iTC = mem.split("_")[1][-1]
@@ -669,7 +669,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
         elif "AS" in mem and "n1" in mem and split:
             addrwidth = 10
-            ramwidth = 36
+            ramwidth = memInfo.bitwidth
             numpages = 8
             numInputs = 1
             merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
@@ -891,13 +891,13 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict, split):
           string_output_mems += "    "+mem+"_V_addr_nent        : out t_"+mtypeB+"_NENTADDR"+disk+";\n"
           string_output_mems += "    "+mem+"_AV_dout_nent       : out t_"+mtypeB+"_NENT;\n"
       elif "AS" in mtypeB and split: #AS/TPAR at interface need to go through merging module
-          string_output_mems += "    "+mem+"_stream_V_dout : out std_logic_vector(36 downto 0);\n"
+          string_output_mems += "    "+mem+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth)+" downto 0);\n"
       elif "TPAR" in mtypeB and split:
           seed = mem.split("_")[1][:-1]
           itc = mem.split("_")[1][-1]
           for PCGroup in MPARdict[seed]:
               if itc == PCGroup[0]:
-                  string_output_mems += "    MTPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector(75 downto 0);\n"
+                  string_output_mems += "    MTPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth+3)+" downto 0);\n"
       else:
           string_output_mems += "    "+mem+"_enb          : in t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_readaddr    : in t_"+mtypeB+"_ADDR;\n"
@@ -1115,7 +1115,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                     itc = mem.split("_")[1][-1]
                     for PCGroup in MPARdict[seed]:
                         if PCGroup[0] == itc:
-                            string_ctrl_signals +="  signal MTPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector(75 downto 0) := (others=> '0') ;\n"
+                            string_ctrl_signals +="  signal MTPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector("+str(memMod.bitwidth+3)+" downto 0) := (others=> '0') ;\n"
                 else:
                     string_ctrl_signals += ("  signal "+mem+"_enb").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1136,7 +1136,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                     if "VMSME_D" in mem:
                         disk = "DISK"
                 if "AS" in mem and "n1" in mem and split:
-                    string_ctrl_signals += "  signal "+mem+"_stream_V_dout : std_logic_vector(36 downto 0) := (others => '0');\n"
+                    string_ctrl_signals += "  signal "+mem+"_stream_V_dout : std_logic_vector("+str(memMod.bitwidth)+" downto 0) := (others => '0');\n"
                     continue
                 string_ctrl_signals += ("  signal "+mem+"_wea").ljust(str_len)+": "
                 string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1293,8 +1293,9 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
 
     for memMod in memList:
         mem = memMod.inst
-        if ("AS" in mem and "n1" in mem and split): #FIXME this is not good
-            width = 37
+        if ("AS" in mem and "n1" in mem and split):
+            #FIXME rewrite this to be a separate function
+            width = memMod.bxbitwidth + 1
             str_len = 16 # length of string for formatting purposes
             string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
             string_mem += "    generic map (\n"
@@ -1361,14 +1362,14 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, 
         if (("TPAR" in mem) or ("AS" in mem and "n1" in mem)) and split: #FIXME this is not good
             width = 0
             if "TPAR" in mem:
-              width=76
+              width= memMod.bitwidth + 4
               seed = mem.split("_")[1][:-1]
               itc = mem.split("_")[1][-1]
               for PCGroup in MPARdict[seed]:
                   if PCGroup[0] != itc: continue
                   mem = "MTPAR_" + seed + PCGroup
             else:
-              width=37
+              width= memMod.bitwidth + 1
             if "MTPAR" not in mem: continue #FIXME also not good
             str_len = 16 # length of string for formatting purposes
             string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"

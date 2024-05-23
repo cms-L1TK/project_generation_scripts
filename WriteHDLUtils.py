@@ -1131,17 +1131,23 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletProcessor',
                             'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
 
+    if not hasattr(writeModuleInst_generic, "modules_with_ports_added"):
+        writeModuleInst_generic.modules_with_ports_added = set()
+
     # Add internal BX wire and start registers
     str_ctrl_wire = ""
     str_ctrl_func = ""
-    if first_of_type and not module.is_last:
-        for mem in module.downstreams:
-            if mem.bxbitwidth != 1: continue
-            oneProcDownMem = mem
-            break
-        ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcDownMem,extraports,delay)
-        str_ctrl_wire += ctrl_wire_inst
-        str_ctrl_func += ctrl_func_inst
+    oneProcUpMem = None
+    for mem in module.upstreams:
+        if mem.bxbitwidth != 1: continue
+        if mem.upstreams[0] is None: continue
+        oneProcUpMem = mem
+        break
+    ports_added = (module.mtype in writeModuleInst_generic.modules_with_ports_added)
+    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay)
+    str_ctrl_wire += ctrl_wire_inst
+    str_ctrl_func += ctrl_func_inst
+    writeModuleInst_generic.modules_with_ports_added.add(module.mtype)
         
     # Update here if the function name is not exactly the same as the module type
 
@@ -1182,14 +1188,14 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True,delay)
+                    string_bx_in += writeProcBXPort(module.inst,module.mtype_short(),True)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,delay)
+                    string_bx_in += writeProcBXPort(module.inst,mem.upstreams[0].mtype_short(),True)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             if first_of_type:
-                string_bx_out += writeProcBXPort(module.mtype_short(),False,False,delay) # output bx
+                string_bx_out += writeProcBXPort(module.inst,module.mtype_short(),False) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \

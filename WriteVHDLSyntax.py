@@ -209,6 +209,8 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
+            if "MPAR" in mem or "MPROJ" in mem:
+                string_mem += "      NUM_TPAGES".ljust(str_len) + "=> 4,\n"
             if "MPAR" in mem :
                 string_mem += "      NUM_BINS".ljust(str_len) + "=> 4,\n"
             else:
@@ -313,9 +315,13 @@ def writeMemoryUtil(memDict, memInfoDict):
                 ss += "  subtype "+tName+" is t_arr"+str(ncopy)+"_"+str(bitwidth)+"b;\n"  
             else:
                 tName = "t_"+mtypeB+"_1b"
-                ss += "  subtype "+tName+" is std_logic;\n" 
-                tName = "t_"+mtypeB+"_ADDR"
-                ss += "  subtype "+tName+" is std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
+                ss += "  subtype "+tName+" is std_logic;\n"
+                if "MPAR" in mtypeB or "MPROJ" in mtypeB:
+                    tName = "t_"+mtypeB+"_ADDR"
+                    ss += "  subtype "+tName+" is std_logic_vector("+str(8+memInfo.bxbitwidth)+" downto 0);\n" 
+                else:
+                    tName = "t_"+mtypeB+"_ADDR"
+                    ss += "  subtype "+tName+" is std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
                 tName = "t_"+mtypeB+"_DATA"
                 ss += "  subtype "+tName+" is std_logic_vector("+str(bitwidth-1)+" downto 0);\n" 
 
@@ -503,7 +509,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "  signal "+mem+"_valid        : "
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_trackletindex        : "
-                    wirelist += "STD_LOGIC_VECTOR(6 downto 0);\n"
+                    wirelist += "STD_LOGIC_VECTOR(8 downto 0);\n"
                     wirelist += "  signal "+mem+"_AV_dout_nent        : "
                     wirelist += "t_arr_7b(0 to 31);\n"
                 #FIXME this is a hack
@@ -565,7 +571,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             delay2_parameterlist +="        DELAY           => " + str(delay*2) +",\n"
             delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
             #enable to use non-default delay value
-            delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
+            if "MPAR" in mem or "MPROJ" in mem:
+                #special case for the merged memories
+                delay_parameterlist +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
+            else:
+                delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
             if memInfo.is_binned:
                 disk=""
                 if "VMSME_D" in mem:
@@ -1232,6 +1242,8 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
                 string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 2048,\n"
             else:
                 string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
+        if "MPROJ" in mem :
+            string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"

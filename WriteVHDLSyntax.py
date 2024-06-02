@@ -520,10 +520,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_index        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
-                    wirelist += "  signal MP_" + mem[3:9] + "_start       :"     
-                    wirelist += "STD_LOGIC;\n"
-                    wirelist += "  signal MP_" + mem[3:9] + "_bx_out      :"
-                    wirelist += "STD_LOGIC_VECTOR(2 downto 0);\n"
                     
             if memInfo.has_numEntries_out:
                 if memInfo.is_binned:
@@ -643,11 +639,12 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        enb       => "+mem+"_enb,\n"
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
-        #if ("AS" in mem or "MPAR" in mem) and "in" in mem:
-        #    portlist += "        sync_nent => PC_start,\n"
-        #else:
-        #    portlist += "        sync_nent => "+sync_signal+",\n"
-        portlist += "        sync_nent => "+mem+"_start,\n"
+        if ("AS" in mem or "MPAR" in mem) and "in" in mem:
+            portlist += "        sync_nent => PC_start,\n"
+        elif "MPAR" in mem and "in" not in mem:
+            portlist += "        sync_nent => MP_start,\n"
+        else:
+            portlist += "        sync_nent => "+sync_signal+",\n"
             
         if memmod.has_numEntries_out:
             if memList[0].is_binned:
@@ -721,22 +718,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "    "+mem+"_DELAY0 : entity work.tf_pipe_delay\n"        
             mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
-        #Delay start signal 
-        mem_str += "    "+mem+"_start_delay : entity work.start_delay1\n"
-        mem_str += "    port map (\n"
-        mem_str += "      clk    => clk,\n"
-        if "AS_" in mem or "MPAR_" in mem:
-            if "in" in mem:
-                mem_str += "      start_in => PC_start,\n"
-            else:
-                mem_str += "      start_in => MP_start,\n"
-        if "MPROJ_" in mem or "VMSME_" in mem :
-            mem_str += "      start_in => MP_start,\n"
-        if "FM_" in mem :
-            mem_str += "      start_in => FT_start,\n"
-        mem_str += "      start_out => " + mem + "_start\n"
-        mem_str += "    );\n\n"
-
 
     return wirelist,mem_str
 
@@ -1342,17 +1323,6 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     """
     module_str = ""
 
-    #HACK for start signal
-    if "MP_" in module.inst:
-        module_str += "  " + module.inst + "_start_delay : entity work.start_delay\n"
-        module_str += "    port map (\n"
-        module_str += "      clk    => clk,\n"
-        module_str += "      bx_in   => VMSMER_bx_out,\n"
-        module_str += "      start_in => MP_start,\n"
-        module_str += "      bx_out   => " + module.inst + "_bx_out,\n"
-        module_str += "      start_out => " + module.inst + "_start\n"
-        module_str += "    );\n\n"
-
     if "PC_" in module.inst:
         module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
         module_str += "    generic map (\n"
@@ -1459,10 +1429,7 @@ def writeProcControlSignalPorts(module,first_of_type):
     string_ctrl_ports += "      ap_rst   => reset,\n"
     #FIXME Special case as the PC_start is use also for VMSMER
     if (module.mtype_short()!="PC" and module.mtype_short()!="VMSMER") :
-        if "MP_" in module.inst:
-            string_ctrl_ports += "      ap_start => "+module.inst+"_start,\n"
-        else:
-            string_ctrl_ports += "      ap_start => "+module.mtype_short()+"_start,\n"
+        string_ctrl_ports += "      ap_start => "+module.mtype_short()+"_start,\n"
         string_ctrl_ports += "      ap_idle  => open,\n"
         string_ctrl_ports += "      ap_ready => open,\n"
         if first_of_type:
@@ -1485,7 +1452,10 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
     if isInput and isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_in,\n"
     elif isInput and not isInitial:
-        bx_str += "      bx_V          => "+modName+"_bx_out,\n"
+        if "MP_" in modName :
+            bx_str += "      bx_V          => PC_bx_out,\n"
+        else:
+            bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
         if delay==0:
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"

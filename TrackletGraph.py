@@ -210,10 +210,7 @@ class TrackletGraph(object):
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
         elif mem.mtype == "AllInnerStubs":
-            if disk>-1:
-              mem.bitwidth = 52
-            else:
-              mem.bitwidth = 51
+            mem.bitwidth = 51
         elif mem.mtype == "DTCLink":
             mem.bitwidth = 39
         elif mem.mtype == "StubPairs":

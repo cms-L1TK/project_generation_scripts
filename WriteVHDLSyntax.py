@@ -1455,7 +1455,7 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
             bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:
-            if first_of_type:
+            if first_of_type and not "VMSMER" in modName:
                 bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
                 bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
     return bx_str

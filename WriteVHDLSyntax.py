@@ -897,7 +897,7 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict, split):
           itc = mem.split("_")[1][-1]
           for PCGroup in MPARdict[seed]:
               if itc == PCGroup[0]:
-                  string_output_mems += "    MTPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth+3)+" downto 0);\n"
+                  string_output_mems += "    MTPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth+2)+" downto 0);\n"
       else:
           string_output_mems += "    "+mem+"_enb          : in t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_readaddr    : in t_"+mtypeB+"_ADDR;\n"
@@ -1115,7 +1115,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                     itc = mem.split("_")[1][-1]
                     for PCGroup in MPARdict[seed]:
                         if PCGroup[0] == itc:
-                            string_ctrl_signals +="  signal MTPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector("+str(memMod.bitwidth+3)+" downto 0) := (others=> '0') ;\n"
+                            string_ctrl_signals +="  signal MTPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector("+str(memMod.bitwidth+2)+" downto 0) := (others=> '0') ;\n"
                 else:
                     string_ctrl_signals += ("  signal "+mem+"_enb").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1295,7 +1295,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         mem = memMod.inst
         if ("AS" in mem and "n1" in mem and split):
             #FIXME rewrite this to be a separate function
-            width = memMod.bxbitwidth + 1
+            width = memMod.bitwidth + 1
             str_len = 16 # length of string for formatting purposes
             string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
             string_mem += "    generic map (\n"
@@ -1362,7 +1362,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, 
         if (("TPAR" in mem) or ("AS" in mem and "n1" in mem)) and split: #FIXME this is not good
             width = 0
             if "TPAR" in mem:
-              width= memMod.bitwidth + 4
+              width= memMod.bitwidth + 3
               seed = mem.split("_")[1][:-1]
               itc = mem.split("_")[1][-1]
               for PCGroup in MPARdict[seed]:

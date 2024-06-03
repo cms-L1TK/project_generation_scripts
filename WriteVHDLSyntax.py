@@ -485,8 +485,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_DATA;\n"
         if interface != 1 :
             if memInfo.is_binned :
-                wirelist += "  signal "+mem+"_start      : "
-                wirelist += "std_logic := '0';\n"
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
                 wirelist += "  signal "+mem+"_AV_readaddr   : "
@@ -494,8 +492,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "  signal "+mem+"_AV_dout       : "
                 wirelist += "t_"+mtypeB+"_ADATA;\n"
             else:
-                wirelist += "  signal "+mem+"_start      : "
-                wirelist += "std_logic := '0';\n"
                 wirelist += "  signal "+mem+"_enb          : "
                 wirelist += "t_"+mtypeB+"_1b;\n"
                 wirelist += "  signal "+mem+"_V_readaddr    : "
@@ -731,7 +727,6 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
-    string_ctrl_signals += "    start_first_write : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
@@ -1111,7 +1106,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "      port map(\n"
     string_fwblock_inst += "        clk".ljust(str_len) + "=> clk,\n"
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
-    string_fwblock_inst += "        START_FIRST_WRITE".ljust(str_len) + "=> START_FIRST_WRITE,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
     string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out_0").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out,\n"

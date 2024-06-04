@@ -1213,7 +1213,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         oneProcUpMem = mem
         break
     ports_added = (module.mtype in writeModuleInst_generic.modules_with_ports_added)
-    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay)
+    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay, first_of_type)
     str_ctrl_wire += ctrl_wire_inst
     str_ctrl_func += ctrl_func_inst
     writeModuleInst_generic.modules_with_ports_added.add(module.mtype)
@@ -1257,7 +1257,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.mtype_short(),True,True,first_of_type,delay)
+                    string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type,delay)
                     break
                 else:
                     if "MP_" in module.inst :
@@ -1268,7 +1268,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             #FIXME hack for PC and VMSMER
             if first_of_type or module.mtype_short() == "PC" or module.mtype_short() == "VMSMER" :
-                string_bx_out += writeProcBXPort(module.mtype_short(),False,False,first_of_type, delay) # output bx
+                string_bx_out += writeProcBXPort(module.inst,False,False,first_of_type, delay) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \

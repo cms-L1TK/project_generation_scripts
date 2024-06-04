@@ -464,6 +464,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             if not memInfo.is_binned:
                 wirelist += "  signal "+mem+"_bx                   : "
                 wirelist += "std_logic_vector(2 downto 0);\n"
+            wirelist += "  signal "+mem+"_start                   : "
+            wirelist += "std_logic;\n"
             wirelist += "  signal "+mem+"_wea_delay_0          : "
             wirelist += "t_"+mtypeB+"_1b;\n"
             wirelist += "  signal "+mem+"_writeaddr_delay_0   : "
@@ -608,10 +610,16 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         if delay > 0:
             delay2_portlist += "        clk      => clk,\n"
             delay2_portlist += "        reset    => reset,\n"
-            delay2_portlist += "        done     => '0',\n"
-            delay2_portlist += "        bx_out   => "+memmod.upstreams[0].mtype_short()+"_bx_out,\n"
+            #FIXME
+            if not "in" in mem :
+                if "VMSMER" in memmod.upstreams[0].mtype_short() or "PC" in memmod.upstreams[0].mtype_short():
+                    delay2_portlist += "        done   => PC_done,\n"
+                    delay2_portlist += "        bx_out   => PC_bx_out,\n"
+                else:
+                    delay2_portlist += "        done   => "+memmod.upstreams[0].mtype_short()+"_done,\n"
+                    delay2_portlist += "        bx_out   => "+memmod.upstreams[0].mtype_short()+"_bx_out,\n"
             delay2_portlist += "        bx       => "+mem+"_bx,\n"
-            delay2_portlist += "        start    => open,\n"
+            delay2_portlist += "        start    => "+mem+"_start,\n"
             delay_portlist_0 += "        clk      => clk,\n"
             delay_portlist_0 += "        wea       => "+mem+"_wea,\n"
             delay_portlist_0 += "        addra     => "+mem+"_writeaddr,\n"
@@ -636,9 +644,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
         if ("AS" in mem or "MPAR" in mem) and "in" in mem:
-            portlist += "        sync_nent => PC_start,\n"
+            portlist += "        sync_nent => "+mem+"_start,\n"
         elif "MPAR" in mem and "in" not in mem:
-            portlist += "        sync_nent => MP_start,\n"
+            portlist += "        sync_nent => "+mem+"_start,\n"
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
             
@@ -704,7 +712,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
         if delay > 0:
-            if not memInfo.is_binned:
+            if not memInfo.is_binned and not "in" in mem:
                 mem_str += "    "+mem+"_BX_GEN : entity work.CreateStartSignal\n"
                 mem_str += "      generic map (\n"+delay2_parameterlist.rstrip(",\n")+"\n      )\n"
                 mem_str += "      port map (\n"+delay2_portlist.rstrip(",\n")+"\n      );\n\n"
@@ -729,6 +737,9 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
+    string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+    string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
+    string_ctrl_signals += "    "+initial_proc+"_done : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
@@ -738,9 +749,11 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
         string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
     # Extra output ports if debug info must be sent to test-bench.
     for mid_proc in notfinal_procs:
-        string_ctrl_signals += "    "+mid_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-        string_ctrl_signals += "    "+mid_proc+"_bx_out_vld : out std_logic;\n"
-        string_ctrl_signals += "    "+mid_proc+"_done   : out std_logic;\n"
+        #Hack should probably not need the if statement here...
+        if mid_proc != "PC" :
+            string_ctrl_signals += "    "+mid_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+            string_ctrl_signals += "    "+mid_proc+"_bx_out_vld : out std_logic;\n"
+            string_ctrl_signals += "    "+mid_proc+"_done   : out std_logic;\n"
 
     return string_ctrl_signals
 
@@ -1108,7 +1121,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
-    string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out_0").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out,\n"
+    string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out,\n"
     string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out_vld").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_done").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_done,\n"
     if final_procs[0].mtype_short().startswith("FT"):
@@ -1372,7 +1385,7 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
 
     return lut_str
 
-def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
+def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_of_type=False):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
     # Inputs: processing module & memory that is upstream of it.
@@ -1381,12 +1394,34 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
     mtype = module.inst
     mtype_up = None
 
+    # First write the LATCH module that emulates the 108 clock delay for the
+    # processing of the stubs in the PC and VMSMER
+    #
+
+    int_ctrl_wire = ""
+    int_ctrl_func = ""
+
+
+    if "PC_" in mtype and first_of_type :
+
+        int_ctrl_func +=  "  LATCH_PC_VMSMER: entity work.CreateStartSignal\n"
+        startsignal_parameter_list = "        DELAY           => " + str(110) +",\n"
+        int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
+
+        int_ctrl_func += "    port map (\n"
+        int_ctrl_func += "      clk   => clk,\n"
+        int_ctrl_func += "      reset => reset,\n"
+        int_ctrl_func += "      done  => PC_start,\n"
+        int_ctrl_func += "      bx_out => PC_bx_in,\n"
+        int_ctrl_func += "      bx => PC_bx_out,\n"
+        int_ctrl_func += "      start => PC_done\n"
+        int_ctrl_func += "  );\n\n"
+    
+    
     if first_proc:
         mtype_up = module.mtype_short()
     else:
         mtype_up = mem.upstreams[0].mtype_short()
-
-    int_ctrl_wire = ""
 
     if not first_proc and not extraports:
         int_ctrl_wire += "  signal "+mtype_up+"_done : std_logic := '0';\n"
@@ -1394,7 +1429,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
         int_ctrl_wire += "  signal "+mtype_up+"_bx_out_vld : std_logic;\n"
     int_ctrl_wire += "  signal "+mtype+"_bx_in : std_logic_vector(2 downto 0);\n"
     int_ctrl_wire += "  signal "+mtype+"_start : std_logic := '0';\n"
-    int_ctrl_func =  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
+    int_ctrl_func +=  "  LATCH_"+mtype+": entity work.CreateStartSignal\n"
     if delay > 0:
       startsignal_parameter_list = "        DELAY           => " + str(delay*2) +",\n"
       int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
@@ -1402,12 +1437,18 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0):
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"
     int_ctrl_func += "      reset => reset,\n"
-    if first_proc:
-        int_ctrl_func += "      done  => "+mtype_up+"_start,\n"
-        int_ctrl_func += "      bx_out => "+mtype_up+"_bx_in,\n"
+    if "MP_" in mtype :
+        int_ctrl_func += "      done  => PC_done,\n"
+        int_ctrl_func += "      bx_out => PC_bx_out,\n"
     else:
-        int_ctrl_func += "      done  => "+mtype_up+"_done,\n"
-        int_ctrl_func += "      bx_out => "+mtype_up+"_bx_out,\n"
+        if first_proc:
+            if mtype_up == "VMSMER":
+                mtype_up = "PC"
+            int_ctrl_func += "      done  => "+mtype_up+"_start,\n"
+            int_ctrl_func += "      bx_out => "+mtype_up+"_bx_in,\n"
+        else:
+            int_ctrl_func += "      done  => "+mtype_up+"_done,\n"
+            int_ctrl_func += "      bx_out => "+mtype_up+"_bx_out,\n"
     int_ctrl_func += "      bx => "+mtype+"_bx_in,\n"
     int_ctrl_func += "      start => "+mtype+"_start\n"
     int_ctrl_func += "  );\n\n"
@@ -1423,7 +1464,7 @@ def writeProcControlSignalPorts(module,first_of_type):
     string_ctrl_ports += "      ap_rst   => reset,\n"
     #FIXME Special case as the PC_start is use also for VMSMER
     if (module.mtype_short()!="PC" and module.mtype_short()!="VMSMER") :
-        string_ctrl_ports += "      ap_start => "+module.mtype_short()+"_start,\n"
+        string_ctrl_ports += "      ap_start => "+module.inst+"_start,\n"
         string_ctrl_ports += "      ap_idle  => open,\n"
         string_ctrl_ports += "      ap_ready => open,\n"
         if first_of_type:
@@ -1437,17 +1478,18 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
     """
     # Processing module port assignment: BX ports
     """
+
     bx_str = ""
     #FIXME
-    if modName == "PC" and not isInput:
+    if "PC_" in modName and not isInput:
         bx_str += "      bx_V          => "+modName+"_bx_in,\n"        
-    if modName == "VMSMER" and not isInput:
+    if "VMSMER_" in modName and not isInput:
         bx_str += "      bx_V          => PC_bx_in,\n"        
     if isInput and isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_in,\n"
     elif isInput and not isInitial:
         if "MP_" in modName :
-            bx_str += "      bx_V          => PC_bx_out,\n"
+            bx_str += "      bx_V          => "+modName+"_bx_in,\n"
         else:
             bx_str += "      bx_V          => "+modName+"_bx_out,\n"
     elif not isInput:
@@ -1455,9 +1497,10 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
             bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
         else:
-            if first_of_type and not "VMSMER" in modName:
-                bx_str += "      bx_o_V        => "+modName+"_bx_out_0,\n"
-                bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+            if first_of_type and not ("VMSMER" in modName or "PC" in modName):
+                bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
+                #bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
+                bx_str += "      bx_o_V_ap_vld => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,split = False):

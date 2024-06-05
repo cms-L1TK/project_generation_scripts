@@ -644,7 +644,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
         if ("AS" in mem or "MPAR" in mem) and "in" in mem:
-            portlist += "        sync_nent => "+mem+"_start,\n"
+            portlist += "        sync_nent => PC_start,\n"
         elif "MPAR" in mem and "in" not in mem:
             portlist += "        sync_nent => "+mem+"_start,\n"
         else:

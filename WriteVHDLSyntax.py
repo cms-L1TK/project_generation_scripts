@@ -1463,6 +1463,8 @@ def writeProcControlSignalPorts(module,first_of_type):
     string_ctrl_ports += "      ap_clk   => clk,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
     #FIXME Special case as the PC_start is use also for VMSMER
+    if (module.mtype_short()=="PC") :
+        string_ctrl_ports += "      ap_start => "+module.inst+"_start,\n"
     if (module.mtype_short()!="PC" and module.mtype_short()!="VMSMER") :
         string_ctrl_ports += "      ap_start => "+module.inst+"_start,\n"
         string_ctrl_ports += "      ap_idle  => open,\n"

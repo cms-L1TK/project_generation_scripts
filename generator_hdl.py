@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -47,7 +47,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = False):
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if ("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split):
+        if (("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split)) and not fpga2:
             continue
 
         string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
@@ -144,6 +144,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
+
         if (memInfo.mtype_long == "AllStubs" and args.split): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
           for mem in memList: 
@@ -160,7 +161,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, fpga2, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -171,7 +172,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, fpga2, split)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -223,7 +224,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
           continue
         if memInfo.is_initial:
             first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
-            string_read += writeTBMemoryReadInstance(mtypeB, memDict, memInfo.bxbitwidth, first_mem, memInfo.is_binned)
+            string_read += writeTBMemoryReadInstance(mtypeB, memDict, memInfo.bxbitwidth, first_mem, memInfo.is_binned, split)
 
             if first_mem: # Write start signal for the first memory in the chain
                 string_read += "  -- As all " + memInfo.mtype_short + " signals start together, take first one, to determine when\n"
@@ -245,20 +246,19 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
     #                   & no. of bits (TPROJ_58 etc.)
     #   memInfoDict:    dictionary of info (MemTypeInfoByKey) about each memory type.
     #   initial_proc:   name of the first processing module of the chain
-    #   final_proc:     name of the last processing module of the chain
+    #   final_procs:     names of the last processing module of the chain
     #   notfinal_procs: a set of the names of processing modules not at the end of the chain
     """
 
     string_instantiaion = "  -- ########################### Instantiation ###########################\n"
     string_instantiaion += "  -- Instantiate the Unit Under Test (UUT)\n\n"
 
-    final_proc_short = final_procs[0].split("_")[0]
-
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
-    if initial_proc not in final_proc_short: # For a single module the normal and the full are the same
+    if initial_proc not in final_procs[0].mtype_short(): # For a single module the normal and the full are the same
         string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split)
     string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+
     return string_instantiaion
 
 def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
@@ -332,15 +332,12 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
 
     # Find names of first & last processing modules in project
     initial_proc = ""
-    final_proc = ""
     final_procs = []
     notfinal_procs = []
     sorted(process_list, key=lambda p: p.order) # Sort processing modules in the order they are in the chain
     for proc in process_list:
         if proc.is_first: initial_proc = proc.mtype_short()
-        if proc.is_last:
-            final_proc = proc.mtype_short()
-            final_procs.append(proc.inst)
+        if proc.is_last: final_procs.append(proc)
         if not proc.is_last and proc.mtype_short() not in notfinal_procs:
             notfinal_procs.append(proc.mtype_short())
 
@@ -349,7 +346,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_proc], memPrintsDir, sector)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[0].mtype_short()], memPrintsDir, sector, split)
     # A bodge for TrackBuilder to write TF concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_104' in memInfoDict.keys():
@@ -444,7 +441,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "ME", "MC", "FT"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -455,6 +452,9 @@ if __name__ == "__main__":
                         help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
     parser.add_argument('-sp', '--split', action='store_true',
                         help="enables split-fpga project")
+
+    parser.add_argument('-f2', '--fpga2', action='store_true',
+                        help="enables split-fpga2 project")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
@@ -565,7 +565,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.fpga2, args.split)
 
     ###############
     # Test bench

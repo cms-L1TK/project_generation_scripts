@@ -920,6 +920,7 @@ def writeTemplatePars_MP(aMPModule):
     return templpars_str
 
 
+
 def matchArgPortNames_MP(argname, portname, memoryname):
     if argname in ['allstub','allproj']:
         return portname == argname+'in'
@@ -934,6 +935,71 @@ def matchArgPortNames_MP(argname, portname, memoryname):
         return False
 
 
+################################
+# ProjectionCalculator
+################################
+
+
+def writeTemplatePars_PC(aMPModule):
+    instance_name = aMPModule.inst
+    # e.g. MP_L2PHID
+
+    return ""
+
+
+def matchArgPortNames_PC(argname, portname, memoryname):
+    barrel_ps = "L1PHI" in memoryname or "L2PHI" in memoryname or "L3PHI" in memoryname
+    barrel_2s = "L4PHI" in memoryname or "L5PHI" in memoryname or "L6PHI" in memoryname
+    disk = "D1PHI" in memoryname or "D2PHI" in memoryname or "D3PHI" in memoryname or "D4PHI" in memoryname or "D5PHI" in memoryname
+    if 'projout_barrel_ps' in argname:
+        return 'projout' in portname and barrel_ps
+    if 'projout_barrel_2s' in argname:
+        return 'projout' in portname and barrel_2s
+    if 'projout_disk' in argname:
+        return 'projout' in portname and disk
+    if 'tpar' in argname:
+        return 'tpar' in portname
+    if 'tparout' in argname:
+        return 'tparout' in portname
+    if 'mpar' in argname:
+        return 'mpar' in portname
+    if 'valid' in argname:
+        return 'valid' in portname
+    if 'trackletIndex' in argname:
+        return 'trackletIndex' in portname
+    else:
+        print("matchArgPortNames_PC: Unknown argument name:", argname)
+        return False
+
+################################
+# VMSMERouter
+################################
+
+
+def writeTemplatePars_VMSMER(aMPModule):
+    instance_name = aMPModule.inst
+
+    return ""
+
+
+def matchArgPortNames_VMSMER(argname, portname, memoryname):
+    if 'allStub' in argname:
+        return 'allstub' in portname
+    if 'memoryME' in argname:
+        return 'vmstubout' in portname
+    if 'memoriesAS' in argname:
+        return 'allstubout' in portname
+    if 'valid' in argname:
+        return 'valid' in portname
+    if 'index' in argname:
+        return 'index' in portname
+    if 'addrcountme' in argname:
+        return 'addrcountme' in portname
+    if 'phiRegSize' in argname or 'Table' in argname:
+        return False
+    else:
+        print("matchArgPortNames_VMSMER: Unknown argument name:", argname)
+        return False
 
 
 
@@ -962,7 +1028,8 @@ def matchArgPortNames_TB(argname, portname, memoryname):
         fm_layer_or_disk = memoryname.split("_")[2][0]
 
     if argname.startswith("trackletParameters"):
-        return portname.startswith("tpar")
+        npages = str(len(memoryname) - len("MPAR_L1L2")) if memoryname.startswith("MPAR_") else ""
+        return portname.startswith("tpar") and argname.startswith("trackletParameters" + npages)
     if argname.startswith("barrelFullMatches"):
         return (fm_layer_or_disk == "L" and portname.startswith("fullmatch"))
     if argname.startswith("diskFullMatches"):
@@ -1128,7 +1195,9 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                               f_matchArgPortNames, first_of_type, extraports,delay,split=False):
     ####
     # function name
-    assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletProcessor',
+
+    assert(module.mtype in ['InputRouter', 'VMRouterCM', 'TrackletEngine',
+                            'TrackletProcessor', 'ProjectionCalculator','VMSMERouter', 
                             'MatchProcessor', 'FitTrack', 'TrackBuilder', 'PurgeDuplicate'])
 
     if not hasattr(writeModuleInst_generic, "modules_with_ports_added"):
@@ -1144,7 +1213,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         oneProcUpMem = mem
         break
     ports_added = (module.mtype in writeModuleInst_generic.modules_with_ports_added)
-    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay)
+    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay, first_of_type)
     str_ctrl_wire += ctrl_wire_inst
     str_ctrl_func += ctrl_func_inst
     writeModuleInst_generic.modules_with_ports_added.add(module.mtype)
@@ -1188,14 +1257,18 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.inst,module.mtype_short(),True)
+                    string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type,delay)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(module.inst,mem.upstreams[0].mtype_short(),True)
+                    if "MP_" in module.inst :
+                        string_bx_in += writeProcBXPort(module.inst,True,False,first_of_type,delay)
+                    else:
+                        string_bx_in += writeProcBXPort(mem.upstreams[0].mtype_short(),True,False,first_of_type,delay)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
-            if first_of_type:
-                string_bx_out += writeProcBXPort(module.inst,module.mtype_short(),False) # output bx
+            #FIXME hack for PC and VMSMER
+            if first_of_type or module.mtype_short() == "PC" or module.mtype_short() == "VMSMER" :
+                string_bx_out += writeProcBXPort(module.inst,False,False,first_of_type, delay) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \
@@ -1300,7 +1373,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
 
     # Check that all the ports/memories have been matched
     if (memModuleList or portNameList):
-        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]))
+        raise ValueError("There are unmatched memories: "+" ,".join([m.inst for m in memModuleList]), portNameList)
 
     # External LUTs
     string_luts = ""
@@ -1389,6 +1462,16 @@ def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay, s
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PD,
                                          matchArgPortNames_PD,
+                                         first_of_type, extraports, delay)
+    elif module.mtype == 'ProjectionCalculator':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_PC,
+                                         matchArgPortNames_PC,
+                                         first_of_type, extraports, delay)
+    elif module.mtype == 'VMSMERouter':
+        return writeModuleInst_generic(module, hls_src_dir,
+                                         writeTemplatePars_VMSMER,
+                                         matchArgPortNames_VMSMER,
                                          first_of_type, extraports, delay)
     else:
         raise ValueError(module.mtype + " is unknown.")

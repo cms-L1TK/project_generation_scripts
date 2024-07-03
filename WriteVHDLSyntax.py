@@ -727,7 +727,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
         if delay > 0:
-            if not memInfo.is_binned and not "in" in mem:
+            if not memInfo.is_binned and not "in" in mem and not "AS_" in mem:
                 mem_str += "    "+mem+"_BX_GEN : entity work.CreateStartSignal\n"
                 mem_str += "      generic map (\n"+delay2_parameterlist.rstrip(",\n")+"\n      )\n"
                 mem_str += "      port map (\n"+delay2_portlist.rstrip(",\n")+"\n      );\n\n"

@@ -1333,7 +1333,7 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     if "PC_" in module.inst:
         module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
         module_str += "    generic map (\n"
-        module_str += "      RAM_WIDTH    => 73,\n"
+        module_str += "      RAM_WIDTH    => " + str(module.upstreams[0].bitwidth) + ",\n"
         module_str += "      NUM_TPAGES    => 4,\n"
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
         module_str += "    )\n"
@@ -1353,7 +1353,7 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     if "VMSMER_" in module.inst:
         module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
         module_str += "    generic map (\n"
-        module_str += "      RAM_WIDTH    => 36,\n"
+        module_str += "      RAM_WIDTH    => " + str(module.upstreams[0].bitwidth) + ",\n"
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
         module_str += "    )\n"
         module_str += "    port map (\n"

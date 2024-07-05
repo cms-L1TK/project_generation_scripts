@@ -13,9 +13,11 @@ ProcOrder_dict = {
    'TrackletProcessor':2,
    'TrackletCalculator':3,
    'ProjectionRouter':4,
+   'ProjectionCalculator':3,
+   'VMSMERouter':3,
    'MatchEngine':5,
    'MatchCalculator':6,
-   'MatchProcessor':3,
+   'MatchProcessor':4,
    'FitTrack':7,
    'PurgeDuplicate':8,
    'TrackBuilder':9
@@ -147,9 +149,9 @@ class MemTypeInfoByKey(object):
             if (self.is_initial and not m.is_initial) or (self.is_final and not m.is_final):
                 self.mixedIO = True
         assert(len(keySet) == 1) # Ensure only one key name is input memory list.
-        if self.mixedIO and self.is_initial:
-            print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
-            exit(1)
+        #if self.mixedIO and self.is_initial:
+        #    print("ERROR: Memories of type ",self.mtype_short," in chain have mixed I/O: some inputs connected to chain & some to external ports. NOT YET SUPPORTED BY SCRIPT")
+        #    exit(1)
 
 
 #######################################
@@ -244,11 +246,11 @@ class TrackletGraph(object):
 
         # Populate BX bit width
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
-               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch"
+               or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch" or mem.mtype == "VMStubsME"
                or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
                   or mem.mtype == "InputLink" or mem.mtype == "DTCLink" or mem.mtype == "AllInnerStubs"):
             mem.bxbitwidth = 1
-        elif (    mem.mtype == "AllProj" or mem.mtype == "VMStubsME"
+        elif (    mem.mtype == "AllProj" 
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3
             if (mem.mtype == "VMStubsME" and  mem.downstreams[0].inst[0:2] == "MP") : 
@@ -271,10 +273,16 @@ class TrackletGraph(object):
         # If those memories are at the of the chain, add numEntries port anyway for VHDL chain debugging purposes.
         if mem.mtype == "AllStubs" and not mem.is_final:
             mem.has_numEntries_out = False
+            #FIXME hack
+            if "in" in mem.inst:
+                mem.has_numEntries_out = True
         elif mem.mtype == "AllProj" and not mem.is_final:
             mem.has_numEntries_out = False
         elif mem.mtype == "TrackletParameters" and not mem.is_final:
             mem.has_numEntries_out = False
+            #FIXME hack
+            if "in" in mem.inst:
+                mem.has_numEntries_out = True
         else:
             mem.has_numEntries_out = True
 
@@ -633,7 +641,8 @@ class TrackletGraph(object):
         "Return all the ProcModule objects of a given type"
         modules = {}
         for instance_name in self.__proc_dict:
-            if instance_name.startswith(module+"_"):
+            #FIXME
+            if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
             print("WARNING!! Cannot find any modules with name starting with", module,"!!")

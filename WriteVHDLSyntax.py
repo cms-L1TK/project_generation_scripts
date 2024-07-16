@@ -452,6 +452,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         parameterlist = ""
         portlist = ""
         delay_parameterlist = ""
+        delay_parameterlist_0 = ""
         delay2_parameterlist = ""
         delay_portlist_0 = ""
         delay_portlist = ""
@@ -573,21 +574,27 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         if delay > 0:
             delay2_parameterlist +="        DELAY           => " + str(delay*2) +",\n"
             delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
+            delay_parameterlist_0 +="        DELAY           => " + str(delay+1) +",\n"
             #enable to use non-default delay value
             if "MPROJ" in mem:
                 #special case for the merged projections
                 delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
+                delay_parameterlist_0 +="        PAGE_LENGTH       => 64,\n"
             if "MPAR" in mem or "MPROJ" in mem:
                 #special case for the merged memories
                 delay_parameterlist +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
+                delay_parameterlist_0 +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
             else:
                 delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
+                delay_parameterlist_0 +="        NUM_PAGES       => "+str(num_pages)+",\n"
             if memInfo.is_binned:
                 disk=""
                 if "VMSME_D" in mem:
                     disk = "*2"
                 delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
+                delay_parameterlist_0 +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
             delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
+            delay_parameterlist_0 +="        RAM_WIDTH       => "+bitwidth+",\n"
 
         ncopy = getVMStubNCopy(memmod);
 
@@ -792,7 +799,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
             mem_str += "    "+mem+"_DELAY0 : entity work.tf_pipe_delay\n"        
-            mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+            mem_str += "      generic map (\n"+delay_parameterlist_0.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
 
     return wirelist,mem_str

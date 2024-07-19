@@ -894,7 +894,7 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
           string_output_mems += "    "+mem+"_AV_dout_nent       : out t_"+mtypeB+"_NENT;\n"
       elif "AS" in mtypeB: #AS/TPAR at interface need to go through merging module
           string_output_mems += "    "+mem+"_stream_V_dout : out std_logic_vector(36 downto 0);\n"
-      elif "TPAR" in mtypeB: 
+      elif "TPAR" in mtypeB:
           seed = mem.split("_")[1][:-1]
           itc = mem.split("_")[1][-1]
           print(itc)
@@ -1009,8 +1009,6 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
     string_constants += "  constant inputFileNameEnding".ljust(str_len) + ": string := \"_" + sector + ".dat\"; -- " + sector + " specifies the nonant/sector the testvectors represent\n"
     string_constants += "  constant outputFileNameEnding".ljust(str_len) + ": string := \".txt\";\n"
     string_constants += "  constant debugFileNameEnding".ljust(str_len) + ": string := \".debug.txt\";\n\n"
-    string_constants += "  signal dummy : STD_LOGIC := '0';\n\n -- dummy tb signal for inputs into sectorproc\n"
-    string_constants += "  signal dummyaddr : t_as_36_addr := (others => '0');\n\n -- dummy tb signal for inputs into sectorproc"
 
     return string_constants
 
@@ -1115,6 +1113,11 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                     string_ctrl_signals += ("t_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => '0'); -- (#page)(#bin)\n"
                     string_ctrl_signals += ("  signal "+mem+"_AV_dout_mask").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_MASK").ljust(str_len2)+":= (others => (others => '0')); -- (#page)(#bin)\n"
+                elif split and "TPAR" in mem:
+                    seed = mem.split("_")[1][:-1]
+                    itc = mem.split("_")[1][-1]
+                    if MPARdict[seed][0] == itc:
+                        string_ctrl_signals +="  signal MPAR_"+seed+MPARdict[seed] +": std_logic_vector(75 downto 0) := (others=> '0') ;\n"
                 else:
                     string_ctrl_signals += ("  signal "+mem+"_enb").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1134,7 +1137,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                 if memMod.is_binned:
                     if "VMSME_D" in mem:
                         disk = "DISK"
-
+                if "AS" in mem and "n1" in mem:
+                    string_ctrl_signals += "  signal "+mem+"_stream_V_dout : std_logic_vector(36 downto 0) := (others => '0');\n"
+                    continue
                 string_ctrl_signals += ("  signal "+mem+"_wea").ljust(str_len)+": "
                 string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
                 string_ctrl_signals += ("  signal "+mem+"_writeaddr").ljust(str_len)+": "
@@ -1211,6 +1216,8 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
         memList = memDict[mtypeB]
         for memMod in memList:
             mem = memMod.inst
+            if split and ("AS" in mtypeB and "n1" in mem):
+                    string_output += ("        "+mem+"_stream_V_dout").ljust(str_len) + "=> "+mem+"_stream_V_dout,\n"
             if memInfo.is_initial:
                 if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTCLink as it has FIFO input
                     string_input += ("        "+mem+"_link_AV_dout").ljust(str_len) + "=> "+mem+"_link_AV_dout,\n"
@@ -1242,6 +1249,11 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                     string_output += ("        "+mem+"_enb_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_V_addr_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
+                elif ("TPAR" in mem) and split:
+                    seed = mem.split("_")[1][:-1]
+                    itc = mem.split("_")[1][-1]
+                    if MPARdict[seed][0] == itc:
+                        string_output += ("        MTPAR_"+seed+MPARdict[seed]+"_stream_V_dout").ljust(str_len) + "=> MTPAR_"+seed+MPARdict[seed]+"_stream_V_dout,\n"
                 else:
                     string_output += ("        "+mem+"_enb").ljust(str_len) + "=> "+mem+"_enb,\n"
                     string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> "+mem+"_readaddr,\n"

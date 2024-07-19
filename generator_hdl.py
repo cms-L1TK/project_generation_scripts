@@ -88,7 +88,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, streamIO=False):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, split, streamIO=False):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -139,7 +139,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
                 if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
-                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
+                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split)
               
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
@@ -149,7 +149,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
           ASmemDict = {mtypeB : []}
           for mem in memList: 
             if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
-          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict)
+          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict, split)
         
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
@@ -188,7 +188,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                                                       memDict, memInfoDict, extraports, delay)
+                                                       memDict, memInfoDict, extraports, delay, split)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -296,13 +296,13 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned, split)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp
             else:
               is_cm = memInfo.downstream_mtype_short in ("TP", "MP")
-              string_intermediate += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+              string_intermediate += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm, split)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"

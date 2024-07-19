@@ -2,14 +2,14 @@ from builtins import range
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
 #following dictionary tracks which trackletparameters are grouped together by merging module
 MPARdict = {
-    "L5L6" : ["ABCD"]
-    "L2L3" : ["ABCD"]
-    "L3L4" : ["AB","CD"]
-    "L2D1" : ["ABCD"]
-    "L1D1" : ["ABCD","EFGH"]
-    "D1D2" : ["ABCD"]
-    "D3D4" : ["ABCD"]
-    "L1L2" : ["ABCD","JLK","DF","GI","E","H"]
+    "L5L6" : ["ABCD"],
+    "L2L3" : ["ABCD"],
+    "L3L4" : ["AB","CD"],
+    "L2D1" : ["ABCD"],
+    "L1D1" : ["ABCD","EFGH"],
+    "D1D2" : ["ABCD"],
+    "D3D4" : ["ABCD"],
+    "L1L2" : ["ABC","JLK","DF","GI","E","H"]
 }
 def getVMStubNCopy(memmod):
 
@@ -459,7 +459,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         delay_portlist_0 = ""
         delay_portlist = ""
         delay2_portlist = ""
-
         #FIXME
         if "MPAR" in mem and not "in" in mem:
             interface = 0
@@ -467,7 +466,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         if "AS" in mem and not "in" in mem:
             interface = 0
             extraports = False
-        
+        merge_parameterlist = ""
+        merge_portlist = ""
         # Write wires
         if delay > 0:
             if not memInfo.is_binned:
@@ -494,7 +494,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_din         : "
                 wirelist += "t_"+mtypeB+"_DATA;\n"
-        if interface != 1 :
+        if not (interface == 1 and not split):
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
@@ -643,8 +643,53 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             delay_portlist += "        wea_out       => "+mem+"_wea_delay,\n"
             delay_portlist += "        addra_out     => "+mem+"_writeaddr_delay,\n"
             delay_portlist += "        dina_out      => "+mem+"_din_delay,\n"
-        
+        if "TPAR" in mem:
+            addrwidth = 10
+            ramwidth = 73
+            numpages = 8
+            seed = mem.split("_")[1][:-1]
+            iTC = mem.split("_")[1][-1]
+            for PCgroup in MPARdict[seed]:
+                if iTC == PCgroup[0]:
+                    numInputs = len(PCgroup)
+                    merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
+                    merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
+                    merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
+                    merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
+                    merge_portlist += "        bx_in => TP_bx_out_0,\n"
+                    merge_portlist += "        rst => '0',\n"
+                    merge_portlist += "        clk => clk,\n"
+                    merge_portlist += "        enb_arr => open,\n"
+                    merge_portlist += "        bx_out => open,\n"
+                    merge_portlist += "        merged_dout => MTPAR_"+seed+PCgroup+"_stream_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCgroup[i%numInputs]+"_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCgroup[i%numInputs]+"_AV_dout_nent,\n"
+                    for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>TPAR_"+seed+PCgroup[i%numInputs]+"_V_readaddr,\n"
+                    mem_str += "    MERGE_STREAM_TPAR"+seed+PCgroup+" : entity work.tf_merge_streamer\n"
+                    mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
+                    mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
 
+        elif "AS" in mem and "n1" in mem:
+            addrwidth = 10
+            ramwidth = 36
+            numpages = 8
+            numInputs = 1
+            merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
+            merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
+            merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
+            merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
+            merge_portlist += "        bx_in => TP_bx_out_0,\n"
+            merge_portlist += "        rst => '0',\n"
+            merge_portlist += "        clk => clk,\n"
+            merge_portlist += "        enb_arr => open,\n"
+            merge_portlist += "        bx_out => open,\n"
+            merge_portlist += "        merged_dout => "+mem+"_stream_V_dout,\n"
+            for i in range(4):  merge_portlist += "        din"+str(i)+"=>" +mem+"_V_dout,\n"
+            for i in range(4):  merge_portlist += "        nent"+str(i)+"=>" +mem+"_AV_dout_nent,\n"
+            for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>"+mem+"_V_readaddr,\n"
+            mem_str += "    STREAM_"+mem+" : entity work.tf_merge_streamer\n"
+            mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
+            mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
         portlist += "        clkb      => clk,\n"
         portlist += "        rstb      => '0',\n"
         portlist += "        regceb    => '1',\n"
@@ -819,7 +864,6 @@ def writeDTCLinkLHSPorts_interface(mtypeB, memDict):
         string_input_mems += "    "+mem+"_link_read          : out t_"+mtypeB+"_1b;\n"
 
     return string_input_mems
-
 def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
     """
     # Top-level interface: output memories' ports.
@@ -848,6 +892,15 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
           string_output_mems += "    "+mem+"_enb_nent        : out t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_addr_nent        : out t_"+mtypeB+"_NENTADDR"+disk+";\n"
           string_output_mems += "    "+mem+"_AV_dout_nent       : out t_"+mtypeB+"_NENT;\n"
+      elif "AS" in mtypeB: #AS/TPAR at interface need to go through merging module
+          string_output_mems += "    "+mem+"_stream_V_dout : out std_logic_vector(36 downto 0);\n"
+      elif "TPAR" in mtypeB: 
+          seed = mem.split("_")[1][:-1]
+          itc = mem.split("_")[1][-1]
+          print(itc)
+          for PCgroup in MPARdict[seed]:
+              if itc == PCgroup[0]:
+                  string_output_mems += "    MTPAR_"+seed+PCgroup+"_stream_V_dout : out std_logic_vector(75 downto 0);\n"
       else:
           string_output_mems += "    "+mem+"_enb          : in t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_readaddr    : in t_"+mtypeB+"_ADDR;\n"

@@ -220,7 +220,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         memList = memDict[mtypeB]
-        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+        if split == 1 and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
           continue
         if memInfo.is_initial:
             first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
@@ -273,7 +273,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
     string_final = ""
     
     for mtypeB in memDict:
-        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+        if split == 1 and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
           continue
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
@@ -450,8 +450,8 @@ if __name__ == "__main__":
                         help="Add debug ports corresponding to all BRAM inputs")
     parser.add_argument('-de', '--delay', type=int, default=0,
                         help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
-    parser.add_argument('-sp', '--split', action='store_true',
-                        help="enables split-fpga project")
+    parser.add_argument('-sp', '--split', type =int, default=0,
+                        help="enables split-fpga project, a value of 1 for first-fpga project, 2 for second-fpga, 0 for single fpga projects")
 
     parser.add_argument('-f2', '--fpga2', action='store_true',
                         help="enables split-fpga2 project")

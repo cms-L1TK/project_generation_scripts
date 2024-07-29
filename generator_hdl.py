@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = False):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -47,7 +47,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = 
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if (("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split)) and not fpga2:
+        if (("VMSME" in mtypeB and split == 1) or ("TPROJ" in mtypeB and split == 1)):
             continue
 
         string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
@@ -59,7 +59,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = 
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
+def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
@@ -75,6 +75,8 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
     proc_type_list = []
 
     for aProcMod in proc_list:
+        if "PC" in aProcMod.mtype and split == 1:
+            continue
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay, split)
             proc_type_list.append(aProcMod.mtype)
@@ -138,14 +140,14 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
+                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split == 1):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split)
               
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
 
-        if (memInfo.mtype_long == "AllStubs" and args.split): #for split fpga we want AS sent to second device
+        if (memInfo.mtype_long == "AllStubs" and args.split == 1): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
           for mem in memList: 
             if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
@@ -161,7 +163,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, fpga2, split = False):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -172,7 +174,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, fpga2, split)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -453,9 +455,6 @@ if __name__ == "__main__":
     parser.add_argument('-sp', '--split', type =int, default=0,
                         help="enables split-fpga project, a value of 1 for first-fpga project, 2 for second-fpga, 0 for single fpga projects")
 
-    parser.add_argument('-f2', '--fpga2', action='store_true',
-                        help="enables split-fpga2 project")
-
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
     parser.add_argument('-ng','--no_graph', action='store_true',
@@ -494,6 +493,9 @@ if __name__ == "__main__":
             process_list.extend(process)
             memory_list.extend(memory)
 
+        PC_dict = TrackletGraph.get_PC_dict()
+
+        print(PC_dict)
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
         memory_list = list(set(memory_list))
@@ -565,7 +567,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.fpga2, args.split)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split)
 
     ###############
     # Test bench

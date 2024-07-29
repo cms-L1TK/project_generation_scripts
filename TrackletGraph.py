@@ -849,6 +849,12 @@ class TrackletGraph(object):
 
     
     @staticmethod
+    def get_PC_dict():
+        #returns a dict which containing info related to the mergining
+        #of TPROJ memories for split FPGA projects
+        PC_dict = {}
+        return PC_dict
+    @staticmethod
     def get_slice_around_proc(aProcModule, nStepsUp=0, nStepsDown=0):
         """ Get a slice of the tracklet project that centers around the 
             processing module <aProcModule> and expands <nStepsUp> upstream  

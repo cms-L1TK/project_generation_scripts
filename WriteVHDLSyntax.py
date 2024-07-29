@@ -618,7 +618,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             delay2_portlist += "        reset    => reset,\n"
             #FIXME
             if not "in" in mem :
-                if "VMSMER" in memmod.upstreams[0].mtype_short() or "PC" in memmod.upstreams[0].mtype_short():
+                if ("VMSMER" in memmod.upstreams[0].mtype_short() or "PC" in memmod.upstreams[0].mtype_short()) and split == 2:
                     delay2_portlist += "        done   => PC_done,\n"
                     delay2_portlist += "        bx_out   => PC_bx_out,\n"
                 else:

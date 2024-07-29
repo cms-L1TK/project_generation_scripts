@@ -1352,7 +1352,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                         if "DL" in memory.inst and "AS" not in memory.inst: # DTCLink
                             string_mem_ports += writeProcDTCLinkRHSPorts(tmp_argname,memory)
                         else:
-                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                            string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory, split=split)
 
                     if portname.replace("outer","").find("out") != -1:
                         if memory.isFIFO():
@@ -1362,7 +1362,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
                     if portname.find("trackpar") != -1 and (module.mtype == "TrackletCalculator" or module.mtype == "TrackletProcessor"):
                         string_mem_ports += writeProcMemoryLHSPorts(tmp_argname,memory,split)
                     elif portname.find("trackpar") != -1 and module.mtype == "PurgeDuplicates":
-                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory)
+                        string_mem_ports += writeProcMemoryRHSPorts(tmp_argname,memory,split=split)
 
                     # Remove the already added module and name from the lists
                     portNameList.remove(portname)

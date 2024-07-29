@@ -1661,7 +1661,7 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
 
     return string_mem_ports
 
-def writeProcMemoryRHSPorts(argname,mem,portindex=0):
+def writeProcMemoryRHSPorts(argname,mem,portindex=0, split = 0):
     """
     # Processing module port assignment: inputs from memories
     """
@@ -1707,7 +1707,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
             string_mem_ports += "      "+argname+"_nentries_V_q0 => "+mem.mtype_short()+"_"+mem.var()+"_AV_dout_nent,\n"
             for i in range(0,2**mem.bxbitwidth):
                 nrz = 8
-                if mem.var()[0] == "D" :
+                if mem.var()[0] == "D"  and split == 2:
                     nrz = 16
                 for j in range(0,nrz):
                     string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("

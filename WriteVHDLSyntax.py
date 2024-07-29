@@ -701,6 +701,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        sync_nent => "+mem+"_start,\n"
         elif "AS" in mem and "n1" in mem and split == 1:
             portlist += "        sync_nent => TP_L1L2A_start,\n"
+        elif "TPAR" in mem and split == 1:
+            portlist += "        sync_nent => TP_done,\n" 
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
         if memmod.has_numEntries_out or ("n1" in mem and split == 1):

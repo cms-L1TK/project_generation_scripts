@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -56,7 +56,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0):
         if (("VMSME" in mtypeB and split == 1) or ("TPROJ" in mtypeB and split == 1)):
             continue
 
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split, MPARdict = MPARdict)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -96,7 +96,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, split, streamIO=False):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, split, streamIO=False, MPARdict = 0):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -147,7 +147,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
                 if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split == 1):
-                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split)
+                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split, MPARdict = MPARdict)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
             string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports, split = split)
@@ -157,7 +157,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
           for mem in memList:
               if "n1" in mem.inst:
                   ASmemDict[mtypeB].append(mem)
-          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict, split)
+          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict, split, MPARdict = MPARdict)
         
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
@@ -169,7 +169,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -180,7 +180,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split, MPARdict)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -196,7 +196,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                                                       memDict, memInfoDict, extraports, delay, split)
+                                                       memDict, memInfoDict, extraports, delay, split, MPARdict=MPARdict)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -247,7 +247,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     # string_read += "\n"
     return string_read
 
-def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split):
+def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split,MPARdict):
     """
     #   topfunc:        name of the top module
     #   memDict:        dictionary of memories organised by type 
@@ -264,12 +264,12 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
     if initial_proc not in final_procs[0].mtype_short(): # For a single module the normal and the full are the same
-        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split)
-    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split,MPARdict=MPARdict)
+    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split,MPARdict=MPARdict)
 
     return string_instantiaion
 
-def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
+def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split, MPARdict):
     """
     #   memDict:      dictionary of memories organised by type 
     #                 & no. of bits (TPROJ_58 etc.)
@@ -304,7 +304,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned, split)
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned, split, MPARdict = MPARdict)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp
@@ -323,7 +323,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
 
     return string_write
 
-def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrintsDir, sector="04", split = False):
+def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrintsDir, sector="04", split = False, MPARdict = 0):
     """
     # Inputs:
     #   tbfunc:       name of the testbench
@@ -361,15 +361,15 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
       fileTF = open("bodge/TF_tb_constants.vhd.bodge")
       string_constants += fileTF.read();
 
-    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split)
+    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split, MPARdict)
 
     string_begin = writeTBEntityBegin()
     string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc,split)
     string_mem_stim = writeTBMemoryStimulusProcess(initial_proc)
 
-    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split,MPARdict=MPARdict)
 
-    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split)
+    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split,MPARdict)
 
     string_tb = ""
     string_tb += string_header
@@ -489,8 +489,6 @@ if __name__ == "__main__":
 
         # Get all module units of a given type
         mutModules = tracklet.get_all_module_units(args.mut,args.split)
-        for mut in mutModules:
-            print(mut)
         # Get the slices around each of the modules
         process_list = []
         memory_list = []
@@ -500,7 +498,7 @@ if __name__ == "__main__":
             process_list.extend(process)
             memory_list.extend(memory)
 
-        PC_dict = TrackletGraph.get_PC_dict()
+        MPARdict = tracklet.get_MPAR_dict()
 
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
@@ -572,13 +570,13 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split, MPARdict = MPARdict)
 
     ###############
     # Test bench
     tb_name = "tb_tf_top"
     string_testbench = writeTestBench(
-        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprints_dir, split = args.split)
+        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprints_dir, split = args.split, MPARdict = MPARdict)
     ###############
     # tcl
     string_tcl = writeTcl(args.projname, topfunc, args.memprints_dir)

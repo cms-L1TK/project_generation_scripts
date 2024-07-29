@@ -1,16 +1,5 @@
 from builtins import range
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-#following dictionary tracks which trackletparameters are grouped together by merging module
-MPARdict = {
-    "L5L6" : ["ABCD"],
-    "L2L3" : ["ABCD"],
-    "L3L4" : ["AB","CD"],
-    "L2D1" : ["ABCD"],
-    "L1D1" : ["ABCD","EFGH"],
-    "D1D2" : ["ABCD"],
-    "D3D4" : ["ABCD"],
-    "L1L2" : ["ABC","JKL","DE","G","F","HI"]
-}
 def getVMStubNCopy(memmod):
 
     mem = memmod.inst;
@@ -411,7 +400,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False, MPARdict = 0):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -868,7 +857,7 @@ def writeDTCLinkLHSPorts_interface(mtypeB, memDict):
         string_input_mems += "    "+mem+"_link_read          : out t_"+mtypeB+"_1b;\n"
 
     return string_input_mems
-def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict, split):
+def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict, split, MPARdict = 0):
     """
     # Top-level interface: output memories' ports.
     # Inputs:
@@ -1015,7 +1004,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
 
     return string_constants
 
-def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs, split = False):
+def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs, split = False, MPARdict = 0):
 
     """
     # VHDL test bench: write control signals
@@ -1169,7 +1158,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
 
     return string_ctrl_signals
 
-def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs = [], split = False):
+def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs = [], split = False, MPARdict = 0):
 
     """
     # VHDL test bench: write the instantiation of the top level SectorProcessor FW
@@ -1344,7 +1333,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
     
     return string_mem
 
-def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, split):
+def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, split, MPARdict = 0):
     """
     # VHDL test bench: write the loop that writes the output from the end-of-chain BRAM memories to text files
     # Inputs:

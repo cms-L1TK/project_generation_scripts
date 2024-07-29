@@ -648,6 +648,18 @@ class TrackletGraph(object):
             print("WARNING!! Cannot find any modules with name starting with", module,"!!")
         else:
             return modules
+    def get_MPAR_dict(self):
+        #returns a dict which containing info related to the mergining
+        #of TPROJ memories for split FPGA projects
+        MPAR_dict = {}
+        PC_dict = self.get_all_module_units("PC")
+        for key, value in PC_dict.items():
+          iTCs = key[7:]
+          seed = key[3:7]
+          if seed not in MPAR_dict:
+              MPAR_dict[seed] = []
+          MPAR_dict[seed].append(iTCs)
+        return MPAR_dict
 
     def get_mem_module(self, instance_name, verbose=True):
         " Return a MemModule object given the instance name "
@@ -851,12 +863,6 @@ class TrackletGraph(object):
     #def count_proc_steps_downstream(aProcModule, ProcList=[]):
 
     
-    @staticmethod
-    def get_PC_dict():
-        #returns a dict which containing info related to the mergining
-        #of TPROJ memories for split FPGA projects
-        PC_dict = {}
-        return PC_dict
     @staticmethod
     def get_slice_around_proc(aProcModule, nStepsUp=0, nStepsDown=0):
         """ Get a slice of the tracklet project that centers around the 

@@ -634,12 +634,15 @@ class TrackletGraph(object):
                 print("WARNING!! Cannot find module", instance_name,"!!")
             return None
 
-    def get_all_module_units(self, module):
+    def get_all_module_units(self, module, split = 0):
         "Return all the ProcModule objects of a given type"
         modules = {}
         for instance_name in self.__proc_dict:
             #FIXME
-            if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
+            if split == 2:
+                if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
+                    modules[instance_name]=self.__proc_dict[instance_name]
+            elif instance_name.startswith(module+"_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
             print("WARNING!! Cannot find any modules with name starting with", module,"!!")

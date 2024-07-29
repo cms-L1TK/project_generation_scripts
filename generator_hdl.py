@@ -140,7 +140,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if "DL" in mtypeB: # DTCLink
                 string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB, memDict)
             else:
-                string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB)
+                string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, split = split)
         elif memInfo.is_final:
             # Output arguments
             if memInfo.isFIFO:
@@ -148,10 +148,9 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             else:
                 if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split == 1):
                     string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split)
-              
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
-            string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
+            string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports, split = split)
 
         if (memInfo.mtype_long == "AllStubs" and args.split == 1): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
@@ -355,7 +354,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[0].mtype_short()], memPrintsDir, sector, split)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[-1].mtype_short()], memPrintsDir, sector, split)
     # A bodge for TrackBuilder to write TF concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_104' in memInfoDict.keys():

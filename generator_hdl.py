@@ -43,6 +43,12 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0):
     # Loop over memory type
     for mtypeB in memDict:
         memList = memDict[mtypeB]
+        if split == 1 and "AS" in mtypeB:
+            tempList = []
+            for mem in memList:
+                if "n2" not in mem.inst:
+                    tempList.append(mem)
+            memList = tempList
         memInfo = memInfoDict[mtypeB]
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
@@ -75,7 +81,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
     proc_type_list = []
 
     for aProcMod in proc_list:
-        if "PC" in aProcMod.mtype and split == 1:
+        if ("PC" in aProcMod.mtype or "VMSMER" in aProcMod.mtype) and split == 1:
             continue
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay, split)
@@ -118,11 +124,11 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         if extraports and (not proc.is_last):
             notfinal_procs_tmp[proc.mtype_short()] = None # Use dictionary as set
     notfinal_procs = notfinal_procs_tmp.keys()
-
+    final_procs.sort()
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay, split = split)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -149,8 +155,9 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 
         if (memInfo.mtype_long == "AllStubs" and args.split == 1): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
-          for mem in memList: 
-            if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
+          for mem in memList:
+              if "n1" in mem.inst:
+                  ASmemDict[mtypeB].append(mem)
           string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict, split)
         
     string_topmod_interface += string_ctrl_signals
@@ -443,7 +450,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR","TP", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -482,8 +489,9 @@ if __name__ == "__main__":
     if args.mut is not None:
 
         # Get all module units of a given type
-        mutModules = tracklet.get_all_module_units(args.mut)
-
+        mutModules = tracklet.get_all_module_units(args.mut,args.split)
+        for mut in mutModules:
+            print(mut)
         # Get the slices around each of the modules
         process_list = []
         memory_list = []
@@ -495,11 +503,9 @@ if __name__ == "__main__":
 
         PC_dict = TrackletGraph.get_PC_dict()
 
-        print(PC_dict)
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
         memory_list = list(set(memory_list))
-        
         # Correct mem.is_initial & mem.is_final, as loop over mutModules overwrites them incorrectly. 
         for mem in memory_list:
             if mem.is_initial:

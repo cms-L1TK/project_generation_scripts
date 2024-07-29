@@ -525,7 +525,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_index        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
-            if memInfo.has_numEntries_out:
+            if memInfo.has_numEntries_out or (split == 1 and "AS" in mem):
                 if memInfo.is_binned:
                     disk=""
                     if "VMSME_D" in mem:
@@ -654,7 +654,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
                     merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
                     merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
-                    merge_portlist += "        bx_in => TP_bx_out_0,\n"
+                    merge_portlist += "        bx_in => TP_bx_out,\n"
                     merge_portlist += "        rst => '0',\n"
                     merge_portlist += "        clk => clk,\n"
                     merge_portlist += "        enb_arr => open,\n"
@@ -676,7 +676,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
             merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
             merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
-            merge_portlist += "        bx_in => TP_bx_out_0,\n"
+            merge_portlist += "        bx_in => TP_bx_out,\n"
             merge_portlist += "        rst => '0',\n"
             merge_portlist += "        clk => clk,\n"
             merge_portlist += "        enb_arr => open,\n"
@@ -699,10 +699,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        sync_nent => PC_start,\n"
         elif "MPAR" in mem and "in" not in mem:
             portlist += "        sync_nent => "+mem+"_start,\n"
+        elif "AS" in mem and "n1" in mem and split == 1:
+            portlist += "        sync_nent => TP_L1L2A_start,\n"
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
-            
-        if memmod.has_numEntries_out:
+        if memmod.has_numEntries_out or ("n1" in mem and split == 1):
             if memList[0].is_binned:
                 ncopy = getVMStubNCopy(memmod);
                 portlist += "        enb       => ("
@@ -777,21 +778,22 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0):
+def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0, split = 0):
     """
     # Top-level interface: control signals
     """
     
     final_proc_short = final_procs[0].split("_")[0]
-    
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
-    string_ctrl_signals += "    "+initial_proc+"_done : out std_logic;\n"
+    if split == 2:
+        string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+        string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
+        string_ctrl_signals += "    "+initial_proc+"_done : out std_logic;\n"
+
     string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
@@ -1696,7 +1698,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
         string_mem_ports += "      "+argname+"_dataarray_data_V_q"+str(portindex)+"        => "
         string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_dout,\n"
 
-    if mem.has_numEntries_out and portindex == 0:
+    if (mem.has_numEntries_out and portindex == 0):
         if mem.is_binned:
             string_mem_ports += "      "+argname+"_nentries_V_ce0 => "+mem.mtype_short()+"_"+mem.var()+"_enb_nent,\n"
             string_mem_ports += "      "+argname+"_nentries_V_address0 => "+mem.mtype_short()+"_"+mem.var()+"_V_addr_nent,\n"

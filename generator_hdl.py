@@ -498,7 +498,8 @@ if __name__ == "__main__":
             process_list.extend(process)
             memory_list.extend(memory)
 
-        MPARdict = tracklet.get_MPAR_dict()
+        if args.split == 1 :
+            MPARdict = tracklet.get_MPAR_dict()
 
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))

@@ -1502,7 +1502,10 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
             if first_of_type and not ("VMSMER" in modName or "PC" in modName):
                 bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
                 #bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
-                bx_str += "      bx_o_V_ap_vld => open,\n"
+                if "FT_" in modName:
+                  bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
+                else:
+                  bx_str += "      bx_o_V_ap_vld => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,split = False):

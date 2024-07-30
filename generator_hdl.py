@@ -500,7 +500,8 @@ if __name__ == "__main__":
 
         if args.split == 1 :
             MPARdict = tracklet.get_MPAR_dict()
-
+        else:
+            MPARdict = None
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
         memory_list = list(set(memory_list))

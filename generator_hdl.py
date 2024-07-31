@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = False):
+def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -43,14 +43,20 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = 
     # Loop over memory type
     for mtypeB in memDict:
         memList = memDict[mtypeB]
+        if split == 1 and "AS" in mtypeB:
+            tempList = []
+            for mem in memList:
+                if "n2" not in mem.inst:
+                    tempList.append(mem)
+            memList = tempList
         memInfo = memInfoDict[mtypeB]
         # FIFO memories are not instantiated in top-level (at end of chain?)
         if memInfo.isFIFO:
             continue
-        if (("VMSME" in mtypeB and split) or ("TPROJ" in mtypeB and split)) and not fpga2:
+        if (("VMSME" in mtypeB and split == 1) or ("TPROJ" in mtypeB and split == 1)):
             continue
 
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split, MPARdict = MPARdict)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -59,7 +65,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, fpga2, split = 
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
+def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
@@ -75,6 +81,8 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
     proc_type_list = []
 
     for aProcMod in proc_list:
+        if ("PC" in aProcMod.mtype or "VMSMER" in aProcMod.mtype) and split == 1:
+            continue
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
             proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay, split)
             proc_type_list.append(aProcMod.mtype)
@@ -88,7 +96,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = False):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, streamIO=False):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, split, streamIO=False, MPARdict = 0):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -116,11 +124,11 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
         if extraports and (not proc.is_last):
             notfinal_procs_tmp[proc.mtype_short()] = None # Use dictionary as set
     notfinal_procs = notfinal_procs_tmp.keys()
-
+    final_procs.sort()
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay, split = split)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -132,24 +140,24 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
             if "DL" in mtypeB: # DTCLink
                 string_input_mems += writeDTCLinkLHSPorts_interface(mtypeB, memDict)
             else:
-                string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB)
+                string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, split = split)
         elif memInfo.is_final:
             # Output arguments
             if memInfo.isFIFO:
                 string_output_mems += writeTrackStreamRHSPorts_interface(mtypeB, memDict)
             else:
-                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split):
-                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict)
-              
+                if not (("TPROJ" in mtypeB or "VMSME" in mtypeB) and args.split == 1):
+                    string_output_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,memDict, split, MPARdict = MPARdict)
         elif extraports:
             # Debug ports corresponding to BRAM inputs.
-            string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports)            
+            string_input_mems += writeMemoryLHSPorts_interface(memList, mtypeB, extraports, split = split)
 
-        if (memInfo.mtype_long == "AllStubs" and args.split): #for split fpga we want AS sent to second device
+        if (memInfo.mtype_long == "AllStubs" and args.split == 1): #for split fpga we want AS sent to second device
           ASmemDict = {mtypeB : []}
-          for mem in memList: 
-            if "n1" in mem.inst: ASmemDict[mtypeB].append(mem)
-          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict)
+          for mem in memList:
+              if "n1" in mem.inst:
+                  ASmemDict[mtypeB].append(mem)
+          string_input_mems += writeMemoryRHSPorts_interface(mtypeB, memInfo,  ASmemDict, split, MPARdict = MPARdict)
         
     string_topmod_interface += string_ctrl_signals
     string_topmod_interface += string_input_mems
@@ -161,7 +169,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, fpga2, split = False):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -172,7 +180,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, fpga2, split)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split, MPARdict)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -188,7 +196,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                                                       memDict, memInfoDict, extraports, delay)
+                                                       memDict, memInfoDict, extraports, delay, split, MPARdict=MPARdict)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -220,7 +228,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     for mtypeB in memDict:
         memInfo = memInfoDict[mtypeB]
         memList = memDict[mtypeB]
-        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+        if split == 1 and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
           continue
         if memInfo.is_initial:
             first_mem = True if initial_proc in memInfo.downstream_mtype_short and not found_first_mem else False # first memory of the chain
@@ -239,7 +247,7 @@ def writeTBMemoryReads(memDict, memInfoDict, initial_proc, split):
     # string_read += "\n"
     return string_read
 
-def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split):
+def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split,MPARdict):
     """
     #   topfunc:        name of the top module
     #   memDict:        dictionary of memories organised by type 
@@ -256,12 +264,12 @@ def writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final
     # Instantiate both the "normal" and the "Full"
     topfunc = topfunc[:-4] if topfunc[-4:] == "Full" else topfunc
     if initial_proc not in final_procs[0].mtype_short(): # For a single module the normal and the full are the same
-        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split)
-    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+        string_instantiaion += writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs,split=split,MPARdict=MPARdict)
+    string_instantiaion += writeFWBlockInstance(topfunc+"Full", memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split,MPARdict=MPARdict)
 
     return string_instantiaion
 
-def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
+def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split, MPARdict):
     """
     #   memDict:      dictionary of memories organised by type 
     #                 & no. of bits (TPROJ_58 etc.)
@@ -273,7 +281,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
     string_final = ""
     
     for mtypeB in memDict:
-        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+        if split == 1 and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
           continue
         memList = memDict[mtypeB]
         memInfo = memInfoDict[mtypeB]
@@ -296,13 +304,13 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
             if memInfo.isFIFO:
               string_final += string_tmp
             else:
-              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned)
+              string_final += writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, memInfo.bxbitwidth, memInfo.is_binned, split, MPARdict = MPARdict)
         elif not memInfo.is_initial: # intermediate memories
             if memInfo.isFIFO:
               string_intermediate += string_tmp
             else:
               is_cm = memInfo.downstream_mtype_short in ("TP", "MP")
-              string_intermediate += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm)
+              string_intermediate += writeTBMemoryWriteInstance(mtypeB, memList, proc, up_proc, memInfo.bxbitwidth, memInfo.is_binned, is_cm, split)
 
     string_write = "  -- Write signals to output .txt files\n\n"
     string_write += "  writeIntermediateRAMs : if INST_TOP_TF = 1 generate\n"
@@ -315,7 +323,7 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split):
 
     return string_write
 
-def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrintsDir, sector="04", split = False):
+def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrintsDir, sector="04", split = False, MPARdict = 0):
     """
     # Inputs:
     #   tbfunc:       name of the testbench
@@ -346,22 +354,22 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBPreamble()
     string_header += writeTBOpener(tbfunc)
 
-    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[0].mtype_short()], memPrintsDir, sector, split)
+    string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[-1].mtype_short()], memPrintsDir, sector, split)
     # A bodge for TrackBuilder to write TF concatenated track+stub data.
     # (Needed to compare with emData/).
     if 'TW_104' in memInfoDict.keys():
       fileTF = open("bodge/TF_tb_constants.vhd.bodge")
       string_constants += fileTF.read();
 
-    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split)
+    string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split, MPARdict)
 
     string_begin = writeTBEntityBegin()
     string_mem_read = writeTBMemoryReads(memDict, memInfoDict, initial_proc,split)
     string_mem_stim = writeTBMemoryStimulusProcess(initial_proc)
 
-    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split)
+    string_fwblock_inst = writeFWBlockInstantiation(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split=split,MPARdict=MPARdict)
 
-    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split)
+    string_mem_write = writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split,MPARdict)
 
     string_tb = ""
     string_tb += string_header
@@ -441,7 +449,7 @@ if __name__ == "__main__":
                         help="Detector region. A: all, L: barrel, D: disk")
     
     parser.add_argument('--uut', type=str, default=None, help="Unit Under Test")
-    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
+    parser.add_argument('--mut', type=str, choices=["IR","VMR", "TE", "TC", "PR","TP", "PC", "ME", "MC", "FT"], default=None, help="Module Under Test")
     parser.add_argument('-u', '--nupstream', type=int, default=0,
                         help="Number of upstream processing steps to include")
     parser.add_argument('-d', '--ndownstream', type=int, default=0,
@@ -450,11 +458,8 @@ if __name__ == "__main__":
                         help="Add debug ports corresponding to all BRAM inputs")
     parser.add_argument('-de', '--delay', type=int, default=0,
                         help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
-    parser.add_argument('-sp', '--split', action='store_true',
-                        help="enables split-fpga project")
-
-    parser.add_argument('-f2', '--fpga2', action='store_true',
-                        help="enables split-fpga2 project")
+    parser.add_argument('-sp', '--split', type =int, default=0,
+                        help="enables split-fpga project, a value of 1 for first-fpga project, 2 for second-fpga, 0 for single fpga projects")
 
     parser.add_argument('--memprints_dir', type=str, default="../../../../../MemPrints/",
                         help="Directory where emulation printouts are stored")
@@ -483,8 +488,7 @@ if __name__ == "__main__":
     if args.mut is not None:
 
         # Get all module units of a given type
-        mutModules = tracklet.get_all_module_units(args.mut)
-
+        mutModules = tracklet.get_all_module_units(args.mut,args.split)
         # Get the slices around each of the modules
         process_list = []
         memory_list = []
@@ -494,10 +498,13 @@ if __name__ == "__main__":
             process_list.extend(process)
             memory_list.extend(memory)
 
+        if args.split == 1 :
+            MPARdict = tracklet.get_MPAR_dict()
+        else:
+            MPARdict = None
         # Remove duplicates from the process and module list
         process_list = list(set(process_list))
         memory_list = list(set(memory_list))
-        
         # Correct mem.is_initial & mem.is_final, as loop over mutModules overwrites them incorrectly. 
         for mem in memory_list:
             if mem.is_initial:
@@ -565,13 +572,13 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.fpga2, args.split)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split, MPARdict = MPARdict)
 
     ###############
     # Test bench
     tb_name = "tb_tf_top"
     string_testbench = writeTestBench(
-        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprints_dir, split = args.split)
+        tb_name, topfunc, process_list, memDict, memInfoDict, args.memprints_dir, split = args.split, MPARdict = MPARdict)
     ###############
     # tcl
     string_tcl = writeTcl(args.projname, topfunc, args.memprints_dir)

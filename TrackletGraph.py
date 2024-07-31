@@ -210,10 +210,7 @@ class TrackletGraph(object):
         elif mem.mtype == "AllStubs" or mem.mtype == "InputLink":
             mem.bitwidth = 36
         elif mem.mtype == "AllInnerStubs":
-            if disk>-1:
-              mem.bitwidth = 52
-            else:
-              mem.bitwidth = 51
+            mem.bitwidth = 51
         elif mem.mtype == "DTCLink":
             mem.bitwidth = 39
         elif mem.mtype == "StubPairs":
@@ -637,17 +634,32 @@ class TrackletGraph(object):
                 print("WARNING!! Cannot find module", instance_name,"!!")
             return None
 
-    def get_all_module_units(self, module):
+    def get_all_module_units(self, module, split = 0):
         "Return all the ProcModule objects of a given type"
         modules = {}
         for instance_name in self.__proc_dict:
             #FIXME
-            if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
+            if split == 2:
+                if instance_name.startswith(module+"_") or instance_name.startswith("VMSMER_"):
+                    modules[instance_name]=self.__proc_dict[instance_name]
+            elif instance_name.startswith(module+"_"):
                 modules[instance_name]=self.__proc_dict[instance_name]
         if not modules:
             print("WARNING!! Cannot find any modules with name starting with", module,"!!")
         else:
             return modules
+    def get_MPAR_dict(self):
+        #returns a dict which containing info related to the mergining
+        #of TPROJ memories for split FPGA projects
+        MPAR_dict = {}
+        PC_dict = self.get_all_module_units("PC")
+        for key, value in PC_dict.items():
+          iTCs = key[7:]
+          seed = key[3:7]
+          if seed not in MPAR_dict:
+              MPAR_dict[seed] = []
+          MPAR_dict[seed].append(iTCs)
+        return MPAR_dict
 
     def get_mem_module(self, instance_name, verbose=True):
         " Return a MemModule object given the instance name "

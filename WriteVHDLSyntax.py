@@ -738,10 +738,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 mem_str += "    "+mem+"_BX_GEN : entity work.CreateStartSignal\n"
                 mem_str += "      generic map (\n"+delay2_parameterlist.rstrip(",\n")+"\n      )\n"
                 mem_str += "      port map (\n"+delay2_portlist.rstrip(",\n")+"\n      );\n\n"
-            mem_str += "    "+mem+"_DELAY : entity work.tf_pipe_delay\n"        
+            mem_str += "    "+mem+"_DELAY : entity work.tf_pipe_delay_single\n"        
             mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
-            mem_str += "    "+mem+"_DELAY0 : entity work.tf_pipe_delay\n"        
+            mem_str += "    "+mem+"_DELAY0 : entity work.tf_pipe_delay_single\n"        
             mem_str += "      generic map (\n"+delay_parameterlist_0.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
 
@@ -1520,7 +1520,11 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
         else:
             if first_of_type and not ("VMSMER" in modName or "PC" in modName):
                 bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
-                bx_str += "      bx_o_V_ap_vld => open,\n"
+                #bx_str += "      bx_o_V_ap_vld => open,\n"
+                if "FT_" in modName:
+                  bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
+                else:
+                  bx_str += "      bx_o_V_ap_vld => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,split = False):

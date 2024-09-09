@@ -181,7 +181,7 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "    read" + mem + " : entity work.FileReaderFIFO\n"
             string_mem += "  generic map (\n"
             memtmp = mem.replace("twoS","2S")
-            string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_DL_39&\""+ memtmp + "\"&inputFileNameEnding,\n"
+            string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_"+mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"

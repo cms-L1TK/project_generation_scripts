@@ -1,10 +1,8 @@
 from builtins import range
 from TrackletGraph import MemModule, ProcModule, MemTypeInfoByKey
-
 def getVMStubNCopy(memmod):
 
     mem = memmod.inst;
-
     if "VMSTE" in mem:
         proc = memmod.downstreams[0].inst;
         if "L1L2" in proc:
@@ -50,8 +48,6 @@ def getVMStubNCopy(memmod):
         return "Error no match for "+mem
     else:
         return "Wrong memory module:"+mem
-
-    
 
 def writeTopPreamble(all=True):
     string_preamble = "--! Standard libraries\n"
@@ -178,14 +174,14 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
 
         mem = memMod.inst
 
-        if split and "in" not in mem:
+        if split == 2 and "in" not in mem:
             continue
     
         if "DL" in mtypeB and "AS" not in mtypeB: # Special case for DTC links that reads from FIFOs
             string_mem += "    read" + mem + " : entity work.FileReaderFIFO\n"
             string_mem += "  generic map (\n"
             memtmp = mem.replace("twoS","2S")
-            string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_DL&\""+ memtmp + "\"&inputFileNameEnding,\n"
+            string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_"+mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
@@ -404,7 +400,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False, MPARdict = 0):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -450,15 +446,15 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         delay_portlist_0 = ""
         delay_portlist = ""
         delay2_portlist = ""
-
         #FIXME
         if "MPAR" in mem and not "in" in mem:
             interface = 0
             extraports = False
-        if "AS" in mem and not "in" in mem:
+        if "AS" in mem and not "in" in mem and split == 2:
             interface = 0
             extraports = False
-        
+        merge_parameterlist = ""
+        merge_portlist = ""
         # Write wires
         if delay > 0:
             if not memInfo.is_binned:
@@ -478,14 +474,16 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
             wirelist += "  signal "+mem+"_din_delay         : "
             wirelist += "t_"+mtypeB+"_DATA;\n"
-            if (interface != -1 and not extraports):
+            if (interface != -1 and not extraports) or (split == 1 and "TPAR" in mem):
+                if "TPAR" in mem:
+                    wirelist += "  signal "+mem+"_dummy   : std_logic_vector(1 downto 0);\n"
                 wirelist += "  signal "+mem+"_wea          : "
                 wirelist += "t_"+mtypeB+"_1b;\n"
                 wirelist += "  signal "+mem+"_writeaddr   : "
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_din         : "
                 wirelist += "t_"+mtypeB+"_DATA;\n"
-        if interface != 1 :
+        if not (interface == 1 and not split == 1):
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
                 wirelist += "t_"+mtypeB+"_A1b;\n"
@@ -495,7 +493,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 wirelist += "t_"+mtypeB+"_ADATA;\n"
             else:
                 wirelist += "  signal "+mem+"_enb          : "
-                wirelist += "t_"+mtypeB+"_1b;\n"
+                wirelist += "t_"+mtypeB+"_1b := '1';\n" #FIXME send a read enable from merge module
                 wirelist += "  signal "+mem+"_V_readaddr    : "
                 wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
                 wirelist += "  signal "+mem+"_V_dout        : "
@@ -518,14 +516,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "STD_LOGIC;\n"
                     wirelist += "  signal "+mem+"_index        : "
                     wirelist += "STD_LOGIC_VECTOR(31 downto 0);\n"
-                    
-            if memInfo.has_numEntries_out:
+            if memInfo.has_numEntries_out or (split == 1 and "AS" in mem):
                 if memInfo.is_binned:
                     disk=""
                     if "VMSME_D" in mem:
                         disk="DISK"
                     wirelist += "  signal "+mem+"_AV_dout_mask : "
-                    wirelist += "t_"+mtypeB+"_MASK"+disk+"; -- (#page)(#bin)\n"  
+                    wirelist += "t_"+mtypeB+"_MASK"+disk+"; -- (#page)(#bin)\n"
                     wirelist += "  signal "+mem+"_enb_nent         : "
                     wirelist += "t_"+mtypeB+"_1b;\n"
                     wirelist += "  signal "+mem+"_V_addr_nent   : "
@@ -612,7 +609,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             delay2_portlist += "        reset    => reset,\n"
             #FIXME
             if not "in" in mem :
-                if "VMSMER" in memmod.upstreams[0].mtype_short() or "PC" in memmod.upstreams[0].mtype_short():
+                if ("VMSMER" in memmod.upstreams[0].mtype_short() or "PC" in memmod.upstreams[0].mtype_short()) and split == 2:
                     delay2_portlist += "        done   => PC_done,\n"
                     delay2_portlist += "        bx_out   => PC_bx_out,\n"
                 else:
@@ -634,8 +631,54 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             delay_portlist += "        wea_out       => "+mem+"_wea_delay,\n"
             delay_portlist += "        addra_out     => "+mem+"_writeaddr_delay,\n"
             delay_portlist += "        dina_out      => "+mem+"_din_delay,\n"
-        
+        # add merge_stream modules if split and TPAR or AS
+        if "TPAR" in mem and split == 1:
+            addrwidth = 10
+            ramwidth = memInfo.bitwidth
+            numpages = 8
+            seed = mem.split("_")[1][:-1]
+            iTC = mem.split("_")[1][-1]
+            for PCGroup in MPARdict[seed]:
+                if iTC == PCGroup[0]:
+                    numInputs = len(PCGroup)
+                    merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
+                    merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
+                    merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
+                    merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
+                    merge_portlist += "        bx_in => TP_bx_out,\n"
+                    merge_portlist += "        rst => '0',\n"
+                    merge_portlist += "        clk => clk,\n"
+                    merge_portlist += "        enb_arr => open,\n"
+                    merge_portlist += "        bx_out => open,\n"
+                    merge_portlist += "        merged_dout => MPAR_"+seed+PCGroup+"_stream_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_dout,\n"
+                    for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_AV_dout_nent,\n"
+                    for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_readaddr,\n"
+                    mem_str += "    MERGE_STREAM_TPAR"+seed+PCGroup+" : entity work.tf_merge_streamer\n"
+                    mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
+                    mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
 
+        elif "AS" in mem and "n1" in mem and split == 1:
+            addrwidth = 10
+            ramwidth = memInfo.bitwidth
+            numpages = 8
+            numInputs = 1
+            merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
+            merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
+            merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
+            merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
+            merge_portlist += "        bx_in => TP_bx_out,\n"
+            merge_portlist += "        rst => '0',\n"
+            merge_portlist += "        clk => clk,\n"
+            merge_portlist += "        enb_arr => open,\n"
+            merge_portlist += "        bx_out => open,\n"
+            merge_portlist += "        merged_dout => "+mem+"_stream_V_dout,\n"
+            for i in range(4):  merge_portlist += "        din"+str(i)+"=>" +mem+"_V_dout,\n"
+            for i in range(4):  merge_portlist += "        nent"+str(i)+"=>" +mem+"_AV_dout_nent,\n"
+            for i in range(numInputs):  merge_portlist += "        addr_arr("+str(((i+1)*addrwidth)-1)+" downto "+ str(i*addrwidth)+ ")=>"+mem+"_V_readaddr,\n"
+            mem_str += "    STREAM_"+mem+" : entity work.tf_merge_streamer\n"
+            mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
+            mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
         portlist += "        clkb      => clk,\n"
         portlist += "        rstb      => '0',\n"
         portlist += "        regceb    => '1',\n"
@@ -647,10 +690,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        sync_nent => PC_start,\n"
         elif "MPAR" in mem and "in" not in mem:
             portlist += "        sync_nent => "+mem+"_start,\n"
+        elif "AS" in mem and "n1" in mem and split == 1:
+            portlist += "        sync_nent => TP_L1L2A_start,\n"
+        elif "TPAR" in mem and split == 1:
+            portlist += "        sync_nent => TP_done,\n" 
         else:
             portlist += "        sync_nent => "+sync_signal+",\n"
-            
-        if memmod.has_numEntries_out:
+        if memmod.has_numEntries_out or ("n1" in mem and split == 1):
             if memList[0].is_binned:
                 ncopy = getVMStubNCopy(memmod);
                 portlist += "        enb       => ("
@@ -725,21 +771,22 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0):
+def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0, split = 0):
     """
     # Top-level interface: control signals
     """
     
     final_proc_short = final_procs[0].split("_")[0]
-    
     string_ctrl_signals = ""
     string_ctrl_signals += "    clk        : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
-    string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
-    string_ctrl_signals += "    "+initial_proc+"_done : out std_logic;\n"
+    if split == 2:
+        string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
+        string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
+        string_ctrl_signals += "    "+initial_proc+"_done : out std_logic;\n"
+
     string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
@@ -757,7 +804,7 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
 
     return string_ctrl_signals
 
-def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False):
+def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False,split = 0):
     """
     # Top-level interface: input memories' ports.
     """
@@ -784,7 +831,7 @@ def writeMemoryLHSPorts_interface(memList, mtypeB, extraports=False):
             if "in" not in mem:
                 continue
         if "AS" in mem:
-            if "in" not in mem:
+            if "in" not in mem and split == 2:
                 continue
                 
         string_input_mems += "    "+mem+"_wea        : "+direction+" t_"+mtypeB+"_1b;\n"
@@ -810,8 +857,7 @@ def writeDTCLinkLHSPorts_interface(mtypeB, memDict):
         string_input_mems += "    "+mem+"_link_read          : out t_"+mtypeB+"_1b;\n"
 
     return string_input_mems
-
-def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
+def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict, split, MPARdict = 0):
     """
     # Top-level interface: output memories' ports.
     # Inputs:
@@ -839,6 +885,14 @@ def writeMemoryRHSPorts_interface(mtypeB, memInfo, memDict):
           string_output_mems += "    "+mem+"_enb_nent        : out t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_addr_nent        : out t_"+mtypeB+"_NENTADDR"+disk+";\n"
           string_output_mems += "    "+mem+"_AV_dout_nent       : out t_"+mtypeB+"_NENT;\n"
+      elif "AS" in mtypeB and split: #AS/TPAR at interface need to go through merging module
+          string_output_mems += "    "+mem+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth)+" downto 0);\n"
+      elif "TPAR" in mtypeB and split == 1:
+          seed = mem.split("_")[1][:-1]
+          itc = mem.split("_")[1][-1]
+          for PCGroup in MPARdict[seed]:
+              if itc == PCGroup[0]:
+                  string_output_mems += "    MPAR_"+seed+PCGroup+"_stream_V_dout : out std_logic_vector("+str(memMod.bitwidth+2)+" downto 0);\n"
       else:
           string_output_mems += "    "+mem+"_enb          : in t_"+mtypeB+"_1b;\n"
           string_output_mems += "    "+mem+"_V_readaddr    : in t_"+mtypeB+"_ADDR;\n"
@@ -919,7 +973,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
                 mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
                 #FIXME - hack for fpga2 project
-                if split:
+                if split == 2:
                     mem_delay = 0
 
                 string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
@@ -947,12 +1001,10 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
     string_constants += "  constant inputFileNameEnding".ljust(str_len) + ": string := \"_" + sector + ".dat\"; -- " + sector + " specifies the nonant/sector the testvectors represent\n"
     string_constants += "  constant outputFileNameEnding".ljust(str_len) + ": string := \".txt\";\n"
     string_constants += "  constant debugFileNameEnding".ljust(str_len) + ": string := \".debug.txt\";\n\n"
-    string_constants += "  signal dummy : STD_LOGIC := '0';\n\n -- dummy tb signal for inputs into sectorproc\n"
-    string_constants += "  signal dummyaddr : t_as_36_addr := (others => '0');\n\n -- dummy tb signal for inputs into sectorproc"
 
     return string_constants
 
-def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs, split = False):
+def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs, split = False, MPARdict = 0):
 
     """
     # VHDL test bench: write control signals
@@ -981,10 +1033,10 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
         string_ctrl_signals += ("  signal "+mid_proc+"_done").ljust(str_len)+": std_logic := '0';\n"
-    string_ctrl_signals += ("  signal "+final_procs[0].mtype_short()+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
-    string_ctrl_signals += ("  signal "+final_procs[0].mtype_short()+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
-    string_ctrl_signals += ("  signal "+final_procs[0].mtype_short()+"_done").ljust(str_len)+": std_logic := '0';\n"
-    if final_procs[0].mtype_short().startswith("FT"):
+    string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
+    string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_done").ljust(str_len)+": std_logic := '0';\n"
+    if final_procs[-1].mtype_short().startswith("FT"):
         for final_proc in final_procs:
             string_ctrl_signals += ("  signal "+final_proc.inst+"_last_track").ljust(str_len)+": std_logic := '0';\n"
             string_ctrl_signals += ("  signal "+final_proc.inst+"_last_track_vld").ljust(str_len)+": std_logic := '0';\n"
@@ -995,7 +1047,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
     # Loop over all memory types
     string_ctrl_signals += "\n  -- Signals matching ports of top-level VHDL\n"
     for mtypeB in memDict:
-        if split and ("TPROJ" in mtypeB or "VMSME" in mtypeB):
+        if split == 1 and ("TPROJ" in mtypeB or "VMSME" in mtypeB):
           continue 
         memInfo = memInfoDict[mtypeB]
 
@@ -1053,6 +1105,12 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                     string_ctrl_signals += ("t_"+mtypeB+"_NENT").ljust(str_len2)+":= (others => '0'); -- (#page)(#bin)\n"
                     string_ctrl_signals += ("  signal "+mem+"_AV_dout_mask").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_MASK").ljust(str_len2)+":= (others => (others => '0')); -- (#page)(#bin)\n"
+                elif split == 1 and "TPAR" in mem:
+                    seed = mem.split("_")[1][:-1]
+                    itc = mem.split("_")[1][-1]
+                    for PCGroup in MPARdict[seed]:
+                        if PCGroup[0] == itc:
+                            string_ctrl_signals +="  signal MPAR_"+seed+PCGroup +"_stream_V_dout: std_logic_vector("+str(memMod.bitwidth+2)+" downto 0) := (others=> '0') ;\n"
                 else:
                     string_ctrl_signals += ("  signal "+mem+"_enb").ljust(str_len)+": "
                     string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
@@ -1072,7 +1130,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
                 if memMod.is_binned:
                     if "VMSME_D" in mem:
                         disk = "DISK"
-
+                if "AS" in mem and "n1" in mem and split == 1:
+                    string_ctrl_signals += "  signal "+mem+"_stream_V_dout : std_logic_vector("+str(memMod.bitwidth)+" downto 0) := (others => '0');\n"
+                    continue
                 string_ctrl_signals += ("  signal "+mem+"_wea").ljust(str_len)+": "
                 string_ctrl_signals += ("t_"+mtypeB+"_1b").ljust(str_len2)+":= '0';\n"
                 string_ctrl_signals += ("  signal "+mem+"_writeaddr").ljust(str_len)+": "
@@ -1098,7 +1158,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
 
     return string_ctrl_signals
 
-def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs = [], split = False):
+def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_procs, notfinal_procs = [], split = False, MPARdict = 0):
 
     """
     # VHDL test bench: write the instantiation of the top level SectorProcessor FW
@@ -1113,7 +1173,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     """
     str_len = 35 # length of string for formatting purposes
 
-    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs or final_procs[0].mtype_short() == initial_proc else "  sectorProc : if INST_TOP_TF = 0 generate\n"
+    string_fwblock_inst =  "  sectorProcFull : if INST_TOP_TF = 1 generate\n" if notfinal_procs or final_procs[-1].mtype_short() == initial_proc else "  sectorProc : if INST_TOP_TF = 0 generate\n"
     string_fwblock_inst += "  begin\n"
     string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
     string_fwblock_inst += "      port map(\n"
@@ -1121,10 +1181,10 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
-    string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out,\n"
-    string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_bx_out_vld").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_bx_out_vld,\n"
-    string_fwblock_inst += ("        " + final_procs[0].mtype_short() + "_done").ljust(str_len) + "=> " + final_procs[0].mtype_short() + "_done,\n"
-    if final_procs[0].mtype_short().startswith("FT"):
+    string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_bx_out").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_bx_out,\n"
+    string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_bx_out_vld").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_bx_out_vld,\n"
+    string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_done").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_done,\n"
+    if final_procs[-1].mtype_short().startswith("FT"):
         for final_proc in final_procs :
             string_fwblock_inst += ("        " + final_proc.inst + "_last_track").ljust(str_len) + "=> " + final_proc.inst + "_last_track,\n"
             string_fwblock_inst += ("        " + final_proc.inst + "_last_track_vld").ljust(str_len) + "=> " + final_proc.inst + "_last_track_vld,\n"
@@ -1143,7 +1203,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_debug = ""
 
     for mtypeB in memDict:
-        if split and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
+        if split == 1 and ("VMSME" in mtypeB or "TPROJ" in mtypeB):
           continue
         memInfo = memInfoDict[mtypeB]
         memList = memDict[mtypeB]
@@ -1180,11 +1240,19 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                     string_output += ("        "+mem+"_enb_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_V_addr_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
+                elif ("TPAR" in mem) and split == 1:
+                    seed = mem.split("_")[1][:-1]
+                    itc = mem.split("_")[1][-1]
+                    for PCGroup in  MPARdict[seed]:
+                        if PCGroup[0] == itc:
+                            string_output += ("        MPAR_"+seed+PCGroup+"_stream_V_dout").ljust(str_len) + "=> MPAR_"+seed+PCGroup+"_stream_V_dout,\n"
                 else:
                     string_output += ("        "+mem+"_enb").ljust(str_len) + "=> "+mem+"_enb,\n"
                     string_output += ("        "+mem+"_V_readaddr").ljust(str_len) + "=> "+mem+"_readaddr,\n"
                     string_output += ("        "+mem+"_V_dout").ljust(str_len) + "=> "+mem+"_dout,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> "+mem+"_AV_dout_nent,\n"
+            elif split ==1 and ("AS" in mtypeB and "n1" in mem):
+                    string_output += ("        "+mem+"_stream_V_dout").ljust(str_len) + "=> "+mem+"_stream_V_dout,\n"
             else:
                 string_debug += ("        "+mem+"_wea").ljust(str_len) + "=> "+mem+"_wea,\n"
                 string_debug += ("        "+mem+"_writeaddr").ljust(str_len) + "=> "+mem+"_writeaddr,\n"
@@ -1199,11 +1267,11 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += string_output[:-2]+"\n" # Remove the last comma
     
     string_fwblock_inst += "      );\n"
-    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs or final_procs[0].mtype_short() == initial_proc else "  end generate sectorProc;\n\n"
+    string_fwblock_inst += "  end generate sectorProcFull;\n\n" if notfinal_procs or final_procs[-1].mtype_short() == initial_proc else "  end generate sectorProc;\n\n"
 
     return string_fwblock_inst
 
-def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_binned, is_cm):
+def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_binned, is_cm, split):
     """
     # VHDL test bench: write the loop that writes the input to the intermediate RAM memories to text files
     # Inputs:
@@ -1220,6 +1288,23 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
 
     for memMod in memList:
         mem = memMod.inst
+        if ("AS" in mem and "n1" in mem and split == 1):
+            #FIXME rewrite this to be a separate function
+            width = memMod.bitwidth + 1
+            str_len = 16 # length of string for formatting purposes
+            string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
+            string_mem += "    generic map (\n"
+            string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
+            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
+            string_mem += "    )\n"
+            string_mem += "    port map (\n"
+            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+            string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
+            string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
+            string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
+            string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_V_dout\n"
+            string_mem += "    );\n"
+            continue
 
         string_mem += "      write"+mem+" : entity work.FileWriter\n"
         string_mem += "      generic map (\n"
@@ -1248,7 +1333,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
     
     return string_mem
 
-def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
+def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, split, MPARdict = 0):
     """
     # VHDL test bench: write the loop that writes the output from the end-of-chain BRAM memories to text files
     # Inputs:
@@ -1269,6 +1354,32 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned):
 
         mem = memMod.inst
 
+        if (("TPAR" in mem) or ("AS" in mem and "n1" in mem)) and split == 1: #FIXME FPGA1 hack
+            width = 0
+            if "TPAR" in mem:
+              width= memMod.bitwidth + 3
+              seed = mem.split("_")[1][:-1]
+              itc = mem.split("_")[1][-1]
+              for PCGroup in MPARdict[seed]:
+                  if PCGroup[0] != itc: continue
+                  mem = "MPAR_" + seed + PCGroup
+            else:
+              width= memMod.bitwidth + 1
+            if "MPAR" not in mem: continue #FIXME also not good
+            str_len = 16 # length of string for formatting purposes
+            string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
+            string_mem += "    generic map (\n"
+            string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
+            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
+            string_mem += "    )\n"
+            string_mem += "    port map (\n"
+            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+            string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
+            string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
+            string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
+            string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_V_dout\n"
+            string_mem += "    );\n"
+            continue
         string_mem += "    write"+mem+" : entity work.FileWriterFromRAM" + ("Binned\n" if is_binned else "\n")
         string_mem += "    generic map (\n"
         string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
@@ -1514,12 +1625,12 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
     """
 
     string_mem_ports = ""
-    if ("TPROJ" in mem.inst) and split: #set TPROJ and VMSME to open for a split-FPGA project
+    if ("TPROJ" in mem.inst) and split == 1: #set TPROJ and VMSME to open for a split-FPGA project
           string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
           string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
-    elif ("VMSME" in mem.inst and split):
+    elif ("VMSME" in mem.inst and split == 1):
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_address0  => open,\n"
@@ -1536,15 +1647,21 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
         string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
-        string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
+        if "TPAR" in mem.inst and split == 1 : #FIXME TPAR addr from TP should be 10 bits
+            string_mem_ports += "      "+argname+"_dataarray_data_V_address0(9 downto 0)  => "
+            string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
+            string_mem_ports += "      "+argname+"_dataarray_data_V_address0(11 downto 10)  => "
+            string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_dummy,\n"
+        else:
+            string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
+            string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
         string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
 
 
     return string_mem_ports
 
-def writeProcMemoryRHSPorts(argname,mem,portindex=0):
+def writeProcMemoryRHSPorts(argname,mem,portindex=0, split = 0):
     """
     # Processing module port assignment: inputs from memories
     """
@@ -1583,14 +1700,14 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0):
         string_mem_ports += "      "+argname+"_dataarray_data_V_q"+str(portindex)+"        => "
         string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_dout,\n"
 
-    if mem.has_numEntries_out and portindex == 0:
+    if (mem.has_numEntries_out and portindex == 0):
         if mem.is_binned:
             string_mem_ports += "      "+argname+"_nentries_V_ce0 => "+mem.mtype_short()+"_"+mem.var()+"_enb_nent,\n"
             string_mem_ports += "      "+argname+"_nentries_V_address0 => "+mem.mtype_short()+"_"+mem.var()+"_V_addr_nent,\n"
             string_mem_ports += "      "+argname+"_nentries_V_q0 => "+mem.mtype_short()+"_"+mem.var()+"_AV_dout_nent,\n"
             for i in range(0,2**mem.bxbitwidth):
                 nrz = 8
-                if mem.var()[0] == "D" :
+                if mem.var()[0] == "D"  and split == 2:
                     nrz = 16
                 for j in range(0,nrz):
                     string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("

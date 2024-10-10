@@ -646,10 +646,15 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
                     merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
                     merge_portlist += "        bx_in => TP_bx_out,\n"
+                    merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
                     merge_portlist += "        rst => '0',\n"
                     merge_portlist += "        clk => clk,\n"
                     merge_portlist += "        enb_arr => open,\n"
-                    merge_portlist += "        bx_out => open,\n"
+                    #This will make output for first stream_merge module (is there a less hacky way?)
+                    if (seed+PCGroup)=='L1L2ABC': 
+                      merge_portlist += "        bx_out => TP_bx_out_merged,\n"
+                    else:
+                      merge_portlist += "        bx_out => open,\n"
                     merge_portlist += "        merged_dout => MPAR_"+seed+PCGroup+"_stream_V_dout,\n"
                     for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_dout,\n"
                     for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_AV_dout_nent,\n"
@@ -668,6 +673,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
             merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
             merge_portlist += "        bx_in => TP_bx_out,\n"
+            merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
             merge_portlist += "        rst => '0',\n"
             merge_portlist += "        clk => clk,\n"
             merge_portlist += "        enb_arr => open,\n"
@@ -782,6 +788,8 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
+    if split == 1:
+        string_ctrl_signals += "    TP_bx_out_merged : out std_logic_vector(2 downto 0);\n"
     if split == 2:
         string_ctrl_signals += "    "+initial_proc+"_bx_out : out std_logic_vector(2 downto 0);\n"
         string_ctrl_signals += "    "+initial_proc+"_bx_out_vld : out std_logic;\n"
@@ -1528,7 +1536,9 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
         int_ctrl_func += "      start => PC_done\n"
         int_ctrl_func += "  );\n\n"
     
-    
+    #if "TP_" in mtype and first_of_type :
+    #    int_ctrl_wire += "  signal TP_bx_out_vld_int : std_logic;\n"
+
     if first_proc:
         mtype_up = module.mtype_short()
     else:
@@ -1613,7 +1623,7 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
             if first_of_type and not ("VMSMER" in modName or "PC" in modName):
                 bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
                 #bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
-                if "FT_" in modName:
+                if ("FT_" in modName) or ("TP_" in modName):
                   bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
                 else:
                   bx_str += "      bx_o_V_ap_vld => open,\n"

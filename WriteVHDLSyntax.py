@@ -1535,9 +1535,6 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
         int_ctrl_func += "      bx => PC_bx_out,\n"
         int_ctrl_func += "      start => PC_done\n"
         int_ctrl_func += "  );\n\n"
-    
-    #if "TP_" in mtype and first_of_type :
-    #    int_ctrl_wire += "  signal TP_bx_out_vld_int : std_logic;\n"
 
     if first_proc:
         mtype_up = module.mtype_short()

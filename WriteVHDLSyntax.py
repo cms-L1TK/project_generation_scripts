@@ -420,6 +420,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
 
     interface = int(memInfo.is_final) - int(memInfo.is_initial)
 
+    first_merge_streamer = True
+
     for memmod in memList:
 
         nmem = 0
@@ -592,6 +594,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             parameterlist += "        NUM_PHI_BINS    => 8,\n"
             parameterlist += "        NUM_RZ_BINS     => 16,\n"
             parameterlist += "        NUM_COPY        => "+str(ncopy)+"\n"
+        if "TPAR" in mem:
+            parameterlist += "        MEM_TYPE        => \"ultra\",\n"
 
             #FIXME implement delay for disks
         # Write ports
@@ -651,8 +655,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_portlist += "        clk => clk,\n"
                     merge_portlist += "        enb_arr => open,\n"
                     #This will make output for first stream_merge module (is there a less hacky way?)
-                    if (seed+PCGroup)=='L1L2ABC': 
+                    if first_merge_streamer: 
                       merge_portlist += "        bx_out => TP_bx_out_merged,\n"
+                      first_merge_streamer = False
                     else:
                       merge_portlist += "        bx_out => open,\n"
                     merge_portlist += "        merged_dout => MPAR_"+seed+PCGroup+"_stream_V_dout,\n"

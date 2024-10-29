@@ -205,6 +205,8 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
+            if "MPROJ" in mem:
+                string_mem += "      PAGE_LENGTH".ljust(str_len) + "=> 64,\n"
             if "MPAR" in mem or "MPROJ" in mem:
                 string_mem += "      NUM_TPAGES".ljust(str_len) + "=> 4,\n"
             if "MPAR" in mem :
@@ -312,9 +314,12 @@ def writeMemoryUtil(memDict, memInfoDict):
             else:
                 tName = "t_"+mtypeB+"_1b"
                 ss += "  subtype "+tName+" is std_logic;\n"
-                if "MPAR" in mtypeB or "MPROJ" in mtypeB:
+                if "MPAR" in mtypeB:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(8+memInfo.bxbitwidth)+" downto 0);\n" 
+                elif "MPROJ" in mtypeB:
+                    tName = "t_"+mtypeB+"_ADDR"
+                    ss += "  subtype "+tName+" is std_logic_vector("+str(7+memInfo.bxbitwidth)+" downto 0);\n" 
                 else:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(6+memInfo.bxbitwidth)+" downto 0);\n" 
@@ -325,7 +330,10 @@ def writeMemoryUtil(memDict, memInfoDict):
             if memInfo.is_binned:
                 varStr = "_64_4b"
             else:
-                varStr = "_7b"
+                if "MPROJ" in tName:
+                    varStr = "_6b"
+                else:
+                    varStr = "_7b"
             if "MPROJ" in tName:
                 tName = "t_"+mtypeB+"_MASK"
                 ss += "  subtype "+tName+" is t_arr"+str(num_pages)+"_4b;\n"
@@ -444,6 +452,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         parameterlist = ""
         portlist = ""
         delay_parameterlist = ""
+        delay_parameterlist_0 = ""
         delay2_parameterlist = ""
         delay_portlist_0 = ""
         delay_portlist = ""
@@ -554,6 +563,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         # Write parameters
         parameterlist += "        RAM_WIDTH       => "+bitwidth+",\n"
         parameterlist += "        NUM_PAGES       => "+str(num_pages)+",\n"
+        if "MPROJ" in mem:
+            parameterlist += "        PAGE_LENGTH       => 64,\n"
         if "MPROJ" in mem or "MPAR" in mem:
             parameterlist += "        NUM_TPAGES       => 4,\n"
         parameterlist += "        INIT_FILE       => \"\",\n"
@@ -563,18 +574,27 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         if delay > 0:
             delay2_parameterlist +="        DELAY           => " + str(delay*2) +",\n"
             delay_parameterlist +="        DELAY           => " + str(delay) +",\n"
+            delay_parameterlist_0 +="        DELAY           => " + str(delay+1) +",\n"
             #enable to use non-default delay value
+            if "MPROJ" in mem:
+                #special case for the merged projections
+                delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
+                delay_parameterlist_0 +="        PAGE_LENGTH       => 64,\n"
             if "MPAR" in mem or "MPROJ" in mem:
                 #special case for the merged memories
                 delay_parameterlist +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
+                delay_parameterlist_0 +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
             else:
                 delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
+                delay_parameterlist_0 +="        NUM_PAGES       => "+str(num_pages)+",\n"
             if memInfo.is_binned:
                 disk=""
                 if "VMSME_D" in mem:
                     disk = "*2"
                 delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
+                delay_parameterlist_0 +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
             delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
+            delay_parameterlist_0 +="        RAM_WIDTH       => "+bitwidth+",\n"
 
         ncopy = getVMStubNCopy(memmod);
 
@@ -762,14 +782,16 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "      );\n\n"
             mem_str += "    "+mem+" : entity work.tf_mem_bin\n"
         else:
-            if "MPROJ" in mem or "MPAR" in mem:
-                mem_str += "    "+mem+" : entity work.tf_mem_tproj\n"        
+            if "MPROJ" in mem:
+                mem_str += "    "+mem+" : entity work.tf_mem_tproj\n"
+            elif  "MPAR" in mem:
+                mem_str += "    "+mem+" : entity work.tf_mem_tpar\n"
             else:
                 mem_str += "    "+mem+" : entity work.tf_mem\n"        
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
         if delay > 0:
-            if not memInfo.is_binned and not "in" in mem:
+            if not memInfo.is_binned and not "in" in mem and not "AS_" in mem:
                 mem_str += "    "+mem+"_BX_GEN : entity work.CreateStartSignal\n"
                 mem_str += "      generic map (\n"+delay2_parameterlist.rstrip(",\n")+"\n      )\n"
                 mem_str += "      port map (\n"+delay2_portlist.rstrip(",\n")+"\n      );\n\n"
@@ -777,7 +799,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
             mem_str += "    "+mem+"_DELAY0 : entity work.tf_pipe_delay\n"        
-            mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+            mem_str += "      generic map (\n"+delay_parameterlist_0.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+delay_portlist_0.rstrip(",\n")+"\n      );\n\n"
 
     return wirelist,mem_str
@@ -1330,6 +1352,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
                 string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
         if "MPROJ" in mem :
             string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
+            string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"
@@ -1603,7 +1626,6 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
     """
     # Processing module port assignment: BX ports
     """
-
     bx_str = ""
     #FIXME
     if "PC_" in modName and not isInput:
@@ -1613,10 +1635,7 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
     if isInput and isInitial:
         bx_str += "      bx_V          => "+modName+"_bx_in,\n"
     elif isInput and not isInitial:
-        if "MP_" in modName :
-            bx_str += "      bx_V          => "+modName+"_bx_in,\n"
-        else:
-            bx_str += "      bx_V          => "+modName+"_bx_out,\n"
+        bx_str += "      bx_V          => "+modName+"_bx_in,\n"
     elif not isInput:
         if delay==0:
             bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
@@ -1624,7 +1643,6 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
         else:
             if first_of_type and not ("VMSMER" in modName or "PC" in modName):
                 bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
-                #bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
                 if ("FT_" in modName) or ("TP_" in modName):
                   bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
                 else:

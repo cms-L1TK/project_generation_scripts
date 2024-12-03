@@ -1741,10 +1741,10 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0, split = 0):
                     nrz = 16
                 for j in range(0,nrz):
                     string_mem_ports += "      "+argname+"_binmask8_"+str(i)+"_V_"+str(j)+"     => ("
-                    for k in range(0, 8) :
+                    for k in range(0,8):
                         if k != 0 :
                             string_mem_ports += ", "
-                        string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_AV_dout_mask("+str(i)+")("+str(j+(7-k)*8)+")"
+                        string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_AV_dout_mask("+str(i)+")("+str((j+1)*8-k-1)+")"
                     string_mem_ports += "),\n"
         else:
             tpage = 1

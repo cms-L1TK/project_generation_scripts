@@ -1606,20 +1606,20 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type):
     """
     bx_str = ""
     if "PC_" in modName and not isInput:
-        bx_str = "      bx_V          => "+modName+"_bx,\n"        
+        bx_str = "      bx            => "+modName+"_bx,\n"        
     if "VMSMER_" in modName and not isInput:
-        bx_str = "      bx_V          => "+modName+"_bx,\n"
+        bx_str = "      bx            => "+modName+"_bx,\n"
     if isInput and isInitial:
-        bx_str = "      bx_V          => "+modName+"_bx,\n"
+        bx_str = "      bx            => "+modName+"_bx,\n"
     elif isInput and not isInitial:
-        bx_str = "      bx_V          => "+modName+"_bx,\n"
+        bx_str = "      bx            => "+modName+"_bx,\n"
     if not isInput:
         if first_of_type and not ("VMSMER" in modName or "PC" in modName):
-            bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
+            bx_str += "      bx_o          => "+modName.split("_")[0]+"_bx_out,\n"
             if ("TB_" in modName) or ("TP_" in modName):
-              bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
+              bx_str += "      bx_o_ap_vld   => "+modName.split("_")[0]+"_bx_out_vld,\n"
             else:
-              bx_str += "      bx_o_V_ap_vld => open,\n"
+              bx_str += "      bx_o_ap_vld   => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,split = False):
@@ -1633,26 +1633,26 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
     elif ("VMSME" in mem.inst and split == 1):
         pass
     elif "memoriesTEO" in argname or "memoryME" in argname :
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => "
+        string_mem_ports += "      "+argname+"_dataarray_0_ce0              => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_0_we0              => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_address0  => "
+        string_mem_ports += "      "+argname+"_dataarray_0_address0         => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_d0        => "
+        string_mem_ports += "      "+argname+"_dataarray_0_d0               => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
     else:
-        string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => "
+        string_mem_ports += "      "+argname+"_dataarray_s_ce0            => open,\n"
+        string_mem_ports += "      "+argname+"_dataarray_s_we0            => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_wea,\n"
         if "TPAR" in mem.inst and split == 1 : #FIXME TPAR addr from TP should be 10 bits
-            string_mem_ports += "      "+argname+"_dataarray_data_V_address0(9 downto 0)  => "
+            string_mem_ports += "      "+argname+"_dataarray_s_address0(9 downto 0)       => "
             string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
-            string_mem_ports += "      "+argname+"_dataarray_data_V_address0(11 downto 10)  => "
+            string_mem_ports += "      "+argname+"_dataarray_s_address0(11 downto 10)       => "
             string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_dummy,\n"
         else:
-            string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => "
+            string_mem_ports += "      "+argname+"_dataarray_s_address0       => "
             string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_writeaddr,\n"
-        string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => "
+        string_mem_ports += "      "+argname+"_dataarray_s_d0             => "
         string_mem_ports += mem.mtype_short() + "_" + mem.var()+"_din,\n"
 
 
@@ -1686,7 +1686,7 @@ def writeProcMemoryRHSPorts(argname,mem,portindex=0, split = 0):
           string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_valid,\n"
           string_mem_ports += "      index        => "
           string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_index,\n"
-          string_mem_ports += "      "+argname+"_data_V        => "
+          string_mem_ports += "      "+argname+"               => "
           string_mem_ports += mem.mtype_short()+"_"+mem.var()+"_V_as,\n"
     else:
         string_mem_ports = ""

@@ -1,0 +1,15 @@
+  -- A bodge for TrackBuilder to write TF concatenated track+stub data for L1L2.
+  -- (Needed to compare with emData/).
+  writeTF_L1L2_484 : entity work.FileWriterFIFO
+  generic map (
+    FILE_NAME  => FILE_OUT_TF&"L1L2"&outputFileNameEnding,
+    FIFO_WIDTH  => 484
+  )
+  port map (
+    CLK => CLK,
+    DONE => FT_DONE,
+    WRITE_EN => (TW_L1L2_stream_A_write and TW_L1L2_stream_AV_din(103)),
+    FULL_NEG => TW_L1L2_stream_A_full_neg,
+    DATA => TW_L1L2_stream_AV_din&BW_L1L2_L3_stream_AV_din&BW_L1L2_L4_stream_AV_din&BW_L1L2_L5_stream_AV_din&BW_L1L2_L6_stream_AV_din&emptyDiskStub&emptyDiskStub&emptyDiskStub&emptyDiskStub
+  );
+

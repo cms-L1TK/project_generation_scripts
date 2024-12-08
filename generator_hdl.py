@@ -290,16 +290,27 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split, MPARdict):
 
         if memInfo.isFIFO:
             string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc)
-            # A bodge for TrackBuilder to write TF concatenated track+stub data.
+            # Code for TrackBuilder to write TF concatenated track+stub data.
             # (Needed to compare with emData/).
-            if mtypeB == 'TW_104':
+            if mtypeB == 'TW_113':
                 for m in memDict[mtypeB]:
                     memName = m.inst
                     seed = memName[-4:]
-                    fileTF = open("bodge/TF_" + seed + "_tb_writer.vhd.bodge")
-                    string_tmp += fileTF.read();
-                    fileTF.close()
-
+                    string_tmp += "-- Clode for TrackBuilder to write TF concatenated track+stub data.\n";
+                    string_tmp += "-- (Needed to compare with emData/).\n";
+                    string_tmp += "writeTF_"+seed+"_634 : entity work.FileWriterFIFO\n";
+                    string_tmp += "generic map (\n";
+                    string_tmp += "  FILE_NAME  => FILE_OUT_TF&\""+seed+"\"&outputFileNameEnding,\n";
+                    string_tmp += "  FIFO_WIDTH  => 634\n";
+                    string_tmp += ")\n";
+                    string_tmp += "port map (\n";
+                    string_tmp += "  CLK => CLK,\n"
+                    string_tmp += "  DONE => TB_DONE,\n";
+                    string_tmp += "  WRITE_EN => (TW_"+seed+"_stream_A_write and TW_"+seed+"_stream_AV_din(112)),\n";
+                    string_tmp += "  FULL_NEG => TW_"+seed+"_stream_A_full_neg,\n";
+                    string_tmp += "  DATA => TW_"+seed+"_stream_AV_din&BW_"+seed+"_L1_stream_AV_din&BW_"+seed+"_L2_stream_AV_din&BW_"+seed+"_L3_stream_AV_din&BW_"+seed+"_L4_stream_AV_din&BW_"+seed+"_L5_stream_AV_din&BW_"+seed+"_L6_stream_AV_din&DW_"+seed+"_D1_stream_AV_din&DW_"+seed+"_D2_stream_AV_din&DW_"+seed+"_D3_stream_AV_din&DW_"+seed+"_D4_stream_AV_din&DW_"+seed+"_D5_stream_AV_din\n";
+                    string_tmp += ");\n";
+                    
         if memInfo.is_final:
             if memInfo.isFIFO:
               string_final += string_tmp
@@ -355,12 +366,9 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBOpener(tbfunc)
 
     string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[-1].mtype_short()], memPrintsDir, sector, split)
-    # A bodge for TrackBuilder to write TF concatenated track+stub data.
-    # (Needed to compare with emData/).
-    if 'TW_104' in memInfoDict.keys():
-      fileTF = open("bodge/TF_tb_constants.vhd.bodge")
-      string_constants += fileTF.read();
-
+    if 'TW_113' in memInfoDict.keys():
+        string_constants += 'constant FILE_OUT_TF          : string := dataOutDir&"TF_";';
+        
     string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split, MPARdict)
 
     string_begin = writeTBEntityBegin()

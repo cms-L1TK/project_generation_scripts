@@ -825,7 +825,7 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, del
     string_ctrl_signals += "    "+final_proc_short+"_bx_out : out std_logic_vector(2 downto 0);\n"
     string_ctrl_signals += "    "+final_proc_short+"_bx_out_vld : out std_logic;\n"
     string_ctrl_signals += "    "+final_proc_short+"_done   : out std_logic;\n"
-    if final_proc_short == "FT":
+    if final_proc_short == "TB":
       for final_proc in final_procs:
         string_ctrl_signals += "    "+final_proc+"_last_track   : out std_logic;\n"
         string_ctrl_signals += "    "+final_proc+"_last_track_vld   : out std_logic;\n"
@@ -1071,7 +1071,7 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
     string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_bx_out").ljust(str_len)+": std_logic_vector(2 downto 0) := (others => '1');\n"
     string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_bx_out_vld").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+final_procs[-1].mtype_short()+"_done").ljust(str_len)+": std_logic := '0';\n"
-    if final_procs[-1].mtype_short().startswith("FT"):
+    if final_procs[-1].mtype_short().startswith("TB"):
         for final_proc in final_procs:
             string_ctrl_signals += ("  signal "+final_proc.inst+"_last_track").ljust(str_len)+": std_logic := '0';\n"
             string_ctrl_signals += ("  signal "+final_proc.inst+"_last_track_vld").ljust(str_len)+": std_logic := '0';\n"
@@ -1219,7 +1219,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_bx_out").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_bx_out,\n"
     string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_bx_out_vld").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_bx_out_vld,\n"
     string_fwblock_inst += ("        " + final_procs[-1].mtype_short() + "_done").ljust(str_len) + "=> " + final_procs[-1].mtype_short() + "_done,\n"
-    if final_procs[-1].mtype_short().startswith("FT"):
+    if final_procs[-1].mtype_short().startswith("TB"):
         for final_proc in final_procs :
             string_fwblock_inst += ("        " + final_proc.inst + "_last_track").ljust(str_len) + "=> " + final_proc.inst + "_last_track,\n"
             string_fwblock_inst += ("        " + final_proc.inst + "_last_track_vld").ljust(str_len) + "=> " + final_proc.inst + "_last_track_vld,\n"
@@ -1643,7 +1643,7 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
         else:
             if first_of_type and not ("VMSMER" in modName or "PC" in modName):
                 bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
-                if ("FT_" in modName) or ("TP_" in modName):
+                if ("TB_" in modName) or ("TP_" in modName):
                   bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
                 else:
                   bx_str += "      bx_o_V_ap_vld => open,\n"

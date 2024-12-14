@@ -504,7 +504,7 @@ class TrackletGraph(object):
                 for up_m in up_p.upstreams:
                     if up_m.mtype != "FullMatch":
                         continue
-                    layer = up_m.inst.split("_")[-1][0:2]
+                    layer = up_m.inst.split("_")[2][0:2]
                     assert(layer.startswith("L") or layer.startswith("D"))
                     layers.add(layer)
 

@@ -497,7 +497,7 @@ class TrackletGraph(object):
                 down_p.upstreams.append(new_mem)
                 down_p.input_port_names.append("trackwordin")
 
-            # We will have all layers now for each TrackWord
+            # We will have all layers for each TrackWord
             layers = {'L6', 'D5', 'L4', 'D2', 'D1', 'L2', 'L5', 'L1', 'L3', 'D4', 'D3'}
 
             # Replace the old memory with a stub word for each of the

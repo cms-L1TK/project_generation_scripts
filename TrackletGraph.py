@@ -497,16 +497,8 @@ class TrackletGraph(object):
                 down_p.upstreams.append(new_mem)
                 down_p.input_port_names.append("trackwordin")
 
-            # Determine the layers/disks from the associated full match
-            # memories.
-            layers = set()
-            if up_p is not None:
-                for up_m in up_p.upstreams:
-                    if up_m.mtype != "FullMatch":
-                        continue
-                    layer = up_m.inst.split("_")[2][0:2]
-                    assert(layer.startswith("L") or layer.startswith("D"))
-                    layers.add(layer)
+            # We will have all layers now for each TrackWord
+            layers = {'L6', 'D5', 'L4', 'D2', 'D1', 'L2', 'L5', 'L1', 'L3', 'D4', 'D3'}
 
             # Replace the old memory with a stub word for each of the
             # layers/disks that can have matches.

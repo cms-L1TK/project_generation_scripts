@@ -292,21 +292,30 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split, MPARdict):
             string_tmp = writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc)
             # Code for TrackBuilder to write TF concatenated track+stub data.
             # (Needed to compare with emData/).
-            if mtypeB == 'TW_113':
+            if mtypeB.startswith('TW_'):
                 for m in memDict[mtypeB]:
                     memName = m.inst
                     seed = memName[-4:]
-                    string_tmp += "-- Clode for TrackBuilder to write TF concatenated track+stub data.\n";
+                    bw_keys = [key for key in memDict if key.startswith('BW_')]
+                    bw_width = memDict[bw_keys[0]][0].bitwidth if len(bw_keys) > 0 else 0
+                    n_bw = len(memDict[bw_keys[0]]) if len(bw_keys) > 0 else 0
+                    dw_keys = [key for key in memDict if key.startswith('DW_')]
+                    dw_width = memDict[dw_keys[0]][0].bitwidth if len(dw_keys) > 0 else 0
+                    n_dw = len(memDict[dw_keys[0]]) if len(dw_keys) > 0 else 0
+                    # Calculate total width of track word plus stub words
+                    total_width = str(m.bitwidth + n_bw * bw_width + n_dw * dw_width)
+
+                    string_tmp += "-- Code for TrackBuilder to write TF concatenated track+stub data.\n";
                     string_tmp += "-- (Needed to compare with emData/).\n";
-                    string_tmp += "writeTF_"+seed+"_634 : entity work.FileWriterFIFO\n";
+                    string_tmp += "writeTF_"+seed+"_" + total_width + " : entity work.FileWriterFIFO\n";
                     string_tmp += "generic map (\n";
                     string_tmp += "  FILE_NAME  => FILE_OUT_TF&\""+seed+"\"&outputFileNameEnding,\n";
-                    string_tmp += "  FIFO_WIDTH  => 634\n";
+                    string_tmp += "  FIFO_WIDTH  => " + total_width + "\n";
                     string_tmp += ")\n";
                     string_tmp += "port map (\n";
                     string_tmp += "  CLK => CLK,\n"
                     string_tmp += "  DONE => TB_DONE,\n";
-                    string_tmp += "  WRITE_EN => (TW_"+seed+"_stream_A_write and TW_"+seed+"_stream_AV_din(112)),\n";
+                    string_tmp += "  WRITE_EN => (TW_"+seed+"_stream_A_write and TW_"+seed+"_stream_AV_din("+str(m.bitwidth-1)+")),\n";
                     string_tmp += "  FULL_NEG => TW_"+seed+"_stream_A_full_neg,\n";
                     string_tmp += "  DATA => TW_"+seed+"_stream_AV_din&BW_"+seed+"_L1_stream_AV_din&BW_"+seed+"_L2_stream_AV_din&BW_"+seed+"_L3_stream_AV_din&BW_"+seed+"_L4_stream_AV_din&BW_"+seed+"_L5_stream_AV_din&BW_"+seed+"_L6_stream_AV_din&DW_"+seed+"_D1_stream_AV_din&DW_"+seed+"_D2_stream_AV_din&DW_"+seed+"_D3_stream_AV_din&DW_"+seed+"_D4_stream_AV_din&DW_"+seed+"_D5_stream_AV_din\n";
                     string_tmp += ");\n";
@@ -366,7 +375,7 @@ def writeTestBench(tbfunc, topfunc, process_list, memDict, memInfoDict, memPrint
     string_header += writeTBOpener(tbfunc)
 
     string_constants = writeTBConstants(memDict, memInfoDict, notfinal_procs+[final_procs[-1].mtype_short()], memPrintsDir, sector, split)
-    if 'TW_113' in memInfoDict.keys():
+    if len([key for key in memInfoDict if key.startswith('TW_')]) > 0:
         string_constants += 'constant FILE_OUT_TF          : string := dataOutDir&"TF_";';
         
     string_ctrl_signals = writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfinal_procs,split, MPARdict)

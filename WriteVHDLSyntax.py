@@ -202,6 +202,8 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
                 memtmp = memtmp.replace("n1","")
             #    memtmp = "T"+mem[1:10]
             string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
+            if "MPAR" in mem:
+                string_mem += "      PAGE_LENGTH".ljust(str_len) + "=> 128,\n"
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
@@ -317,6 +319,7 @@ def writeMemoryUtil(memDict, memInfoDict):
                 if "MPAR" in mtypeB:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(8+memInfo.bxbitwidth)+" downto 0);\n" 
+                    #ss += "  subtype "+tName+" is std_logic_vector("+str(7+memInfo.bxbitwidth)+" downto 0);\n" 
                 elif "MPROJ" in mtypeB:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(7+memInfo.bxbitwidth)+" downto 0);\n" 
@@ -584,8 +587,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         # Write parameters
         parameterlist += "        RAM_WIDTH       => "+bitwidth+",\n"
         parameterlist += "        NUM_PAGES       => "+str(num_pages)+",\n"
-        if "MPROJ" in mem:
+        if "MPROJ" in mem :
             parameterlist += "        PAGE_LENGTH       => 64,\n"
+        if "MPAR" in mem:
+            parameterlist += "        PAGE_LENGTH       => 128,\n"
         if "MPROJ" in mem or "MPAR" in mem:
             parameterlist += "        NUM_TPAGES       => 4,\n"
         parameterlist += "        INIT_FILE       => \"\",\n"
@@ -1369,7 +1374,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         string_mem += "        ADDR".ljust(str_len)+"=> "+mem+"_writeaddr,\n"
         string_mem += "        DATA".ljust(str_len)+"=> "+mem+"_din,\n"
         string_mem += "        WRITE_EN".ljust(str_len)+"=> "+mem+"_wea,\n"
-        if proc == "VMSMER" :
+        if proc == "VMSMER" or proc == "PC":
             string_mem += "        START".ljust(str_len)+"=> PC_START,\n"
         else:
             string_mem += "        START".ljust(str_len)+"=> "+(proc+"_START,\n" if not proc_up else proc_up+"_DONE,\n")
@@ -1489,6 +1494,7 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     if "PC_" in module.inst:
         module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
         module_str += "    generic map (\n"
+        module_str += "      PAGE_LENGTH    => 128,\n"
         module_str += "      RAM_WIDTH    => " + str(module.upstreams[0].bitwidth) + ",\n"
         module_str += "      NUM_TPAGES    => 4,\n"
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"

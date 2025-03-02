@@ -498,7 +498,7 @@ class TrackletGraph(object):
                 down_p.input_port_names.append("trackwordin")
 
             # We will have all layers for each TrackWord
-            layers = {'L6', 'D5', 'L4', 'D2', 'D1', 'L2', 'L5', 'L1', 'L3', 'D4', 'D3'}
+            layers = {'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'D1', 'D2', 'D3', 'D4', 'D5'}
 
             # Replace the old memory with a stub word for each of the
             # layers/disks that can have matches.

@@ -202,8 +202,6 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
                 memtmp = memtmp.replace("n1","")
             #    memtmp = "T"+mem[1:10]
             string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
-            if "MPAR" in mem:
-                string_mem += "      PAGE_LENGTH".ljust(str_len) + "=> 128,\n"
             string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
@@ -319,7 +317,6 @@ def writeMemoryUtil(memDict, memInfoDict):
                 if "MPAR" in mtypeB:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(8+memInfo.bxbitwidth)+" downto 0);\n" 
-                    #ss += "  subtype "+tName+" is std_logic_vector("+str(7+memInfo.bxbitwidth)+" downto 0);\n" 
                 elif "MPROJ" in mtypeB:
                     tName = "t_"+mtypeB+"_ADDR"
                     ss += "  subtype "+tName+" is std_logic_vector("+str(7+memInfo.bxbitwidth)+" downto 0);\n" 
@@ -588,8 +585,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         parameterlist += "        NUM_PAGES       => "+str(num_pages)+",\n"
         if "MPROJ" in mem :
             parameterlist += "        PAGE_LENGTH       => 64,\n"
-        if "MPAR" in mem:
-            parameterlist += "        PAGE_LENGTH       => 128,\n"
         if "MPROJ" in mem or "MPAR" in mem:
             parameterlist += "        NUM_TPAGES       => 4,\n"
         parameterlist += "        INIT_FILE       => \"\",\n"
@@ -1286,7 +1281,6 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
                     string_output += ("        "+mem+"_A_enb").ljust(str_len) + "=> "+mem+"_enb,\n"
                     string_output += ("        "+mem+"_AV_readaddr").ljust(str_len) + "=> "+mem+"_readaddr,\n"
                     string_output += ("        "+mem+"_AV_dout").ljust(str_len) + "=> "+mem+"_dout,\n"
-                    #string_output += ("        "+mem+"_AV_dout_mask").ljust(str_len) + "=> open,\n" #FIXME
                     string_output += ("        "+mem+"_enb_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_V_addr_nent").ljust(str_len) + "=> open,\n"
                     string_output += ("        "+mem+"_AV_dout_nent").ljust(str_len) + "=> open,\n"
@@ -1497,7 +1491,6 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
     if "PC_" in module.inst:
         module_str += "  " + module.inst + "_mem_reader : entity work.mem_reader\n"
         module_str += "    generic map (\n"
-        module_str += "      PAGE_LENGTH    => 128,\n"
         module_str += "      RAM_WIDTH    => " + str(module.upstreams[0].bitwidth) + ",\n"
         module_str += "      NUM_TPAGES    => 4,\n"
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"

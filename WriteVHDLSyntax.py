@@ -527,6 +527,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     wirelist += "STD_LOGIC_VECTOR(8 downto 0);\n"
                     wirelist += "  signal "+mem+"_AV_dout_nent        : "
                     wirelist += "t_arr_7b(0 to 31);\n"
+                    wirelist += "  signal "+mem+"_AV_dout_mask        : "
+                    wirelist += "t_arr_4b(0 to 7);\n"
                 #FIXME this is a hack
                 if "AS" in mem and "in" in mem :
                     wirelist += "  signal "+mem+"_V_as        : "
@@ -778,6 +780,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             else:
                 portlist += "        nent_o    => "+mem+"_AV_dout_nent,\n"
                 if "MPROJ" in mem:
+                    portlist += "        mask_o    => "+mem+"_AV_dout_mask,\n"
+                if "MPAR" in mem:
                     portlist += "        mask_o    => "+mem+"_AV_dout_mask,\n"
         else:
             portlist += "        nent_o    => open,\n"
@@ -1505,7 +1509,8 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
         module_str += "      dout  => MPAR_"+module.inst[3:]+"in_V_tpar,\n"
         module_str += "      valid  => MPAR_"+module.inst[3:]+"in_valid,\n"
         module_str += "      index  => MPAR_"+module.inst[3:]+"in_trackletindex,\n"
-        module_str += "      nent  => MPAR_"+module.inst[3:]+"in_AV_dout_nent\n"
+        module_str += "      nent  => MPAR_"+module.inst[3:]+"in_AV_dout_nent,\n"
+        module_str += "      mask  => MPAR_"+module.inst[3:]+"in_AV_dout_mask\n"
         module_str += "    );\n\n"
 
     if "VMSMER_" in module.inst:
@@ -1524,7 +1529,8 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
         module_str += "      dout  => AS_"+module.inst[7:]+"in_V_as,\n"
         module_str += "      valid  => AS_"+module.inst[7:]+"in_valid,\n"
         module_str += "      index  => AS_"+module.inst[7:]+"in_index(6 downto 0),\n"
-        module_str += "      nent  => AS_"+module.inst[7:]+"in_AV_dout_nent\n"
+        module_str += "      nent  => AS_"+module.inst[7:]+"in_AV_dout_nent,\n"
+        module_str += "      mask  => (others => (others => '1'))\n"
         module_str += "    );\n\n"
 
     module_str += str_ctrl_func

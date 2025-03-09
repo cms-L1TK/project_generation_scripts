@@ -298,10 +298,10 @@ def writeTBMemoryWrites(memDict, memInfoDict, notfinal_procs,split, MPARdict):
                     seed = memName[-4:]
                     bw_keys = [key for key in memDict if key.startswith('BW_')]
                     bw_width = memDict[bw_keys[0]][0].bitwidth if len(bw_keys) > 0 else 0
-                    n_bw = len(memDict[bw_keys[0]]) if len(bw_keys) > 0 else 0
+                    n_bw = len([key for key in memDict[bw_keys[0]] if seed in key.inst]) if len(bw_keys) > 0 else 0
                     dw_keys = [key for key in memDict if key.startswith('DW_')]
                     dw_width = memDict[dw_keys[0]][0].bitwidth if len(dw_keys) > 0 else 0
-                    n_dw = len(memDict[dw_keys[0]]) if len(dw_keys) > 0 else 0
+                    n_dw = len([key for key in memDict[dw_keys[0]] if seed in key.inst]) if len(dw_keys) > 0 else 0
                     # Calculate total width of track word plus stub words
                     total_width = str(m.bitwidth + n_bw * bw_width + n_dw * dw_width)
 

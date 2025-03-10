@@ -1368,6 +1368,9 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         if "MPROJ" in mem :
             string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
             string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
+        if "FM" in mem :
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"

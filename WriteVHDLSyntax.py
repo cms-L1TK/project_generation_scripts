@@ -635,13 +635,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
                     merge_portlist += "        rst => '0',\n"
                     merge_portlist += "        clk => clk,\n"
-                    merge_portlist += "        enb_arr => open,\n"
                     #This will make output for first stream_merge module (is there a less hacky way?)
                     if first_merge_streamer: 
                       merge_portlist += "        bx_out => TP_bx_out_merged,\n"
                       first_merge_streamer = False
-                    else:
-                      merge_portlist += "        bx_out => open,\n"
                     merge_portlist += "        merged_dout => MPAR_"+seed+PCGroup+"_stream_V_dout,\n"
                     for i in range(4):  merge_portlist += "        din"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_V_dout,\n"
                     for i in range(4):  merge_portlist += "        nent"+str(i)+"=>TPAR_"+seed+PCGroup[i%numInputs]+"_AV_dout_nent,\n"
@@ -663,8 +660,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
             merge_portlist += "        rst => '0',\n"
             merge_portlist += "        clk => clk,\n"
-            merge_portlist += "        enb_arr => open,\n"
-            merge_portlist += "        bx_out => open,\n"
             merge_portlist += "        merged_dout => "+mem+"_stream_V_dout,\n"
             for i in range(4):  merge_portlist += "        din"+str(i)+"=>" +mem+"_V_dout,\n"
             for i in range(4):  merge_portlist += "        nent"+str(i)+"=>" +mem+"_AV_dout_nent,\n"
@@ -1612,15 +1607,9 @@ def writeProcMemoryLHSPorts(argname,mem,split = False):
 
     string_mem_ports = ""
     if ("TPROJ" in mem.inst) and split == 1: #set TPROJ and VMSME to open for a split-FPGA project
-          string_mem_ports += "      "+argname+"_dataarray_data_V_ce0       => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_we0       => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_address0  => open,\n"
-          string_mem_ports += "      "+argname+"_dataarray_data_V_d0        => open,\n"
+        pass
     elif ("VMSME" in mem.inst and split == 1):
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_address0  => open,\n"
-        string_mem_ports += "      "+argname+"_dataarray_0_data_V_d0        => open,\n"
+        pass
     elif "memoriesTEO" in argname or "memoryME" in argname :
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_ce0       => open,\n"
         string_mem_ports += "      "+argname+"_dataarray_0_data_V_we0       => "

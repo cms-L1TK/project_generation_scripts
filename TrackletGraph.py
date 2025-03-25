@@ -233,7 +233,7 @@ class TrackletGraph(object):
             if barrelPS>-1 or barrel2S>-1: mem.bitwidth = 52
             if disk>-1: mem.bitwidth = 55
         elif mem.mtype == "TrackWord":
-            mem.bitwidth = 104
+            mem.bitwidth = 113
         elif mem.mtype == "BarrelStubWord":
             mem.bitwidth = 46
         elif mem.mtype == "DiskStubWord":
@@ -497,16 +497,8 @@ class TrackletGraph(object):
                 down_p.upstreams.append(new_mem)
                 down_p.input_port_names.append("trackwordin")
 
-            # Determine the layers/disks from the associated full match
-            # memories.
-            layers = set()
-            if up_p is not None:
-                for up_m in up_p.upstreams:
-                    if up_m.mtype != "FullMatch":
-                        continue
-                    layer = up_m.inst.split("_")[-1][0:2]
-                    assert(layer.startswith("L") or layer.startswith("D"))
-                    layers.add(layer)
+            # We will have all layers for each TrackWord
+            layers = {'L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'D1', 'D2', 'D3', 'D4', 'D5'}
 
             # Replace the old memory with a stub word for each of the
             # layers/disks that can have matches.

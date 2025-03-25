@@ -1,6 +1,0 @@
-  -- A bodge for TrackBuilder to write TF concatenated track+stub data.
-  -- (Needed to compare with emData/).
-  constant FILE_OUT_TF          : string := dataOutDir&"TF_";
-  -- Empty field in the output from barrel-only TrackBuilders corresponding to
-  -- disk matches
-  constant emptyDiskStub : std_logic_vector(48 downto 0) := (others => '0');

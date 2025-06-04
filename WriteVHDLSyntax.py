@@ -442,12 +442,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
     first_tp=""
 
     for memmod in memList:
-        nmem = 0
         mem=memmod.inst
         if "L1L2" in mem:
             first_tp = "TP_L1L2A"
 
-    #If we did not find L1L2 assume L5L^ for reduced project
+    #If we did not find L1L2 assume L5L6 for reduced project
     if first_tp == "" :
         first_tp = "TP_L5L6A"
 

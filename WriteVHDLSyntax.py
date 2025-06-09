@@ -636,6 +636,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        dina      => "+mem+"_din,\n"
         if delay > 0:
             delay_portlist += "        clk      => clk,\n"
+            delay_portlist += "        reset    => reset,\n"
             delay_portlist += "        wea       => "+mem+"_wea,\n"
             delay_portlist += "        addra     => "+mem+"_writeaddr,\n"
             delay_portlist += "        dina      => "+mem+"_din,\n"
@@ -1529,6 +1530,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
 
         int_ctrl_func += "    port map (\n"
         int_ctrl_func += "      clk   => clk,\n"
+        int_ctrl_func += "      reset => reset,\n"
         int_ctrl_func += "      done  => PC_start,\n"
         int_ctrl_func += "      bx_out => PC_bx_in,\n"
         int_ctrl_func += "      bx => PC_bx_out,\n"
@@ -1549,6 +1551,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
     int_ctrl_func += "  LATCH_"+mtype+": entity work.tf_pipeline_slr_xing\n"
     int_ctrl_func += "    port map (\n"
     int_ctrl_func += "      clk   => clk,\n"
+    int_ctrl_func += "      reset => reset,\n"
     if "MP_" in mtype :
         int_ctrl_func += "      done  => PC_done,\n"
         int_ctrl_func += "      bx_out => PC_bx_out,\n"
@@ -1573,6 +1576,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
         int_ctrl_func += "  LATCH_"+mtype+"_BX_GEN: entity work.tf_pipeline_slr_xing\n"
         int_ctrl_func += "    port map (\n"
         int_ctrl_func += "      clk   => clk,\n"
+        int_ctrl_func += "      reset => reset,\n"
         if first_proc:
             if mtype_up == "VMSMER":
                 mtype_up = "PC"

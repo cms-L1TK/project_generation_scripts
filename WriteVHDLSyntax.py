@@ -132,7 +132,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
     string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
-    string_mem += "    variable CLK_COUNT : natural := 4; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
+    string_mem += "    variable CLK_COUNT : natural := 2; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"

@@ -1523,7 +1523,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
 
         int_ctrl_func +=  "  LATCH_PC_VMSMER: entity work.tf_pipeline_slr_xing\n"
         startsignal_parameter_list  = "        NUM_SLR       => 3,\n"
-        startsignal_parameter_list += "        DELAY         => (2, 119, 2),\n"
+        startsignal_parameter_list += "        DELAY         => (2, 124, 2),\n"
         startsignal_parameter_list += "        USE_SRL       => (false, true, false),\n"
         int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
 

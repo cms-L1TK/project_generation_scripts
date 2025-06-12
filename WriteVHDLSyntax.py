@@ -132,7 +132,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
     string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
-    string_mem += "    variable CLK_COUNT : natural := 4; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
+    string_mem += "    variable CLK_COUNT : natural := 2; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
@@ -1315,13 +1315,13 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
             else:
                 string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
             if "VMSME" in mem:
-                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
+                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         if "MPROJ" in mem :
             string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
             string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         if "FM" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"
@@ -1523,7 +1523,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_
 
         int_ctrl_func +=  "  LATCH_PC_VMSMER: entity work.tf_pipeline_slr_xing\n"
         startsignal_parameter_list  = "        NUM_SLR       => 3,\n"
-        startsignal_parameter_list += "        DELAY         => (2, 119, 2),\n"
+        startsignal_parameter_list += "        DELAY         => (2, 124, 2),\n"
         startsignal_parameter_list += "        USE_SRL       => (false, true, false),\n"
         int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
 

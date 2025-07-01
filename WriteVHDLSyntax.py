@@ -136,17 +136,17 @@ def writeTBMemoryStimulusProcess(initial_proc):
     # Stimulates reading and process start
     """
 
-    string_mem = "  procStart : process(CLK240)\n"
+    string_mem = "  procStart : process(CLK240)\n" if "IR" not in initial_proc else "  procStart : process(CLK360)\n"
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
     string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
-    string_mem += "    variable CLK_COUNT : natural := 2; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES - CLK_RESET;\n"
+    string_mem += "    variable CLK_COUNT : natural := 2; -- Magic adjustment (ryd)\n" if "IR" not in initial_proc else "    variable CLK_COUNT : natural := MAX_ENTRIES_360 - CLK_RESET;\n"
     string_mem += "    variable EVENT_COUNT : integer := -1;\n"
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
     string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + " = '1' then\n"
-    string_mem += "      if rising_edge(CLK240) then\n"
-    string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
+    string_mem += "      if rising_edge(CLK240) then\n" if "IR" not in initial_proc else "      if rising_edge(CLK360) then\n"
+    string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n" if "IR" not in initial_proc else "        if (CLK_COUNT < MAX_ENTRIES_360) then\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
     string_mem += "        else\n"
     string_mem += "          CLK_COUNT := 1;\n"
@@ -158,7 +158,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "          write(v_line, string'(\"=== Processing event \")); write(v_line,EVENT_COUNT); write(v_line, string'(\" at SIM time \")); write(v_line, NOW); writeline(output, v_line);\n"
     string_mem += "        end if;\n"
     string_mem += "        -- Releae\n"
-    string_mem += "        if (CLK_COUNT = " + ("CLK_RESET" if "IR" not in initial_proc else "MAX_ENTRIES") + ") then \n"
+    string_mem += "        if (CLK_COUNT = " + ("CLK_RESET" if "IR" not in initial_proc else "MAX_ENTRIES_360") + ") then \n"
     string_mem += "          RESET <= '0';\n"
     string_mem += "        end if;\n"
     string_mem += "      end if;\n"
@@ -192,10 +192,11 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_"+mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
             string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
-            string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_DL_debug&\""+ memtmp + "\"&debugFileNameEnding\n"
+            string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_DL_debug&\""+ memtmp + "\"&debugFileNameEnding,\n"
+            string_mem += "      MAX_ENTRIES".ljust(str_len) + "=> MAX_ENTRIES_360\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"
-            string_mem += "      CLK".ljust(str_len) + "=> CLK240,\n"
+            string_mem += "      CLK".ljust(str_len) + "=> CLK360,\n"
             string_mem += "      LOCKED".ljust(str_len) + "=> LOCKED,\n"
             string_mem += "      READ_EN".ljust(str_len) + "=> " + mem + "_link_read,\n"
             string_mem += "      DATA".ljust(str_len) + "=> " + mem + "_link_AV_dout,\n"
@@ -596,7 +597,9 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             parameterlist += "        FILE_WRITE            => true,\n"
         else:
             parameterlist += "        FILE_WRITE            => false,\n"
-
+        if mem.startswith("IL_"):
+            parameterlist += "        NENT_SYNC       => true,\n"
+            parameterlist += "        MAX_ENTRIES     => MAX_ENTRIES_360,\n"
         if "MPROJ" in mem:
             #special case for the merged projections
             delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
@@ -635,11 +638,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
 
             #FIXME implement delay for disks
         # Write ports
-        portlist += "        clka      => clk240,\n"
+        portlist += "        clka      => clk240,\n" if not mem.startswith("IL_") else "        clka      => clk360,\n"
         portlist += "        wea       => "+mem+"_wea_delay,\n"
         portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
         portlist += "        dina      => "+mem+"_din_delay,\n"
-        delay_portlist += "        clk      => clk240,\n"
+        delay_portlist += "        clk      => clk240,\n" if not mem.startswith("IL_") else "        clk      => clk360,\n"
         delay_portlist += "        reset    => reset,\n"
         delay_portlist += "        wea       => "+mem+"_wea,\n"
         delay_portlist += "        addra     => "+mem+"_writeaddr,\n"
@@ -1219,7 +1222,7 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
     string_fwblock_inst += "      port map(\n"
     string_fwblock_inst += "        clk240".ljust(str_len) + "=> clk240,\n"
-    string_fwblock_inst += "        clk360".ljust(str_len) + "=> clk240, -- Using 240-MHz clock until CDC is integrated\n"
+    string_fwblock_inst += "        clk360".ljust(str_len) + "=> clk360,\n"
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
@@ -1541,8 +1544,15 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
     int_ctrl_wire += "  signal "+mtype+"_bx : std_logic_vector(2 downto 0);\n"
     int_ctrl_wire += "  signal "+mtype+"_start : std_logic := '0';\n"
     int_ctrl_func += "  LATCH_"+mtype+": entity work.tf_pipeline_slr_xing\n"
+    if mtype.startswith("VMR_"):
+        int_ctrl_func += "    generic map (\n"
+        int_ctrl_func += "      NUM_SLR => 1\n"
+        int_ctrl_func += "    )\n"
     int_ctrl_func += "    port map (\n"
-    int_ctrl_func += "      clk   => clk240,\n"
+    if not (mtype.startswith("IR_") or mtype.startswith("VMR_")):
+        int_ctrl_func += "      clk   => clk240,\n"
+    else:
+        int_ctrl_func += "      clk   => clk360,\n"
     int_ctrl_func += "      reset => reset,\n"
     if "MP_" in mtype :
         int_ctrl_func += "      done  => PC_done,\n"
@@ -1558,10 +1568,32 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
             int_ctrl_func += "      bx_out => "+mtype_up+"_bx_out,\n"
     if "PC_" in mtype or "VMSMER_" in mtype:
         int_ctrl_func += "      bx => "+mtype+"_bx_in,\n"
+    elif mtype.startswith("VMR_"):
+        int_ctrl_func += "      bx => "+mtype+"_bx_0,\n"
     else:
         int_ctrl_func += "      bx => "+mtype+"_bx,\n"
-    int_ctrl_func += "      start => "+mtype+"_start\n"
+    if mtype.startswith("VMR_"):
+        int_ctrl_func += "      start => "+mtype+"_start_0\n"
+    else:
+        int_ctrl_func += "      start => "+mtype+"_start\n"
     int_ctrl_func += "  );\n\n"
+
+    if mtype.startswith("VMR_"):
+        int_ctrl_wire += "  signal "+mtype+"_bx_0 : std_logic_vector(2 downto 0);\n"
+        int_ctrl_wire += "  signal "+mtype+"_start_0 : std_logic := '0';\n"
+        int_ctrl_func += "  LATCH_"+mtype+"_0: entity work.tf_pipeline_slr_xing\n"
+        int_ctrl_func += "    generic map (\n"
+        int_ctrl_func += "      NUM_SLR => 1,\n"
+        int_ctrl_func += "      LATCH_START => false\n"
+        int_ctrl_func += "    )\n"
+        int_ctrl_func += "    port map (\n"
+        int_ctrl_func += "      clk   => clk240,\n"
+        int_ctrl_func += "      reset => reset,\n"
+        int_ctrl_func += "      done  => "+mtype+"_start_0,\n"
+        int_ctrl_func += "      bx_out => "+mtype+"_bx_0,\n"
+        int_ctrl_func += "      bx => "+mtype+"_bx,\n"
+        int_ctrl_func += "      start => "+mtype+"_start\n"
+        int_ctrl_func += "  );\n\n"
 
     if "PC_" in mtype or "VMSMER_" in mtype: # only needed for modules that use mem_reader
         int_ctrl_wire += "  signal "+mtype+"_bx_in : std_logic_vector(2 downto 0);\n"
@@ -1585,7 +1617,10 @@ def writeProcControlSignalPorts(module,first_of_type):
     # Processing module port assignment: control signals
     """
     string_ctrl_ports = ""
-    string_ctrl_ports += "      ap_clk   => clk240,\n"
+    if (module.mtype_short() != "IR") :
+        string_ctrl_ports += "      ap_clk   => clk240,\n"
+    else :
+        string_ctrl_ports += "      ap_clk   => clk360,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
     if (module.mtype_short()=="PC") :
         string_ctrl_ports += "      ap_start => '1',\n"

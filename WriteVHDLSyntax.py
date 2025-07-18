@@ -710,12 +710,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             portlist += "        enb       => '1',\n"
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"
             portlist += "        doutb     => "+mem+"_V_dout,\n"
-        if "AS" in mem and "n1" in mem and split == 1:
-            portlist += "        sync_nent => "+first_tp+"_start,\n"
-        elif "TPAR" in mem and split == 1:
-            portlist += "        sync_nent => TP_done,\n" 
-        else:
-            portlist += "        sync_nent => "+mem+"_start,\n"
+        portlist += "        sync_nent => "+mem+"_start,\n"
         if memmod.has_numEntries_out or ("n1" in mem and split == 1):
             if memList[0].is_binned:
                 ncopy = getVMStubNCopy(memmod);

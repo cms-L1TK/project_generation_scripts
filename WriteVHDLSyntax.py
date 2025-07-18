@@ -417,7 +417,7 @@ def writeMemoryUtil(memDict, memInfoDict):
 
     return ss;
 
-def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, split = False, MPARdict = 0):
+def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False, MPARdict = 0):
     """
     # Declaration of memories of type "mtype" (e.g. TPROJ) & associated wires
     # Inputs:
@@ -476,24 +476,23 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         merge_parameterlist = ""
         merge_portlist = ""
         # Write wires
-        if delay > 0:
-            wirelist += "  signal "+mem+"_start                   : "
-            wirelist += "std_logic;\n"
-            wirelist += "  signal "+mem+"_wea_delay          : "
+        wirelist += "  signal "+mem+"_start                   : "
+        wirelist += "std_logic;\n"
+        wirelist += "  signal "+mem+"_wea_delay          : "
+        wirelist += "t_"+mtypeB+"_1b;\n"
+        wirelist += "  signal "+mem+"_writeaddr_delay   : "
+        wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
+        wirelist += "  signal "+mem+"_din_delay         : "
+        wirelist += "t_"+mtypeB+"_DATA;\n"
+        if (interface != -1 and not extraports) or (split == 1 and "TPAR" in mem):
+            if "TPAR" in mem:
+                wirelist += "  signal "+mem+"_dummy   : std_logic_vector(1 downto 0);\n"
+            wirelist += "  signal "+mem+"_wea          : "
             wirelist += "t_"+mtypeB+"_1b;\n"
-            wirelist += "  signal "+mem+"_writeaddr_delay   : "
+            wirelist += "  signal "+mem+"_writeaddr   : "
             wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
-            wirelist += "  signal "+mem+"_din_delay         : "
+            wirelist += "  signal "+mem+"_din         : "
             wirelist += "t_"+mtypeB+"_DATA;\n"
-            if (interface != -1 and not extraports) or (split == 1 and "TPAR" in mem):
-                if "TPAR" in mem:
-                    wirelist += "  signal "+mem+"_dummy   : std_logic_vector(1 downto 0);\n"
-                wirelist += "  signal "+mem+"_wea          : "
-                wirelist += "t_"+mtypeB+"_1b;\n"
-                wirelist += "  signal "+mem+"_writeaddr   : "
-                wirelist += "t_"+mtypeB+"_ADDR"+disk+";\n"
-                wirelist += "  signal "+mem+"_din         : "
-                wirelist += "t_"+mtypeB+"_DATA;\n"
         if not (interface == 1 and not split == 1):
             if memInfo.is_binned :
                 wirelist += "  signal "+mem+"_A_enb         : "
@@ -590,22 +589,20 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         else:
             parameterlist += "        FILE_WRITE            => false,\n"
 
-        if delay > 0:
-            #enable to use non-default delay value
-            if "MPROJ" in mem:
-                #special case for the merged projections
-                delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
-            if "MPAR" in mem or "MPROJ" in mem:
-                #special case for the merged memories
-                delay_parameterlist +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
-            else:
-                delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
-            if memInfo.is_binned:
-                disk=""
-                if "VMSME_D" in mem:
-                    disk = "*2"
-                delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
-            delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
+        if "MPROJ" in mem:
+            #special case for the merged projections
+            delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
+        if "MPAR" in mem or "MPROJ" in mem:
+            #special case for the merged memories
+            delay_parameterlist +="        NUM_PAGES       => "+str(4*num_pages)+",\n"
+        else:
+            delay_parameterlist +="        NUM_PAGES       => "+str(num_pages)+",\n"
+        if memInfo.is_binned:
+            disk=""
+            if "VMSME_D" in mem:
+                disk = "*2"
+            delay_parameterlist +="        RAM_DEPTH       => "+str(num_pages)+disk+"*PAGE_LENGTH_CM,\n"
+        delay_parameterlist +="        RAM_WIDTH       => "+bitwidth+",\n"
 
         ncopy = getVMStubNCopy(memmod);
 
@@ -631,32 +628,26 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             #FIXME implement delay for disks
         # Write ports
         portlist += "        clka      => clk,\n"
-        if delay > 0:
-            portlist += "        wea       => "+mem+"_wea_delay,\n"
-            portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
-            portlist += "        dina      => "+mem+"_din_delay,\n"
+        portlist += "        wea       => "+mem+"_wea_delay,\n"
+        portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
+        portlist += "        dina      => "+mem+"_din_delay,\n"
+        delay_portlist += "        clk      => clk,\n"
+        delay_portlist += "        reset    => reset,\n"
+        delay_portlist += "        wea       => "+mem+"_wea,\n"
+        delay_portlist += "        addra     => "+mem+"_writeaddr,\n"
+        delay_portlist += "        dina      => "+mem+"_din,\n"
+        delay_portlist += "        wea_out       => "+mem+"_wea_delay,\n"
+        delay_portlist += "        addra_out     => "+mem+"_writeaddr_delay,\n"
+        delay_portlist += "        dina_out      => "+mem+"_din_delay,\n"
+        if not memmod.is_initial:
+            previous_module = memmod.upstreams[0].mtype_short()
+            if previous_module == "VMSMER":
+                previous_module = "PC"
+            delay_portlist += "        done       => "+previous_module+"_done,\n"
+        #elif "AS_" in mem:
         else:
-            portlist += "        wea       => "+mem+"_wea,\n"
-            portlist += "        addra     => "+mem+"_writeaddr,\n"
-            portlist += "        dina      => "+mem+"_din,\n"
-        if delay > 0:
-            delay_portlist += "        clk      => clk,\n"
-            delay_portlist += "        reset    => reset,\n"
-            delay_portlist += "        wea       => "+mem+"_wea,\n"
-            delay_portlist += "        addra     => "+mem+"_writeaddr,\n"
-            delay_portlist += "        dina      => "+mem+"_din,\n"
-            delay_portlist += "        wea_out       => "+mem+"_wea_delay,\n"
-            delay_portlist += "        addra_out     => "+mem+"_writeaddr_delay,\n"
-            delay_portlist += "        dina_out      => "+mem+"_din_delay,\n"
-            if not memmod.is_initial:
-                previous_module = memmod.upstreams[0].mtype_short()
-                if previous_module == "VMSMER":
-                    previous_module = "PC"
-                delay_portlist += "        done       => "+previous_module+"_done,\n"
-            #elif "AS_" in mem:
-            else:
-                delay_portlist += "        done       => PC_start,\n"
-            delay_portlist += "        start      => "+mem+"_start,\n"
+            delay_portlist += "        done       => PC_start,\n"
+        delay_portlist += "        start      => "+mem+"_start,\n"
         # add merge_stream modules if split and TPAR or AS
         if "TPAR" in mem and split == 1:
             addrwidth = 10
@@ -780,14 +771,13 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                 mem_str += "    "+mem+" : entity work.tf_mem\n"        
         mem_str += "      generic map (\n"+parameterlist.rstrip(",\n")+"\n      )\n"
         mem_str += "      port map (\n"+portlist.rstrip(",\n")+"\n      );\n\n"
-        if delay > 0:
-            mem_str += "    "+mem+"_DELAY : entity work.tf_pipeline_slr_xing\n"        
-            mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
-            mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
+        mem_str += "    "+mem+"_DELAY : entity work.tf_pipeline_slr_xing\n"        
+        mem_str += "      generic map (\n"+delay_parameterlist.rstrip(",\n")+"\n      )\n"
+        mem_str += "      port map (\n"+delay_portlist.rstrip(",\n")+"\n      );\n\n"
 
     return wirelist,mem_str
 
-def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = 0, split = 0):
+def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, split = 0):
     """
     # Top-level interface: control signals
     """
@@ -1467,7 +1457,7 @@ def writeLUTCombination(lut, argname, portlist, parameterlist):
 
     return lut_str
 
-def writeStartSwitchAndInternalBX(module,mem,extraports=False, delay = 0, first_of_type=False):
+def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=False):
     """
     # Top-level: control (start/done) & Bx signals for use by given module
     # Inputs: processing module & memory that is upstream of it.
@@ -1571,7 +1561,7 @@ def writeProcControlSignalPorts(module,first_of_type):
 
     return string_ctrl_ports
 
-def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
+def writeProcBXPort(modName,isInput,isInitial,first_of_type):
     """
     # Processing module port assignment: BX ports
     """
@@ -1585,16 +1575,12 @@ def writeProcBXPort(modName,isInput,isInitial,first_of_type,delay):
     elif isInput and not isInitial:
         bx_str = "      bx_V          => "+modName+"_bx,\n"
     if not isInput:
-        if delay==0:
-            bx_str += "      bx_o_V        => "+modName+"_bx_out,\n"
-            bx_str += "      bx_o_V_ap_vld => "+modName+"_bx_out_vld,\n"
-        else:
-            if first_of_type and not ("VMSMER" in modName or "PC" in modName):
-                bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
-                if ("TB_" in modName) or ("TP_" in modName):
-                  bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
-                else:
-                  bx_str += "      bx_o_V_ap_vld => open,\n"
+        if first_of_type and not ("VMSMER" in modName or "PC" in modName):
+            bx_str += "      bx_o_V        => "+modName.split("_")[0]+"_bx_out,\n"
+            if ("TB_" in modName) or ("TP_" in modName):
+              bx_str += "      bx_o_V_ap_vld => "+modName.split("_")[0]+"_bx_out_vld,\n"
+            else:
+              bx_str += "      bx_o_V_ap_vld => open,\n"
     return bx_str
 
 def writeProcMemoryLHSPorts(argname,mem,split = False):

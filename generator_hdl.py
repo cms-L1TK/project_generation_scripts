@@ -31,7 +31,7 @@ import os, subprocess
 # Memories
 ########################################
 
-def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0, MPARdict = 0):
+def writeMemoryModules(memDict, memInfoDict, extraports , split = 0, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -56,7 +56,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0, MPAR
         if (("VMSME" in mtypeB and split == 1) or ("TPROJ" in mtypeB and split == 1)):
             continue
 
-        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = delay, split = split, MPARdict = MPARdict)
+        string_wires_inst, string_mem_inst = writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = split, MPARdict = MPARdict)
         string_wires += string_wires_inst
         string_mem += string_mem_inst
     
@@ -65,7 +65,7 @@ def writeMemoryModules(memDict, memInfoDict, extraports , delay, split = 0, MPAR
 ########################################
 # Processing modules
 ########################################
-def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
+def writeProcModules(proc_list, hls_src_dir, extraports, split = 0):
     """
     # proc_list:   a list of processing modules
     # hls_src_dir: string pointing to the HLS directory, used to extract constants
@@ -84,10 +84,10 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
         if ("PC" in aProcMod.mtype or "VMSMER" in aProcMod.mtype) and split == 1:
             continue
         if not aProcMod.mtype in proc_type_list: # Is this aProcMod the first of its type
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, delay, split)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, True, extraports, split)
             proc_type_list.append(aProcMod.mtype)
         else:
-            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports, delay, split)
+            proc_wire_inst,proc_func_inst = writeModuleInstance(aProcMod, hls_src_dir, False, extraports, split)
         string_proc_wire += proc_wire_inst
         string_proc_func += proc_func_inst
         
@@ -96,7 +96,7 @@ def writeProcModules(proc_list, hls_src_dir, extraports, delay, split = 0):
 ########################################
 # Top function interface
 ########################################
-def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, delay, split, streamIO=False, MPARdict = 0):
+def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,  extraports, split, streamIO=False, MPARdict = 0):
     """
     # topmodule_name:  name of the top module
     # process_list:    list of all processing functions in the block (in this function, this list is
@@ -128,7 +128,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
     string_topmod_interface = writeTopModuleOpener(topmodule_name)
 
     # Write control signals
-    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, delay = delay, split = split)
+    string_ctrl_signals = writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, split = split)
     
     string_input_mems = ""
     string_output_mems = ""
@@ -169,7 +169,7 @@ def writeTopModule_interface(topmodule_name, process_list, memDict, memInfoDict,
 ########################################
 # Top file
 ########################################
-def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, delay, split = False, MPARdict = 0):
+def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraports, split = False, MPARdict = 0):
     """
     # Inputs:
     #   memDict = dictionary of memories organised by type 
@@ -180,7 +180,7 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # Write memories
     string_memWires = ""
     string_memModules = ""
-    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, delay, split, MPARdict)
+    memWires_inst,memModules_inst = writeMemoryModules(memDict, memInfoDict, extraports, split, MPARdict)
     string_memWires   += memWires_inst
     string_memModules += memModules_inst
 
@@ -192,11 +192,11 @@ def writeTopFile(topfunc, process_list, memDict, memInfoDict, hls_dir, extraport
     # HLS source code directory
     source_dir = hls_dir.rstrip('/')+'/TrackletAlgorithm'
 
-    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports, delay, split)
+    string_procWires, string_procModules = writeProcModules(process_list, source_dir, extraports, split)
 
     # Top function interface
     string_topmod_interface = writeTopModule_interface(topfunc, process_list,
-                                                       memDict, memInfoDict, extraports, delay, split, MPARdict=MPARdict)
+                                                       memDict, memInfoDict, extraports, split, MPARdict=MPARdict)
 
     string_src = ""
     string_src += writeTopPreamble()
@@ -473,8 +473,6 @@ if __name__ == "__main__":
                         help="Number of downstream processing steps to include")
     parser.add_argument('-x', '--extraports', action='store_true', 
                         help="Add debug ports corresponding to all BRAM inputs")
-    parser.add_argument('-de', '--delay', type=int, default=0,
-                        help="Number of pipeline stages in between processing and memory modules to include, setting 0 does not include pipeline modules")
     parser.add_argument('-sp', '--split', type =int, default=0,
                         help="enables split-fpga project, a value of 1 for first-fpga project, 2 for second-fpga, 0 for single fpga projects")
 
@@ -589,7 +587,7 @@ if __name__ == "__main__":
     ###############
     #  Top File
     string_topfile = writeTopFile(topfunc, process_list,
-                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.delay, args.split, MPARdict = MPARdict)
+                                  memDict, memInfoDict, args.hls_dir, args.extraports, args.split, MPARdict = MPARdict)
 
     ###############
     # Test bench

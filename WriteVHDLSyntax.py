@@ -657,6 +657,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             iTC = mem.split("_")[1][-1]
             for PCGroup in MPARdict[seed]:
                 if iTC == PCGroup[0]:
+                    wirelist += "  signal TPAR"+seed+PCGroup+"_bx                      : std_logic_vector(2 downto 0);\n"
+                    wirelist += "  signal TPAR"+seed+PCGroup+"_bx_vld                  : std_logic;\n"
                     numInputs = len(PCGroup)
                     merge_parameterlist += "        RAM_WIDTH => "+str(ramwidth)+",\n"
                     merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
@@ -668,8 +670,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
                     else:
                         merge_parameterlist += "        FILE_WRITE     => false,\n"
 
-                    merge_portlist += "        bx_in => TP_bx_out,\n"
-                    merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
+                    merge_portlist += "        bx_in => TPAR"+seed+PCGroup+"_bx,\n"
+                    merge_portlist += "        bx_in_vld => TPAR"+seed+PCGroup+"_bx_vld,\n"
                     merge_portlist += "        rst => '0',\n"
                     merge_portlist += "        clk => clk,\n"
                     #This will make output for first stream_merge module (is there a less hacky way?)
@@ -684,7 +686,19 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
                     mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
                     mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
 
+                    stream_delay_portlist = ""
+                    stream_delay_portlist += "        clk        => clk240,\n"
+                    stream_delay_portlist += "        reset      => reset,\n"
+                    stream_delay_portlist += "        bx_out     => TP_bx_out,\n"
+                    stream_delay_portlist += "        bx_out_vld => TP_bx_out_vld,\n"
+                    stream_delay_portlist += "        bx         => TPAR"+seed+PCGroup+"_bx,\n"
+                    stream_delay_portlist += "        bx_vld     => TPAR"+seed+PCGroup+"_bx_vld,\n"
+                    mem_str += "    TPAR"+seed+PCGroup+"_STREAM_DELAY : entity work.tf_pipeline_slr_xing\n"        
+                    mem_str += "      port map (\n"+stream_delay_portlist.rstrip(",\n")+"\n      );\n\n"
+
         elif "AS" in mem and "n1" in mem and split == 1:
+            wirelist += "  signal "+mem+"_bx                      : std_logic_vector(2 downto 0);\n"
+            wirelist += "  signal "+mem+"_bx_vld                  : std_logic;\n"
             addrwidth = 10
             ramwidth = memInfo.bitwidth
             numpages = 8
@@ -695,8 +709,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
             merge_parameterlist += "        FILE_WRITE     => false,\n" # don't write here since we write memory
             merge_parameterlist += "        NAME => \"" + mem + "\",\n"
-            merge_portlist += "        bx_in => TP_bx_out,\n"
-            merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
+            merge_portlist += "        bx_in => "+mem+"_bx,\n"
+            merge_portlist += "        bx_in_vld => "+mem+"_bx_vld,\n"
             merge_portlist += "        rst => '0',\n"
             merge_portlist += "        clk => clk,\n"
             merge_portlist += "        merged_dout => "+mem+"_stream_V_dout,\n"
@@ -706,6 +720,17 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             mem_str += "    STREAM_"+mem+" : entity work.tf_merge_streamer\n"
             mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
+
+            stream_delay_portlist = ""
+            stream_delay_portlist += "        clk        => clk,\n"
+            stream_delay_portlist += "        reset      => reset,\n"
+            stream_delay_portlist += "        bx_out     => TP_bx_out,\n"
+            stream_delay_portlist += "        bx_out_vld => TP_bx_out_vld,\n"
+            stream_delay_portlist += "        bx         => "+mem+"_bx,\n"
+            stream_delay_portlist += "        bx_vld     => "+mem+"_bx_vld,\n"
+            mem_str += "    "+mem+"_STREAM_DELAY : entity work.tf_pipeline_slr_xing\n"        
+            mem_str += "      port map (\n"+stream_delay_portlist.rstrip(",\n")+"\n      );\n\n"
+
         portlist += "        clkb      => clk,\n"
         portlist += "        rsta      => reset,\n"
         portlist += "        rstb      => '0',\n"

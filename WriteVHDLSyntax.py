@@ -709,7 +709,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
         portlist += "        clkb      => clk,\n"
         portlist += "        rsta      => reset,\n"
         portlist += "        rstb      => '0',\n"
-        portlist += "        regceb    => '1',\n"
         if not memInfo.is_binned :
             portlist += "        enb       => '1',\n"
             portlist += "        addrb     => "+mem+"_V_readaddr,\n"

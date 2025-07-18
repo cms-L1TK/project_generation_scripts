@@ -619,8 +619,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             parameterlist += "        NUM_COPY        => "+str(ncopy)+"\n"
         if "TPAR" in mem:
             parameterlist += "        MEM_TYPE        => \"ultra\",\n"
+            parameterlist += "        OUT_PIPE_DEPTH  => 2,\n"
 
-            #FIXME implement delay for disks
         # Write ports
         portlist += "        clka      => clk,\n"
         portlist += "        wea       => "+mem+"_wea_delay,\n"

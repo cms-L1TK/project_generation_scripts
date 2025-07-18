@@ -1192,7 +1192,7 @@ def parseProcFunction(proc_name, fname_def):
     return arg_types_list, arg_names_list, templ_pars_list
 
 def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
-                              f_matchArgPortNames, first_of_type, extraports,delay,split=0):
+                              f_matchArgPortNames, first_of_type, extraports,split=0):
     ####
     # function name
 
@@ -1213,7 +1213,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         oneProcUpMem = mem
         break
     ports_added = (module.mtype in writeModuleInst_generic.modules_with_ports_added)
-    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,delay, first_of_type)
+    ctrl_wire_inst,ctrl_func_inst = writeStartSwitchAndInternalBX(module,oneProcUpMem,extraports or ports_added,first_of_type)
     str_ctrl_wire += ctrl_wire_inst
     str_ctrl_func += ctrl_func_inst
     writeModuleInst_generic.modules_with_ports_added.add(module.mtype)
@@ -1257,15 +1257,15 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
             for mem in module.upstreams:
                 if mem.bxbitwidth != 1: continue
                 if mem.is_initial:
-                    string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type,delay)
+                    string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type)
                     break
                 else:
-                    string_bx_in += writeProcBXPort(module.inst,True,False,first_of_type,delay)
+                    string_bx_in += writeProcBXPort(module.inst,True,False,first_of_type)
                     break
         elif argtype == "BXType&" or argtype == "BXType &": # Could change this in the HLS instead
             #FIXME hack for PC and VMSMER
             if first_of_type or module.mtype_short() == "PC" or module.mtype_short() == "VMSMER" :
-                string_bx_out += writeProcBXPort(module.inst,False,False,first_of_type, delay) # output bx
+                string_bx_out += writeProcBXPort(module.inst,False,False,first_of_type) # output bx
         elif "table" in argname: # For TE
             innerPS = ("_L1" in module.inst and "_L2" in module.inst) \
                    or ("_L2" in module.inst and "_L3" in module.inst) \
@@ -1394,81 +1394,81 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     return str_ctrl_wire,module_str
 
 ################################
-def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, delay, split = 0):
+def writeModuleInstance(module, hls_src_dir, first_of_type, extraports, split = 0):
     if module.mtype == 'InputRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_IR,
                                          matchArgPortNames_IR,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'VMRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMR,
                                          matchArgPortNames_VMR,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'VMRouterCM':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMRCM,
                                          matchArgPortNames_VMRCM,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'TrackletEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TE,
                                          matchArgPortNames_TE,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'TrackletProcessor':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TP,
                                          matchArgPortNames_TP,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'TrackletCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TC,
                                          matchArgPortNames_TC,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'ProjectionRouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PR,
                                          matchArgPortNames_PR,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'MatchEngine':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_ME,
                                          matchArgPortNames_ME,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'MatchCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_MC,
                                          matchArgPortNames_MC,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'MatchProcessor':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_MP,
                                          matchArgPortNames_MP,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'FitTrack':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_FT,
                                          matchArgPortNames_FT,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'TrackBuilder':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_TB,
                                          matchArgPortNames_TB,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'PurgeDuplicate':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PD,
                                          matchArgPortNames_PD,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'ProjectionCalculator':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_PC,
                                          matchArgPortNames_PC,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     elif module.mtype == 'VMSMERouter':
         return writeModuleInst_generic(module, hls_src_dir,
                                          writeTemplatePars_VMSMER,
                                          matchArgPortNames_VMSMER,
-                                         first_of_type, extraports, delay, split)
+                                         first_of_type, extraports, split)
     else:
         raise ValueError(module.mtype + " is unknown.")

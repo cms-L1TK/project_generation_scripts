@@ -600,6 +600,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
         if mem.startswith("IL_"):
             parameterlist += "        NENT_SYNC       => true,\n"
             parameterlist += "        MAX_ENTRIES     => MAX_ENTRIES_360,\n"
+        if mem.startswith("IL_"):
+            delay_parameterlist +="        DELAY           => (3, 3),\n"
         if "MPROJ" in mem:
             #special case for the merged projections
             delay_parameterlist +="        PAGE_LENGTH       => 64,\n"
@@ -1544,9 +1546,13 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
     int_ctrl_wire += "  signal "+mtype+"_bx : std_logic_vector(2 downto 0);\n"
     int_ctrl_wire += "  signal "+mtype+"_start : std_logic := '0';\n"
     int_ctrl_func += "  LATCH_"+mtype+": entity work.tf_pipeline_slr_xing\n"
-    if mtype.startswith("VMR_"):
+    if mtype.startswith("IR_") or mtype.startswith("VMR_"):
         int_ctrl_func += "    generic map (\n"
-        int_ctrl_func += "      NUM_SLR => 1\n"
+        if mtype.startswith("VMR_"):
+            int_ctrl_func += "      NUM_SLR => 1,\n"
+            int_ctrl_func += "      DELAY => (others => 3)\n"
+        else:
+            int_ctrl_func += "      DELAY => (3, 3)\n"
         int_ctrl_func += "    )\n"
     int_ctrl_func += "    port map (\n"
     if not (mtype.startswith("IR_") or mtype.startswith("VMR_")):

@@ -703,6 +703,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             mem_str += "      generic map (\n"+merge_parameterlist.rstrip(",\n")+"\n      )\n"
             mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
         portlist += "        clkb      => clk,\n"
+        portlist += "        rsta      => reset,\n"
         portlist += "        rstb      => '0',\n"
         portlist += "        regceb    => '1',\n"
         if not memInfo.is_binned :

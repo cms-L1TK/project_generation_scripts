@@ -111,7 +111,15 @@ def writeTopModuleEntityCloser(topmodule_name):
 def writeTBEntityBegin():
     string_begin = "begin\n\n"
     string_begin += "--! @brief Make clock ---------------------------------------\n"
-    string_begin += "  clk <= not clk after CLK_PERIOD/2;\n\n"
+    string_begin += "  clk <= not clk after CLK_PERIOD/2.0;"
+    string_begin += """
+  clk_wiz_240_360_0 : clk_wiz_240_360
+     port map (
+     clk    => clk,
+     clk240 => clk240,
+     clk360 => clk360,
+     locked => locked
+   );\n\n"""
     return string_begin
 
 def writeTopModuleCloser():
@@ -128,7 +136,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     # Stimulates reading and process start
     """
 
-    string_mem = "  procStart : process(CLK)\n"
+    string_mem = "  procStart : process(CLK240)\n"
     string_mem += "    -- Process to start first module in chain & generate its BX counter input.\n"
     string_mem += "    -- Also releases reset flag.\n"
     string_mem += "    constant CLK_RESET : natural := 5; -- Any low number OK.\n"
@@ -137,7 +145,7 @@ def writeTBMemoryStimulusProcess(initial_proc):
     string_mem += "    variable v_line : line; -- Line for debug\n"
     string_mem += "  begin\n\n"
     string_mem += "    if START_FIRST_" + ("WRITE" if "IR" not in initial_proc else "LINK") + " = '1' then\n"
-    string_mem += "      if rising_edge(CLK) then\n"
+    string_mem += "      if rising_edge(CLK240) then\n"
     string_mem += "        if (CLK_COUNT < MAX_ENTRIES) then\n"
     string_mem += "          CLK_COUNT := CLK_COUNT + 1;\n"
     string_mem += "        else\n"
@@ -182,13 +190,13 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "  generic map (\n"
             memtmp = mem.replace("twoS","2S")
             string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_"+mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
-            string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      FIFO_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      DEBUG".ljust(str_len) + "=> true,\n"
             string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_DL_debug&\""+ memtmp + "\"&debugFileNameEnding\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"
-            string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
+            string_mem += "      CLK".ljust(str_len) + "=> CLK240,\n"
+            string_mem += "      LOCKED".ljust(str_len) + "=> LOCKED,\n"
             string_mem += "      READ_EN".ljust(str_len) + "=> " + mem + "_link_read,\n"
             string_mem += "      DATA".ljust(str_len) + "=> " + mem + "_link_AV_dout,\n"
             string_mem += "      START".ljust(str_len) + "=> " + ("START_" + mem + ",\n" if is_initial else "open,\n")
@@ -202,7 +210,6 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
                 memtmp = memtmp.replace("n1","")
             #    memtmp = "T"+mem[1:10]
             string_mem += "      FILE_NAME".ljust(str_len) + "=> FILE_IN_" + mtypeB+"&\""+ memtmp + "\"&inputFileNameEnding,\n"
-            string_mem += "      DELAY".ljust(str_len) + "=> " + mtypeB.split("_")[0] + "_DELAY*MAX_ENTRIES,\n"
             string_mem += "      RAM_WIDTH".ljust(str_len) + "=> " + mtypeB.split("_")[1] + ",\n"
             string_mem += "      NUM_PAGES".ljust(str_len) + "=> " + str(2**bxbitwidth) + ",\n"
             if "MPROJ" in mem:
@@ -217,7 +224,8 @@ def writeTBMemoryReadInstance(mtypeB, memDict, bxbitwidth, is_initial, is_binned
             string_mem += "      FILE_NAME_DEBUG".ljust(str_len) + "=> FILE_OUT_" + mtypeB+"&\""+ mem + "_debug\"&debugFileNameEnding\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"
-            string_mem += "      CLK".ljust(str_len) + "=> CLK,\n"
+            string_mem += "      CLK".ljust(str_len) + "=> CLK240,\n"
+            string_mem += "      LOCKED".ljust(str_len) + "=> LOCKED,\n"
             string_mem += "      ADDR".ljust(str_len) + "=> " + mem + "_writeaddr,\n"
             string_mem += "      DATA".ljust(str_len) + "=> " + mem + "_din,\n"
             string_mem += "      START".ljust(str_len) + "=> START_" + mem + ",\n" if is_initial else "      START => open,\n"
@@ -627,11 +635,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
 
             #FIXME implement delay for disks
         # Write ports
-        portlist += "        clka      => clk,\n"
+        portlist += "        clka      => clk240,\n"
         portlist += "        wea       => "+mem+"_wea_delay,\n"
         portlist += "        addra     => "+mem+"_writeaddr_delay,\n"
         portlist += "        dina      => "+mem+"_din_delay,\n"
-        delay_portlist += "        clk      => clk,\n"
+        delay_portlist += "        clk      => clk240,\n"
         delay_portlist += "        reset    => reset,\n"
         delay_portlist += "        wea       => "+mem+"_wea,\n"
         delay_portlist += "        addra     => "+mem+"_writeaddr,\n"
@@ -673,7 +681,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
                     merge_portlist += "        bx_in => TPAR"+seed+PCGroup+"_bx,\n"
                     merge_portlist += "        bx_in_vld => TPAR"+seed+PCGroup+"_bx_vld,\n"
                     merge_portlist += "        rst => '0',\n"
-                    merge_portlist += "        clk => clk,\n"
+                    merge_portlist += "        clk => clk240,\n"
                     #This will make output for first stream_merge module (is there a less hacky way?)
                     if first_merge_streamer: 
                       merge_portlist += "        bx_out => TP_bx_out_merged,\n"
@@ -712,7 +720,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             merge_portlist += "        bx_in => "+mem+"_bx,\n"
             merge_portlist += "        bx_in_vld => "+mem+"_bx_vld,\n"
             merge_portlist += "        rst => '0',\n"
-            merge_portlist += "        clk => clk,\n"
+            merge_portlist += "        clk => clk240,\n"
             merge_portlist += "        merged_dout => "+mem+"_stream_V_dout,\n"
             for i in range(4):  merge_portlist += "        din"+str(i)+"=>" +mem+"_V_dout,\n"
             for i in range(4):  merge_portlist += "        nent"+str(i)+"=>" +mem+"_AV_dout_nent,\n"
@@ -722,7 +730,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             mem_str += "      port map (\n"+merge_portlist.rstrip(",\n")+"\n      );\n\n"
 
             stream_delay_portlist = ""
-            stream_delay_portlist += "        clk        => clk,\n"
+            stream_delay_portlist += "        clk        => clk240,\n"
             stream_delay_portlist += "        reset      => reset,\n"
             stream_delay_portlist += "        bx_out     => TP_bx_out,\n"
             stream_delay_portlist += "        bx_out_vld => TP_bx_out_vld,\n"
@@ -731,7 +739,7 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, split = False,
             mem_str += "    "+mem+"_STREAM_DELAY : entity work.tf_pipeline_slr_xing\n"        
             mem_str += "      port map (\n"+stream_delay_portlist.rstrip(",\n")+"\n      );\n\n"
 
-        portlist += "        clkb      => clk,\n"
+        portlist += "        clkb      => clk240,\n"
         portlist += "        rsta      => reset,\n"
         portlist += "        rstb      => '0',\n"
         if not memInfo.is_binned :
@@ -805,7 +813,8 @@ def writeControlSignals_interface(initial_proc, final_procs, notfinal_procs, spl
     
     final_proc_short = final_procs[0].split("_")[0]
     string_ctrl_signals = ""
-    string_ctrl_signals += "    clk        : in std_logic;\n"
+    string_ctrl_signals += "    clk240     : in std_logic;\n"
+    string_ctrl_signals += "    clk360     : in std_logic;\n"
     string_ctrl_signals += "    reset      : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_start  : in std_logic;\n"
     string_ctrl_signals += "    "+initial_proc+"_bx_in : in std_logic_vector(2 downto 0);\n"
@@ -980,7 +989,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
     string_constants += "  --    N.B. Change this also in makeProject.tcl !\n"
     string_constants += "  constant INST_TOP_TF".ljust(str_len) + ": integer := 1; \n"
     string_constants += "  --=========================================================================\n\n"
-    string_constants += "  constant CLK_PERIOD".ljust(str_len) + ": time    := 4 ns;       --! 250 MHz\n"
+    string_constants += "  constant CLK_PERIOD".ljust(str_len) + ": time    := 25.0 ns;       --! 40 MHz\n"
     string_constants += "  constant DEBUG".ljust(str_len) + ": boolean := False;      --! Debug off/on\n"
  
     # Write delay and input/output file name signals
@@ -996,13 +1005,7 @@ def writeTBConstants(memDict, memInfoDict, procs, emData_dir, sector, split):
             if memInfo.mtype_short not in string_input_tmp:
                 mem_dir = memInfo.mtype_long.replace("AllStubs", "Stubs").replace("Inner", "").replace("Outer", "").replace("DTCLink", "InputStubs").replace("InputLink", "InputStubs").replace("FullMatch", "Matches").replace("AllProj", "TrackletProjections").replace("CandidateMatch", "Matches") # Directory name for the memory testvectors. FIX ME, make this prettier?!
                 mem_file_start = memInfo.mtype_long.replace("ME", "").replace("TE","").replace("Inner", "").replace("Outer", "").replace("DTC", "").replace("InputLink", "InputStubs").replace("FullMatch", "FullMatches").replace("CandidateMatch", "CandidateMatches") # Testvector file name start. FIX ME, make this prettier?!
-                mem_delay = procs.index(memInfo.downstream_mtype_short) # The delay in number of bx. The initial process of the chain will have 0 delay, the second have 1 bx delay etc.
 
-                #FIXME - hack for fpga2 project
-                if split == 2:
-                    mem_delay = 0
-
-                string_constants += ("  constant " + memInfo.mtype_short + "_DELAY").ljust(str_len) + ": integer := " + str(mem_delay) + ";          --! Number of BX delays\n"
                 string_input_tmp += ("  constant FILE_IN_" + mtypeB).ljust(str_len) + ": string := memPrintsDir&\"" + mem_dir + "/" + mem_file_start + "_\";\n"
                 if "VMSME_16" == mtypeB:
                     string_input_tmp += ("  constant FILE_IN_VMSME_17").ljust(str_len) + ": string := memPrintsDir&\"" + mem_dir + "/" + mem_file_start + "_\";\n"
@@ -1049,6 +1052,9 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
     string_ctrl_signals = "\n  -- ########################### Signals ###########################\n"
     string_ctrl_signals += "  -- ### UUT signals ###\n"
     string_ctrl_signals += "  signal clk".ljust(str_len)+": std_logic := '0';\n"
+    string_ctrl_signals += "  signal clk240".ljust(str_len)+": std_logic;\n"
+    string_ctrl_signals += "  signal clk360".ljust(str_len)+": std_logic;\n"
+    string_ctrl_signals += "  signal locked".ljust(str_len)+": std_logic;\n"
     string_ctrl_signals += "  signal reset".ljust(str_len)+": std_logic := '1';\n"
     string_ctrl_signals += ("  signal "+initial_proc+"_start").ljust(str_len)+": std_logic := '0';\n"
     string_ctrl_signals += ("  signal "+initial_proc+"_idle").ljust(str_len)+": std_logic := '0';\n"
@@ -1178,6 +1184,17 @@ def writeTBControlSignals(memDict, memInfoDict, initial_proc, final_procs, notfi
         mem = memMod.inst
         string_ctrl_signals += "  signal START_" + mem + " : t_" + first_mem + "_1b" + " := '0';\n"
 
+    string_ctrl_signals += """
+  component clk_wiz_240_360
+  port
+   (
+    clk    : in     std_logic;
+    clk240 : out std_logic;
+    clk360 : out std_logic;
+    locked : out std_logic
+   );
+  end component;\n"""
+
     string_ctrl_signals += "\n"
 
     return string_ctrl_signals
@@ -1201,7 +1218,8 @@ def writeFWBlockInstance(topfunc, memDict, memInfoDict, initial_proc, final_proc
     string_fwblock_inst += "  begin\n"
     string_fwblock_inst += "    uut : entity work." + topfunc + "\n"
     string_fwblock_inst += "      port map(\n"
-    string_fwblock_inst += "        clk".ljust(str_len) + "=> clk,\n"
+    string_fwblock_inst += "        clk240".ljust(str_len) + "=> clk240,\n"
+    string_fwblock_inst += "        clk360".ljust(str_len) + "=> clk240, -- Using 240-MHz clock until CDC is integrated\n"
     string_fwblock_inst += "        reset".ljust(str_len) + "=> reset,\n"
     string_fwblock_inst += ("        " + initial_proc + "_start").ljust(str_len) + "=> " + initial_proc + "_start,\n"
     string_fwblock_inst += ("        " + initial_proc + "_bx_in").ljust(str_len) + "=> " + initial_proc + "_bx_in,\n"
@@ -1353,7 +1371,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, 
             string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"
-            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+            string_mem += "      CLK".ljust(str_len)+"=> CLK240,\n"
             string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
             string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
             string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
@@ -1367,7 +1385,7 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, 
         string_mem += "      NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "    )\n"
         string_mem += "    port map (\n"
-        string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+        string_mem += "      CLK".ljust(str_len)+"=> CLK240,\n"
         string_mem += "      ADDR".ljust(str_len)+"=> "+mem+"_readaddr,\n"
         string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_dout,\n"
         string_mem += "      READ_EN".ljust(str_len)+"=> "+mem+"_enb,\n"
@@ -1405,7 +1423,7 @@ def writeTBMemoryWriteFIFOInstance(mtypeB, memDict, proc):
         string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + "\n"
         string_mem += "    )\n"
         string_mem += "    port map (\n"
-        string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
+        string_mem += "      CLK".ljust(str_len)+"=> CLK240,\n"
         string_mem += "      DONE".ljust(str_len)+"=> "+proc+"_DONE,\n"
         string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_A_write and "+mem+"_stream_AV_din(" + str(memWidth - 1) + ")),\n"
         string_mem += "      FULL_NEG".ljust(str_len)+"=> "+mem+"_stream_A_full_neg,\n"
@@ -1429,7 +1447,7 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
         module_str += "    )\n"
         module_str += "    port map (\n"
-        module_str += "      clk    => clk,\n"
+        module_str += "      clk    => clk240,\n"
         module_str += "      bx    => "+module.inst+"_bx_in,\n"
         module_str += "      start => "+module.inst+"_start,\n"
         module_str += "      enb   => MPAR_"+module.inst[3:]+"in_enb,\n"
@@ -1449,7 +1467,7 @@ def writeProcCombination(module, str_ctrl_func, str_ports):
         module_str += "      NAME    => \""+module.inst+"_mem_reader\"\n"
         module_str += "    )\n"
         module_str += "    port map (\n"
-        module_str += "      clk    => clk,\n"
+        module_str += "      clk    => clk240,\n"
         module_str += "      bx    => "+module.inst+"_bx_in,\n"
         module_str += "      start => "+module.inst+"_start,\n"
         module_str += "      enb   => AS_"+module.inst[7:]+"in_enb,\n"
@@ -1503,7 +1521,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
         int_ctrl_func += "      generic map (\n"+startsignal_parameter_list.rstrip(",\n")+"\n      )\n"
 
         int_ctrl_func += "    port map (\n"
-        int_ctrl_func += "      clk   => clk,\n"
+        int_ctrl_func += "      clk   => clk240,\n"
         int_ctrl_func += "      reset => reset,\n"
         int_ctrl_func += "      done  => PC_start,\n"
         int_ctrl_func += "      bx_out => PC_bx_in,\n"
@@ -1524,7 +1542,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
     int_ctrl_wire += "  signal "+mtype+"_start : std_logic := '0';\n"
     int_ctrl_func += "  LATCH_"+mtype+": entity work.tf_pipeline_slr_xing\n"
     int_ctrl_func += "    port map (\n"
-    int_ctrl_func += "      clk   => clk,\n"
+    int_ctrl_func += "      clk   => clk240,\n"
     int_ctrl_func += "      reset => reset,\n"
     if "MP_" in mtype :
         int_ctrl_func += "      done  => PC_done,\n"
@@ -1549,7 +1567,7 @@ def writeStartSwitchAndInternalBX(module,mem,extraports=False, first_of_type=Fal
         int_ctrl_wire += "  signal "+mtype+"_bx_in : std_logic_vector(2 downto 0);\n"
         int_ctrl_func += "  LATCH_"+mtype+"_BX_GEN: entity work.tf_pipeline_slr_xing\n"
         int_ctrl_func += "    port map (\n"
-        int_ctrl_func += "      clk   => clk,\n"
+        int_ctrl_func += "      clk   => clk240,\n"
         int_ctrl_func += "      reset => reset,\n"
         if first_proc:
             if mtype_up == "VMSMER":
@@ -1567,7 +1585,7 @@ def writeProcControlSignalPorts(module,first_of_type):
     # Processing module port assignment: control signals
     """
     string_ctrl_ports = ""
-    string_ctrl_ports += "      ap_clk   => clk,\n"
+    string_ctrl_ports += "      ap_clk   => clk240,\n"
     string_ctrl_ports += "      ap_rst   => reset,\n"
     if (module.mtype_short()=="PC") :
         string_ctrl_ports += "      ap_start => '1',\n"
@@ -1721,7 +1739,7 @@ def writeLastTrackPorts(ftName, is_open):
 def writeLUTPorts(argname,lut):
     string_lut_ports = ""
     argname = argname.split("[")[0]
-    string_lut_ports += "      clk       => clk,\n"
+    string_lut_ports += "      clk       => clk240,\n"
     string_lut_ports += "      addr      => "+lut.inst+"_"+argname+"_addr,\n"
     string_lut_ports += "      ce        => "+lut.inst+"_"+argname+"_ce,\n"
     string_lut_ports += "      dout      => "+lut.inst+"_"+argname+"_dout\n"

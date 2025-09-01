@@ -1208,7 +1208,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     str_ctrl_func = ""
     oneProcUpMem = None
     for mem in module.upstreams:
-        if mem.bxbitwidth != 1: continue
+        if mem.bxbitwidth != 1 and mem.bxbitwidth != 2: continue  #What is this doing?
         if mem.upstreams[0] is None: continue
         oneProcUpMem = mem
         break
@@ -1255,7 +1255,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         # bunch crossing
         if argtype == "BXType":
             for mem in module.upstreams:
-                if mem.bxbitwidth != 1: continue
+                if mem.bxbitwidth != 1 and mem.bxbitwidth != 2: continue #FIXME what is this doing
                 if mem.is_initial:
                     string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type,delay)
                     break

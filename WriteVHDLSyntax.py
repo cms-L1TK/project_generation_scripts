@@ -712,8 +712,6 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             portlist += "        doutb     => "+mem+"_V_dout,\n"
         if "AS" in mem and "n1" in mem and split == 1:
             portlist += "        sync_nent => "+first_tp+"_start,\n"
-        elif "TPAR" in mem and split == 1:
-            portlist += "        sync_nent => TP_done,\n" 
         else:
             portlist += "        sync_nent => "+mem+"_start,\n"
         if memmod.has_numEntries_out or ("n1" in mem and split == 1):
@@ -1296,7 +1294,9 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
             string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
             string_mem += "    generic map (\n"
             string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
-            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
+            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + ",\n"
+            string_mem += "      BX_CNT_INIT".ljust(str_len)+"=> -1,\n"
+            string_mem += "      DONE_DELAY".ljust(str_len)+"=> 6\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"
             string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
@@ -1318,12 +1318,18 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
                 string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
             if "VMSME" in mem:
                 string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
+            if "VMSTE" in mem:
+                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -1,\n" #-1 is emperically determined to allign the FileWriter BX with the data stream
         if "MPROJ" in mem :
             string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
             string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         if "FM" in mem :
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
+        if "IL" in mem :
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -2,\n" #-2 is emperically determined to allign the FileWriter BX with the data stream
+        if "AS" in mem :
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -16,\n" #-10 is emperically determined to allign the FileWriter BX with the data stream
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"
@@ -1377,6 +1383,8 @@ def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, 
             string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
             string_mem += "    generic map (\n"
             string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
+            string_mem += "      BX_CNT_INIT".ljust(str_len)+"=> -1,\n"
+            string_mem += "      DONE_DELAY".ljust(str_len)+"=> 5,\n"
             string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + "\n"
             string_mem += "    )\n"
             string_mem += "    port map (\n"

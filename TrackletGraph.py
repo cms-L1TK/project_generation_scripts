@@ -245,8 +245,10 @@ class TrackletGraph(object):
         if (      mem.mtype == "TrackletProjections" or mem.mtype == "VMProjections"
                or mem.mtype == "CandidateMatch" or mem.mtype == "FullMatch" or mem.mtype == "VMStubsME"
                or mem.mtype == "StubPairs" or mem.mtype == "VMStubsTEInner" or mem.mtype == "VMStubsTEOuter"
-                  or mem.mtype == "InputLink" or mem.mtype == "DTCLink" or mem.mtype == "AllInnerStubs"):
+                  or mem.mtype == "DTCLink" or mem.mtype == "AllInnerStubs"):
             mem.bxbitwidth = 1
+        elif ( mem.mtype == "InputLink") :
+            mem.bxbitwidth = 2
         elif (    mem.mtype == "AllProj" 
                or mem.mtype == "AllStubs" or mem.mtype == "TrackletParameters"):
             mem.bxbitwidth = 3

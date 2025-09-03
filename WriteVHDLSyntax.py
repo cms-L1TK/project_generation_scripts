@@ -1326,7 +1326,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         if "FM" in mem :
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
-        if "IL" in mem :
+        if "IL_" in mem :
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -2,\n" #-2 is emperically determined to allign the FileWriter BX with the data stream
         if "AS" in mem :
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -16,\n" #-10 is emperically determined to allign the FileWriter BX with the data stream

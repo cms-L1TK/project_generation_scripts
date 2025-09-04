@@ -271,6 +271,27 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
+    #horrible hack to fix order of modules
+    ia=-1;
+    ib=-1;
+    for mem in memList:
+        if "_BE" in mem.var() :
+            ia=memList.index(mem);
+        if "_BF" in mem.var() :
+            ib=memList.index(mem);
+    if ia != -1 and ib != -1 and ib < ia :
+        memList[ia], memList[ib] = memList[ib], memList[ia]
+
+    ia=-1;
+    ib=-1;
+    for mem in memList:
+        if "L1PHIH_BC" in mem.var() :
+            ia=memList.index(mem);
+        if "L1PHIH_BD" in mem.var() :
+            ib=memList.index(mem);
+    if ia != -1 and ib != -1 and ib < ia :
+        memList[ia], memList[ib] = memList[ib], memList[ia]
+
     # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = list(zip(memList, portList))
     zipped_list.sort(key=lambda m_p: 0 if 'vmstubout' else int("".join([i for i in m_p[1] if i.isdigit()]))) # sort by number

@@ -1319,7 +1319,7 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
             if "VMSME" in mem:
                 string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
             if "VMSTE" in mem:
-                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -1,\n" #-1 is emperically determined to allign the FileWriter BX with the data stream
+                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
         if "MPROJ" in mem :
             string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
             string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
@@ -1327,9 +1327,9 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
         if "FM" in mem :
             string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
         if "IL_" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -2,\n" #-2 is emperically determined to allign the FileWriter BX with the data stream
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -8,\n" #-8 is emperically determined to allign the FileWriter BX with the data stream
         if "AS" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -16,\n" #-10 is emperically determined to allign the FileWriter BX with the data stream
+            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream changed for FPGA1 project
         string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
         string_mem += "      )\n"
         string_mem += "      port map (\n"

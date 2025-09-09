@@ -271,6 +271,27 @@ def getListsOfGroupedMemories(aProcModule):
     memList = list(aProcModule.upstreams + aProcModule.downstreams)
     portList = list(aProcModule.input_port_names + aProcModule.output_port_names)
 
+    #horrible hack to fix order of modules
+    ia=-1;
+    ib=-1;
+    for mem in memList:
+        if "_BE" in mem.var() :
+            ia=memList.index(mem);
+        if "_BF" in mem.var() :
+            ib=memList.index(mem);
+    if ia != -1 and ib != -1 and ib < ia :
+        memList[ia], memList[ib] = memList[ib], memList[ia]
+
+    ia=-1;
+    ib=-1;
+    for mem in memList:
+        if "L1PHIH_BC" in mem.var() :
+            ia=memList.index(mem);
+        if "L1PHIH_BD" in mem.var() :
+            ib=memList.index(mem);
+    if ia != -1 and ib != -1 and ib < ia :
+        memList[ia], memList[ib] = memList[ib], memList[ia]
+
     # Sort the VMSME and VMSTE using portList, first by the phi region number (e.g. 2 in "vmstuboutPHIA2"), then alphabetically
     zipped_list = list(zip(memList, portList))
     zipped_list.sort(key=lambda m_p: 0 if 'vmstubout' else int("".join([i for i in m_p[1] if i.isdigit()]))) # sort by number
@@ -1208,7 +1229,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
     str_ctrl_func = ""
     oneProcUpMem = None
     for mem in module.upstreams:
-        if mem.bxbitwidth != 1: continue
+        if mem.bxbitwidth != 1 and mem.bxbitwidth != 2: continue  #What is this doing?
         if mem.upstreams[0] is None: continue
         oneProcUpMem = mem
         break
@@ -1255,7 +1276,7 @@ def writeModuleInst_generic(module, hls_src_dir, f_writeTemplatePars,
         # bunch crossing
         if argtype == "BXType":
             for mem in module.upstreams:
-                if mem.bxbitwidth != 1: continue
+                if mem.bxbitwidth != 1 and mem.bxbitwidth != 2: continue #FIXME what is this doing
                 if mem.is_initial:
                     string_bx_in += writeProcBXPort(module.inst,True,True,first_of_type,delay)
                     break

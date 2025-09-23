@@ -672,7 +672,10 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
                     merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
                     merge_parameterlist += "        NAME => \"MPAR_"+seed+PCGroup+"\",\n"
-                    merge_parameterlist += "        FILE_WRITE     => true,\n"
+                    if extraports:
+                        merge_parameterlist += "        FILE_WRITE     => true,\n"
+                    else:
+                        merge_parameterlist += "        FILE_WRITE     => false,\n"
 
                     merge_portlist += "        bx_in => TP_bx_out,\n"
                     merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"

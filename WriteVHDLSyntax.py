@@ -585,6 +585,11 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
         parameterlist += "        INIT_HEX        => true,\n"
         parameterlist += "        RAM_PERFORMANCE => \"HIGH_PERFORMANCE\",\n"
         parameterlist += "        NAME            => \""+mem+"\",\n"
+        if extraports and not (("AS_" in mem or "MPAR_" in mem)and "in" in mem):
+            parameterlist += "        FILE_WRITE            => true,\n"
+        else:
+            parameterlist += "        FILE_WRITE            => false,\n"
+
         if delay > 0:
             #enable to use non-default delay value
             if "MPROJ" in mem:
@@ -666,6 +671,12 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
                     merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
                     merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
                     merge_parameterlist += "        NUM_EXTRA_BITS => 2,\n"
+                    merge_parameterlist += "        NAME => \"MPAR_"+seed+PCGroup+"\",\n"
+                    if extraports:
+                        merge_parameterlist += "        FILE_WRITE     => true,\n"
+                    else:
+                        merge_parameterlist += "        FILE_WRITE     => false,\n"
+
                     merge_portlist += "        bx_in => TP_bx_out,\n"
                     merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
                     merge_portlist += "        rst => '0',\n"
@@ -691,6 +702,8 @@ def writeTopLevelMemoryType(mtypeB, memList, memInfo, extraports, delay = 0, spl
             merge_parameterlist += "        NUM_PAGES => "+str(numpages)+",\n"
             merge_parameterlist += "        NUM_INPUTS => "+str(numInputs)+",\n"
             merge_parameterlist += "        NUM_EXTRA_BITS => 0,\n"
+            merge_parameterlist += "        FILE_WRITE     => false,\n" # don't write here since we write memory
+            merge_parameterlist += "        NAME => \"" + mem + "\",\n"
             merge_portlist += "        bx_in => TP_bx_out,\n"
             merge_portlist += "        bx_in_vld => TP_bx_out_vld,\n"
             merge_portlist += "        rst => '0',\n"
@@ -1285,65 +1298,6 @@ def writeTBMemoryWriteInstance(mtypeB, memList, proc, proc_up, bxbitwidth, is_bi
 
     string_mem = ""
 
-    for memMod in memList:
-        mem = memMod.inst
-        if ("AS" in mem and "n1" in mem and split == 1):
-            #FIXME rewrite this to be a separate function
-            width = memMod.bitwidth + 1
-            str_len = 16 # length of string for formatting purposes
-            string_mem += "    write"+mem+" : entity work.FileWriterFIFO\n"
-            string_mem += "    generic map (\n"
-            string_mem += "      FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
-            string_mem += "      FIFO_WIDTH".ljust(str_len)+"=> " + str(width) + ",\n"
-            string_mem += "      BX_CNT_INIT".ljust(str_len)+"=> -1,\n"
-            string_mem += "      DONE_DELAY".ljust(str_len)+"=> 6\n"
-            string_mem += "    )\n"
-            string_mem += "    port map (\n"
-            string_mem += "      CLK".ljust(str_len)+"=> CLK,\n"
-            string_mem += "      DONE".ljust(str_len)+"=> TP_DONE,\n"
-            string_mem += "      WRITE_EN".ljust(str_len)+"=> ("+mem+"_stream_V_dout(" + str(width - 1) + ")),\n"
-            string_mem += "      FULL_NEG".ljust(str_len)+'=> open,\n'
-            string_mem += "      DATA".ljust(str_len)+"=> "+mem+"_stream_V_dout\n"
-            string_mem += "    );\n"
-            continue
-
-        string_mem += "      write"+mem+" : entity work.FileWriter\n"
-        string_mem += "      generic map (\n"
-        string_mem += "        FILE_NAME".ljust(str_len)+"=> FILE_OUT_"+mtypeB+"&\""+mem+"\"&outputFileNameEnding,\n"
-        string_mem += "        RAM_WIDTH".ljust(str_len)+"=> " + mtypeB.split("_")[1] + ",\n"
-        if is_cm and is_binned :
-            if "VMSME_D" in mem:
-                string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 2048,\n"
-            else:
-                string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 1024,\n"
-            if "VMSME" in mem:
-                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
-            if "VMSTE" in mem:
-                string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream
-        if "MPROJ" in mem :
-            string_mem += "        NUM_TPAGES".ljust(str_len)+"=> 4,\n"
-            string_mem += "        PAGE_LENGTH".ljust(str_len)+"=> 64,\n"
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
-        if "FM" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -21,\n" #-21 is emperically determined to allign the FileWriter BX with the data stream
-        if "IL_" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -8,\n" #-8 is emperically determined to allign the FileWriter BX with the data stream
-        if "AS" in mem :
-            string_mem += "        CLK_CNT_INIT".ljust(str_len)+"=> -17,\n" #-17 is emperically determined to allign the FileWriter BX with the data stream changed for FPGA1 project
-        string_mem += "        NUM_PAGES".ljust(str_len)+"=> " + str(2**bxbitwidth) + "\n"
-        string_mem += "      )\n"
-        string_mem += "      port map (\n"
-        string_mem += "        CLK".ljust(str_len)+"=> CLK,\n"
-        string_mem += "        ADDR".ljust(str_len)+"=> "+mem+"_writeaddr,\n"
-        string_mem += "        DATA".ljust(str_len)+"=> "+mem+"_din,\n"
-        string_mem += "        WRITE_EN".ljust(str_len)+"=> "+mem+"_wea,\n"
-        if proc == "VMSMER" or proc == "PC":
-            string_mem += "        START".ljust(str_len)+"=> PC_START,\n"
-        else:
-            string_mem += "        START".ljust(str_len)+"=> "+(proc+"_START,\n" if not proc_up else proc_up+"_DONE,\n")
-        string_mem += "        DONE".ljust(str_len)+"=> "+proc+"_DONE\n"
-        string_mem += "      );\n"
-    
     return string_mem
 
 def writeTBMemoryWriteRAMInstance(mtypeB, memDict, proc, bxbitwidth, is_binned, split, MPARdict = 0):
